@@ -4,7 +4,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
     try {
-        const { projectId } = await req.json()
+        const { projectId, gender } = await req.json()
 
         if (!projectId) {
             return NextResponse.json(
@@ -63,10 +63,13 @@ export async function POST(req: NextRequest) {
                 project_id: projectId,
                 name: result.profile.name,
                 personality: result.profile.personality,
+                backstory: result.profile.backstory || '',
                 appearance_description: result.profile.appearanceDescription,
                 voice_id: result.voiceId,
                 voice_name: result.voiceName,
                 visual_profile: result.profile.visualProfile,
+                avatar_url: result.avatarUrl || null,
+                gender: gender || 'female',
                 status: 'ready',
             })
             .select()

@@ -78,6 +78,12 @@ export async function POST(req: NextRequest) {
         }
 
         // Run video generation workflow
+        // Update status to 'voicing' before starting
+        await supabase
+            .from('videos')
+            .update({ status: 'voicing' })
+            .eq('id', videoRecord.id)
+
         const result = await generateVideo(
             {
                 name: project.name,
@@ -97,8 +103,18 @@ export async function POST(req: NextRequest) {
             influencer?.visual_profile || {},
             influencer?.voice_id || '',
             screenshotUrls,
-            platform
+            platform,
+            projectId
         )
+
+        // Update status to 'rendering' before video gen
+        await supabase
+            .from('videos')
+            .update({ status: 'rendering' })
+            .eq('id', videoRecord.id)
+
+        // Determine final status based on video URL availability
+        const finalStatus = result.videoUrl ? 'ready' : 'rendering'
 
         // Update video record with results
         const { error: updateError } = await supabase
@@ -109,7 +125,7 @@ export async function POST(req: NextRequest) {
                 video_url: result.videoUrl,
                 thumbnail_url: result.thumbnailUrl,
                 duration_seconds: result.script.estimatedDuration,
-                status: 'ready',
+                status: finalStatus,
                 metadata: {
                     hashtags: result.script.hashtags,
                     hook: result.script.hook,
@@ -131,6 +147,26 @@ export async function POST(req: NextRequest) {
         })
     } catch (error) {
         console.error('Video generation error:', error)
+
+        // Update video status to 'failed' so it doesn't stay stuck in 'İşleniyor'
+        try {
+            const supabase = await createServerSupabaseClient()
+            // Find the most recent scripting/rendering video for this project and mark it failed
+            const { projectId } = await req.clone().json().catch(() => ({ projectId: null }))
+            if (projectId) {
+                await supabase
+                    .from('videos')
+                    .update({
+                        status: 'failed',
+                        metadata: { error: String(error) },
+                    })
+                    .eq('project_id', projectId)
+                    .in('status', ['scripting', 'voicing', 'rendering'])
+            }
+        } catch (dbError) {
+            console.error('Failed to update video status:', dbError)
+        }
+
         return NextResponse.json(
             { error: 'Video generation failed', details: String(error) },
             { status: 500 }

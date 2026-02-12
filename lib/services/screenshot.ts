@@ -72,7 +72,7 @@ export async function uploadScreenshot(
     const filePath = `${projectId}/${fileName}`
 
     const { data, error } = await supabase.storage
-        .from('project-assets')
+        .from('assets')
         .upload(filePath, buffer, {
             contentType: 'image/png',
             upsert: true,
@@ -83,7 +83,37 @@ export async function uploadScreenshot(
     }
 
     const { data: urlData } = supabase.storage
-        .from('project-assets')
+        .from('assets')
+        .getPublicUrl(data.path)
+
+    return urlData.publicUrl
+}
+
+/**
+ * Upload any media file (audio, video, etc.) to Supabase Storage
+ */
+export async function uploadMediaToStorage(
+    buffer: Buffer,
+    projectId: string,
+    fileName: string,
+    contentType: string = 'audio/mpeg'
+): Promise<string> {
+    const supabase = await createServiceRoleClient()
+    const filePath = `${projectId}/${fileName}`
+
+    const { data, error } = await supabase.storage
+        .from('assets')
+        .upload(filePath, buffer, {
+            contentType,
+            upsert: true,
+        })
+
+    if (error) {
+        throw new Error(`Media upload failed: ${error.message}`)
+    }
+
+    const { data: urlData } = supabase.storage
+        .from('assets')
         .getPublicUrl(data.path)
 
     return urlData.publicUrl

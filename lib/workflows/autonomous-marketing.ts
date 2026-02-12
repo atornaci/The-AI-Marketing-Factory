@@ -6,7 +6,7 @@
 
 import { abacusAI } from '@/lib/services/abacus-ai'
 import { elevenLabs } from '@/lib/services/elevenlabs'
-import { captureWebsite, uploadScreenshot, scrapeWebsiteInfo } from '@/lib/services/screenshot'
+import { captureWebsite, uploadScreenshot, scrapeWebsiteInfo, uploadMediaToStorage } from '@/lib/services/screenshot'
 import type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile } from '@/lib/services/abacus-ai'
 
 export interface WorkflowStatus {
@@ -29,6 +29,7 @@ export interface InfluencerResult {
     profile: InfluencerProfile
     voiceId: string
     voiceName: string
+    avatarUrl: string
 }
 
 export interface VideoResult {
@@ -113,7 +114,11 @@ export async function createInfluencer(
     report('Generating influencer personality...')
     const profile = await abacusAI.generateInfluencerProfile(analysis, constitution)
 
-    // Step 2: Select appropriate voice
+    // Step 2: Generate unique avatar image
+    report('Generating influencer photo...')
+    const avatarUrl = await abacusAI.generateInfluencerAvatar(profile)
+
+    // Step 3: Select appropriate voice
     report('Selecting brand voice...')
     const voices = await elevenLabs.getRecommendedVoices(constitution.brandVoice)
     const selectedVoice = voices[0] // Select best match
@@ -123,6 +128,7 @@ export async function createInfluencer(
         profile,
         voiceId: selectedVoice?.voice_id || '',
         voiceName: selectedVoice?.name || 'Default Voice',
+        avatarUrl,
     }
 }
 
@@ -136,31 +142,80 @@ export async function generateVideo(
     voiceId: string,
     screenshotUrls: string[],
     platform: 'instagram' | 'tiktok' | 'linkedin',
+    projectId: string,
     onProgress?: (step: string) => void
 ): Promise<VideoResult> {
     const report = (step: string) => onProgress?.(step)
 
     // Step 1: Generate script
     report('Writing viral video script...')
-    const script = await abacusAI.generateVideoScript(analysis, constitution, platform)
+    let script: VideoScript
+    try {
+        script = await abacusAI.generateVideoScript(analysis, constitution, platform)
+        console.log(`[Workflow] ✅ Script generated: "${script.title}"`)
+    } catch (error) {
+        console.error('[Workflow] ❌ Script generation failed:', error)
+        // Provide a fallback script so pipeline can continue
+        script = {
+            title: `${analysis.name} - ${platform} Ad`,
+            hook: `Discover ${analysis.name}!`,
+            body: analysis.valueProposition || analysis.description,
+            fullScript: `${analysis.name}: ${analysis.valueProposition || analysis.description}`,
+            cta: 'Try it now!',
+            hashtags: [analysis.name.replace(/\s+/g, ''), platform, 'ai'],
+            estimatedDuration: 30,
+        }
+    }
 
-    // Step 2: Generate narration audio
-    report('Generating AI voice narration...')
-    const audioBuffer = await elevenLabs.generateSpeech(script.fullScript, voiceId)
+    // Step 2: Generate narration audio (only if voiceId is available)
+    let audioBuffer: ArrayBuffer | null = null
+    if (voiceId && voiceId.trim().length > 0) {
+        report('Generating AI voice narration...')
+        try {
+            audioBuffer = await elevenLabs.generateSpeech(script.fullScript, voiceId)
+            console.log(`[Workflow] ✅ Audio generated (${audioBuffer.byteLength} bytes)`)
+        } catch (error) {
+            console.error('[Workflow] ❌ Audio generation failed:', error)
+        }
+    } else {
+        console.log('[Workflow] ⚠️ No voice ID provided, skipping audio generation')
+    }
 
-    // Step 3: Upload audio to storage
-    report('Uploading audio...')
-    // Audio upload would go here
+    // Step 3: Upload audio to Supabase Storage
+    let audioUrl = ''
+    if (audioBuffer && audioBuffer.byteLength > 0) {
+        report('Uploading narration audio...')
+        try {
+            audioUrl = await uploadMediaToStorage(
+                Buffer.from(audioBuffer),
+                projectId,
+                `narration-${platform}-${Date.now()}.mp3`,
+                'audio/mpeg'
+            )
+            console.log(`[Workflow] ✅ Audio uploaded: ${audioUrl}`)
+        } catch (error) {
+            console.error('[Workflow] ❌ Audio upload failed:', error)
+        }
+    }
 
-    // Step 4: Generate video with AI influencer
-    report('Rendering video with AI influencer...')
-    const { videoUrl, thumbnailUrl } = await abacusAI.generateVideo({
-        script: script.fullScript,
-        audioUrl: '', // Would be the uploaded audio URL
-        influencerProfile,
-        screenshotUrls,
-        platform,
-    })
+    // Step 4: Generate video with AI influencer via Abacus AI
+    report('Rendering video with AI influencer (Abacus AI)...')
+    let videoUrl = ''
+    let thumbnailUrl = ''
+    try {
+        const videoResult = await abacusAI.generateVideo({
+            script: script.fullScript,
+            audioUrl,
+            influencerProfile,
+            screenshotUrls,
+            platform,
+        })
+        videoUrl = videoResult.videoUrl
+        thumbnailUrl = videoResult.thumbnailUrl
+        console.log(`[Workflow] ✅ Video generation complete. URL: ${videoUrl || '(pending)'}`)
+    } catch (error) {
+        console.error('[Workflow] ❌ Video generation failed:', error)
+    }
 
     return {
         videoId: '', // Will be set by API route
@@ -177,6 +232,7 @@ export async function runFullPipeline(
     url: string,
     userId: string,
     platform: 'instagram' | 'tiktok' | 'linkedin',
+    projectId: string,
     onProgress?: (step: string) => void
 ): Promise<{
     project: OnboardingResult
@@ -206,6 +262,7 @@ export async function runFullPipeline(
         influencer.voiceId,
         project.screenshots,
         platform,
+        projectId,
         onProgress
     )
 

@@ -62,6 +62,7 @@ interface VideoScript {
 interface InfluencerProfile {
     name: string
     personality: string
+    backstory: string
     appearanceDescription: string
     visualProfile: Record<string, unknown>
 }
@@ -74,36 +75,67 @@ class AbacusAIService {
     }
 
     private async callLLM(prompt: string, systemPrompt?: string): Promise<string> {
-        const response = await fetch(`${ABACUS_API_BASE}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.apiKey}`,
-            },
-            body: JSON.stringify({
-                model: ABACUS_MODEL,
-                messages: [
-                    {
-                        role: 'system',
-                        content: systemPrompt || 'You are an expert marketing strategist and content creator.',
-                    },
-                    {
-                        role: 'user',
-                        content: prompt,
-                    },
-                ],
-                temperature: 0.7,
-                max_tokens: 4096,
-            }),
-        })
+        const MAX_RETRIES = 3
+        const TIMEOUT_MS = 90_000 // 90 seconds — below Cloudflare's 100s limit
 
-        if (!response.ok) {
-            const errorBody = await response.text().catch(() => '')
-            throw new Error(`Abacus AI API error: ${response.status} ${response.statusText} — ${errorBody}`)
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+                const response = await fetch(`${ABACUS_API_BASE}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: ABACUS_MODEL,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: systemPrompt || 'You are an expert marketing strategist and content creator.',
+                            },
+                            {
+                                role: 'user',
+                                content: prompt,
+                            },
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 2048,
+                    }),
+                    signal: controller.signal,
+                })
+
+                clearTimeout(timeoutId)
+
+                if (!response.ok) {
+                    const errorBody = await response.text().catch(() => '')
+                    // Retry on 5xx / timeout errors
+                    if (response.status >= 500 && attempt < MAX_RETRIES) {
+                        console.warn(`Abacus AI attempt ${attempt} failed (${response.status}), retrying in ${attempt * 2}s...`)
+                        await new Promise(r => setTimeout(r, attempt * 2000))
+                        continue
+                    }
+                    throw new Error(`Abacus AI API error: ${response.status} ${response.statusText} — ${errorBody}`)
+                }
+
+                const data = await response.json()
+                return data.choices?.[0]?.message?.content || ''
+            } catch (error: unknown) {
+                const isAbortError = error instanceof Error && error.name === 'AbortError'
+                const isTimeout = isAbortError || (error instanceof Error && error.message.includes('timeout'))
+
+                if ((isTimeout || (error instanceof Error && error.message.includes('fetch'))) && attempt < MAX_RETRIES) {
+                    console.warn(`Abacus AI attempt ${attempt} timed out, retrying in ${attempt * 3}s...`)
+                    await new Promise(r => setTimeout(r, attempt * 3000))
+                    continue
+                }
+                throw error
+            }
         }
 
-        const data = await response.json()
-        return data.choices?.[0]?.message?.content || ''
+        throw new Error('Abacus AI: All retry attempts exhausted')
     }
 
     /**
@@ -359,20 +391,69 @@ IMPORTANT: Always respond in ${lang.name} (${lang.adLang}). Every single word of
      * Generate an AI Influencer profile
      */
     async generateInfluencerProfile(analysis: ProjectAnalysis, constitution: MarketingConstitution): Promise<InfluencerProfile> {
+        // Randomize personality archetype each time for variety
+        const archetypes = [
+            'The Visionary Innovator — forward-thinking, inspiring, always talking about the future',
+            'The Friendly Mentor — warm, approachable, guides people with patience and humor',
+            'The Bold Challenger — provocative, energetic, breaks conventions and challenges norms',
+            'The Calm Expert — composed, authoritative, explains complex topics simply',
+            'The Passionate Storyteller — emotional, creative, connects through narratives',
+            'The Street-Smart Hustler — practical, direct, motivates with real-world experience',
+            'The Quirky Creative — playful, unconventional, surprises with unexpected angles',
+            'The Empathetic Connector — deeply caring, community-focused, builds trust naturally',
+        ]
+        const nameStyles = [
+            'a modern tech-inspired name',
+            'a warm Mediterranean-sounding name',
+            'an elegant European name',
+            'a bold and punchy American name',
+            'an artistic and creative name',
+            'a cool and trendy East Asian-inspired name',
+            'a sophisticated British-sounding name',
+            'a vibrant Latin-inspired name',
+        ]
+        const backstoryThemes = [
+            'came from a completely different career and found their true calling',
+            'grew up in a small town and built their way up through pure determination',
+            'was a skeptic at first but became a passionate advocate after a life-changing experience',
+            'has an academic/research background and brings intellectual depth',
+            'is a serial entrepreneur who has seen both failures and successes',
+            'traveled the world and gained unique perspectives from different cultures',
+            'started as a community volunteer and discovered their talent for communication',
+            'is a former artist/musician who brings creative energy to everything they do',
+        ]
+
+        const archetype = archetypes[Math.floor(Math.random() * archetypes.length)]
+        const nameStyle = nameStyles[Math.floor(Math.random() * nameStyles.length)]
+        const backstoryTheme = backstoryThemes[Math.floor(Math.random() * backstoryThemes.length)]
+        const uniqueSeed = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+
         const prompt = `
-Create an AI Influencer character profile for marketing the following project.
+Create a UNIQUE AI Influencer character profile for marketing the following project.
+Generation seed: ${uniqueSeed} — use this to ensure uniqueness.
 
 Project: ${analysis.name}
+Description: ${analysis.description || ''}
 Target Audience: ${JSON.stringify(analysis.targetAudience)}
 Brand Voice: ${constitution.brandVoice}
 Visual Style: ${constitution.visualGuidelines.style}
 
-The AI influencer should be a virtual character that embodies the brand and connects with the target audience.
+CREATIVE DIRECTION (follow this closely):
+- Personality archetype: ${archetype}
+- Name style: Give them ${nameStyle}
+- Backstory theme: This character ${backstoryTheme}
+
+The AI influencer should be a virtual character that:
+- Has a memorable, UNIQUE name (first and last name) — NEVER use generic names like "Alex Nova" or "Ada"
+- Has a rich backstory explaining who they are and why they promote this brand
+- Embodies the brand values and connects emotionally with the target audience
+- Has a distinct personality matching the archetype above
 
 Respond with a JSON object:
 {
-  "name": "Influencer name",
-  "personality": "Personality traits and communication style",
+  "name": "A creative, memorable influencer name (first and last name)",
+  "personality": "Detailed personality traits, communication style, and tone of voice matching the archetype (2-3 sentences)",
+  "backstory": "A compelling backstory following the theme above: who this character is, their background, why they are passionate about this brand/product, what drives them, and their mission. Write as a mini biography (3-5 sentences).",
   "appearanceDescription": "Detailed visual description for AI generation",
   "visualProfile": {
     "gender": "male/female/neutral",
@@ -388,9 +469,13 @@ Respond ONLY with valid JSON.`
         try {
             return JSON.parse(result)
         } catch {
+            // Randomized fallback names
+            const fallbackNames = ['Zara Pulse', 'Leo Vantis', 'Maya Drift', 'Kai Ember', 'Nora Flux', 'Ravi Crest', 'Lina Spark', 'Theo Blaze']
+            const fallbackName = fallbackNames[Math.floor(Math.random() * fallbackNames.length)]
             return {
-                name: 'Alex Nova',
-                personality: 'Friendly, professional, and enthusiastic about technology',
+                name: fallbackName,
+                personality: 'Friendly, professional, and enthusiastic about technology. Speaks with confidence and warmth, making complex things feel simple.',
+                backstory: `${fallbackName} is a passionate digital creator who discovered their calling in connecting innovative brands with the people who need them most. Their journey started unexpectedly, but every experience shaped them into the authentic voice they are today.`,
                 appearanceDescription: 'A modern, professional-looking AI character with a warm smile',
                 visualProfile: {
                     gender: 'neutral',
@@ -403,7 +488,43 @@ Respond ONLY with valid JSON.`
     }
 
     /**
-     * Generate video with AI influencer (Abacus.AI Video Engine)
+     * Generate a unique AI influencer avatar/headshot using Pollinations.ai
+     * The URL itself serves as the image — no API key needed
+     * IMPORTANT: Prompt must be English-only and short (URL < 500 chars)
+     */
+    async generateInfluencerAvatar(profile: InfluencerProfile): Promise<string> {
+        try {
+            const vp = profile.visualProfile as Record<string, string> | undefined
+            const gender = vp?.gender === 'male' ? 'man' : 'woman'
+            const age = vp?.ageRange || '28'
+            const seed = Math.floor(Math.random() * 999999)
+
+            // English-only, short prompt — no LLM text (may contain non-ASCII)
+            const promptText = `photorealistic portrait headshot of a ${gender} aged ${age} wearing business casual, studio lighting, clean background, warm smile`
+
+            const encodedPrompt = encodeURIComponent(promptText)
+            const avatarUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&seed=${seed}&nologo=true&model=flux`
+
+            console.log(`[Influencer] Avatar URL length: ${avatarUrl.length}`)
+
+            // Validate the URL works (HEAD request)
+            const testResponse = await fetch(avatarUrl, { method: 'HEAD' })
+            if (testResponse.ok) {
+                console.log(`[Influencer] ✅ Avatar generated (seed: ${seed})`)
+                return avatarUrl
+            } else {
+                console.error(`[Influencer] Pollinations.ai returned ${testResponse.status}`)
+                return ''
+            }
+        } catch (error) {
+            console.error(`[Influencer] Avatar generation error:`, error)
+            return ''
+        }
+    }
+
+    /**
+     * Generate video with AI influencer via Abacus AI ChatLLM
+     * Uses ChatLLM's multimodal video generation (Kling AI / Hailuo / RunwayML)
      */
     async generateVideo(params: {
         script: string
@@ -412,39 +533,511 @@ Respond ONLY with valid JSON.`
         screenshotUrls: string[]
         platform: 'instagram' | 'tiktok' | 'linkedin'
     }): Promise<{ videoUrl: string; thumbnailUrl: string }> {
-        // This would call Abacus.AI's video generation API
-        // For now, return a placeholder that will be replaced with actual API call
-        const response = await fetch(`${ABACUS_API_BASE}/generateVideo`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.apiKey}`,
-            },
-            body: JSON.stringify({
-                deploymentToken: this.apiKey,
-                arguments: {
-                    script: params.script,
-                    audio_url: params.audioUrl,
-                    character_profile: params.influencerProfile,
-                    overlay_images: params.screenshotUrls,
-                    platform: params.platform,
-                    lip_sync: true,
-                    resolution: params.platform === 'linkedin' ? '1920x1080' : '1080x1920',
-                },
-            }),
-        })
+        console.log(`[Video] Starting Abacus AI video generation...`)
+        console.log(`[Video] Script: ${params.script.length} chars, platform: ${params.platform}`)
+        console.log(`[Video] Audio URL: ${params.audioUrl || 'none'}`)
+        console.log(`[Video] Screenshots: ${params.screenshotUrls.length} images`)
 
-        if (!response.ok) {
-            throw new Error(`Video generation failed: ${response.statusText}`)
+        // Platform-specific video settings
+        const platformSettings = {
+            instagram: { aspectRatio: '9:16', maxDuration: 60 },
+            tiktok: { aspectRatio: '9:16', maxDuration: 60 },
+            linkedin: { aspectRatio: '16:9', maxDuration: 120 },
+        }
+        const settings = platformSettings[params.platform]
+
+        // Build the influencer description for visual consistency
+        const influencerDesc = params.influencerProfile?.appearanceDescription
+            || params.influencerProfile?.name
+            || 'A professional, modern-looking presenter'
+
+        // Build the video generation prompt
+        const videoPrompt = this.buildVideoPrompt(params.script, influencerDesc as string, settings, params.screenshotUrls)
+
+        try {
+            // Method 1: Try ChatLLM video generation endpoint
+            const videoResult = await this.callChatLLMVideoGen(videoPrompt, settings)
+
+            if (videoResult.videoUrl) {
+                console.log(`[Video] ✅ Video generated successfully: ${videoResult.videoUrl}`)
+                return videoResult
+            }
+
+            // Method 2: Fallback — try RouteLLM with image generation for thumbnail
+            console.log(`[Video] ChatLLM video gen returned no URL, generating thumbnail...`)
+            const thumbnailUrl = await this.generateVideoThumbnail(params.script, influencerDesc as string, params.platform)
+
+            return {
+                videoUrl: '',
+                thumbnailUrl,
+            }
+        } catch (error) {
+            console.error(`[Video] Video generation failed:`, error)
+            return {
+                videoUrl: '',
+                thumbnailUrl: '',
+            }
+        }
+    }
+
+    /**
+     * Build the video generation prompt for ChatLLM
+     */
+    private buildVideoPrompt(
+        script: string,
+        influencerDesc: string,
+        settings: { aspectRatio: string; maxDuration: number },
+        screenshotUrls: string[]
+    ): string {
+        // Extract just the spoken parts (remove stage directions in brackets)
+        const spokenScript = script
+            .replace(/\[.*?\]/g, '')
+            .replace(/\(.*?\)/g, '')
+            .trim()
+            .substring(0, 500) // Keep prompt manageable
+
+        const screenshotContext = screenshotUrls.length > 0
+            ? `\nReference images from the product/app are available. The video should show app screenshots naturally integrated.`
+            : ''
+
+        return `Create a ${settings.maxDuration}-second marketing video in ${settings.aspectRatio} format.
+
+PRESENTER: ${influencerDesc}
+The presenter is a professional content creator speaking directly to the camera in an engaging, authentic way.
+
+SCRIPT/STORY:
+${spokenScript}
+
+STYLE: Modern social media marketing video. Dynamic camera angles, smooth transitions, text overlays highlighting key points. Professional lighting, vibrant colors.
+${screenshotContext}
+
+The video should feel authentic and organic, like a real person sharing their genuine experience — not like a corporate ad.`
+    }
+
+    /**
+     * Call Abacus AI ChatLLM for video generation
+     */
+    private async callChatLLMVideoGen(
+        prompt: string,
+        settings: { aspectRatio: string; maxDuration: number }
+    ): Promise<{ videoUrl: string; thumbnailUrl: string }> {
+        const MAX_RETRIES = 2
+        const TIMEOUT_MS = 180_000 // 3 minutes for video gen
+
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+                console.log(`[Video] ChatLLM attempt ${attempt}/${MAX_RETRIES}...`)
+
+                const response = await fetch('https://api.abacus.ai/api/v0/createChatLLMSendMessageResponse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        apiKey: this.apiKey,
+                        message: prompt,
+                        chatSession: null,
+                        isVideoGen: true,
+                        videoGenModel: 'KLING_AI',
+                        videoGenSettings: {
+                            aspectRatio: settings.aspectRatio,
+                            duration: Math.min(settings.maxDuration, 10), // Most models support max 10s clips
+                        },
+                    }),
+                    signal: controller.signal,
+                })
+
+                clearTimeout(timeoutId)
+
+                if (!response.ok) {
+                    const errorBody = await response.text().catch(() => '')
+                    console.warn(`[Video] ChatLLM attempt ${attempt} failed: ${response.status} — ${errorBody}`)
+
+                    if (response.status >= 500 && attempt < MAX_RETRIES) {
+                        await new Promise(r => setTimeout(r, attempt * 5000))
+                        continue
+                    }
+
+                    // Try alternative endpoint format
+                    return await this.callRouteLLMVideoGen(prompt, settings)
+                }
+
+                const data = await response.json()
+                console.log(`[Video] ChatLLM response keys:`, Object.keys(data))
+
+                // Parse the response — look for video URL in various locations
+                const videoUrl = this.extractVideoUrl(data)
+                const thumbnailUrl = this.extractThumbnailUrl(data)
+
+                return { videoUrl, thumbnailUrl }
+            } catch (error) {
+                const isAbortError = error instanceof Error && error.name === 'AbortError'
+
+                if (isAbortError && attempt < MAX_RETRIES) {
+                    console.warn(`[Video] ChatLLM attempt ${attempt} timed out, retrying...`)
+                    await new Promise(r => setTimeout(r, attempt * 5000))
+                    continue
+                }
+
+                if (attempt === MAX_RETRIES) {
+                    console.warn(`[Video] ChatLLM exhausted, trying RouteLLM fallback...`)
+                    return await this.callRouteLLMVideoGen(prompt, settings)
+                }
+            }
         }
 
-        const data = await response.json()
-        return {
-            videoUrl: data.video_url || '',
-            thumbnailUrl: data.thumbnail_url || '',
+        return { videoUrl: '', thumbnailUrl: '' }
+    }
+
+    /**
+     * Fallback: Try using RouteLLM API with video gen capabilities
+     */
+    private async callRouteLLMVideoGen(
+        prompt: string,
+        settings: { aspectRatio: string; maxDuration: number }
+    ): Promise<{ videoUrl: string; thumbnailUrl: string }> {
+        try {
+            console.log(`[Video] Trying RouteLLM video generation fallback...`)
+
+            const response = await fetch(`${ABACUS_API_BASE}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: 'video-gen',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'You are a video generation AI. Generate a marketing video based on the prompt.',
+                        },
+                        {
+                            role: 'user',
+                            content: prompt,
+                        },
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 1024,
+                    // Video gen settings passed as extra body
+                    video_settings: {
+                        aspect_ratio: settings.aspectRatio,
+                        duration: Math.min(settings.maxDuration, 10),
+                        model: 'kling-ai',
+                    },
+                }),
+            })
+
+            if (!response.ok) {
+                console.warn(`[Video] RouteLLM fallback failed: ${response.status}`)
+                return { videoUrl: '', thumbnailUrl: '' }
+            }
+
+            const data = await response.json()
+            const videoUrl = this.extractVideoUrl(data)
+            return { videoUrl, thumbnailUrl: '' }
+        } catch (error) {
+            console.warn(`[Video] RouteLLM fallback error:`, error)
+            return { videoUrl: '', thumbnailUrl: '' }
+        }
+    }
+
+    /**
+     * Extract video URL from various Abacus AI response formats
+     */
+    private extractVideoUrl(data: Record<string, unknown>): string {
+        // Check common response locations
+        if (typeof data.videoUrl === 'string') return data.videoUrl
+        if (typeof data.video_url === 'string') return data.video_url
+
+        // Check nested response
+        const result = data.result as Record<string, unknown> | undefined
+        if (result) {
+            if (typeof result.videoUrl === 'string') return result.videoUrl
+            if (typeof result.video_url === 'string') return result.video_url
+            if (typeof result.url === 'string') return result.url
+        }
+
+        // Check ChatLLM message format
+        const messages = data.messages as Array<Record<string, unknown>> | undefined
+        if (messages?.length) {
+            const lastMsg = messages[messages.length - 1]
+            const content = lastMsg?.content as string | undefined
+            if (content) {
+                // Look for URLs in the response content
+                const urlMatch = content.match(/https?:\/\/[^\s"'<>]+\.(mp4|webm|mov)/i)
+                if (urlMatch) return urlMatch[0]
+            }
+        }
+
+        // Check choices format (OpenAI-compatible)
+        const choices = data.choices as Array<Record<string, unknown>> | undefined
+        if (choices?.length) {
+            const msg = choices[0]?.message as Record<string, unknown> | undefined
+            const content = msg?.content as string | undefined
+            if (content) {
+                const urlMatch = content.match(/https?:\/\/[^\s"'<>]+\.(mp4|webm|mov)/i)
+                if (urlMatch) return urlMatch[0]
+            }
+        }
+
+        // Check attachments
+        const attachments = data.attachments as Array<Record<string, unknown>> | undefined
+        if (attachments?.length) {
+            const videoAttachment = attachments.find(a =>
+                (a.type as string)?.includes('video') || (a.mime_type as string)?.includes('video')
+            )
+            if (videoAttachment?.url) return videoAttachment.url as string
+        }
+
+        console.log(`[Video] Could not find video URL in response:`, JSON.stringify(data).substring(0, 500))
+        return ''
+    }
+
+    /**
+     * Extract thumbnail URL from response
+     */
+    private extractThumbnailUrl(data: Record<string, unknown>): string {
+        if (typeof data.thumbnailUrl === 'string') return data.thumbnailUrl
+        if (typeof data.thumbnail_url === 'string') return data.thumbnail_url
+
+        const result = data.result as Record<string, unknown> | undefined
+        if (result?.thumbnailUrl) return result.thumbnailUrl as string
+        if (result?.thumbnail_url) return result.thumbnail_url as string
+
+        return ''
+    }
+
+    /**
+     * Generate a video thumbnail using RouteLLM image generation
+     */
+    private async generateVideoThumbnail(
+        script: string,
+        influencerDesc: string,
+        platform: string
+    ): Promise<string> {
+        try {
+            const prompt = `Create a video thumbnail for a ${platform} marketing video. The presenter: ${influencerDesc}. Topic: ${script.substring(0, 200)}`
+
+            const response = await fetch(`${ABACUS_API_BASE}/images/generations`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: 'dall-e-3',
+                    prompt,
+                    n: 1,
+                    size: platform === 'linkedin' ? '1792x1024' : '1024x1792',
+                }),
+            })
+
+            if (!response.ok) {
+                console.warn(`[Video] Thumbnail generation failed: ${response.status}`)
+                return ''
+            }
+
+            const data = await response.json()
+            return data.data?.[0]?.url || ''
+        } catch (error) {
+            console.warn(`[Video] Thumbnail error:`, error)
+            return ''
+        }
+    }
+
+    /**
+     * Analyze competitors and identify weaknesses/opportunities
+     */
+    async analyzeCompetitors(
+        analysis: ProjectAnalysis,
+        constitution: MarketingConstitution
+    ): Promise<CompetitorAnalysis> {
+        const competitors = analysis.competitors || []
+
+        if (competitors.length === 0) {
+            return {
+                competitors: [],
+                marketPosition: 'Rakip bilgisi bulunamadı. Projeyi yeniden analiz edin.',
+                generatedAt: new Date().toISOString(),
+            }
+        }
+
+        const prompt = `
+You are a competitive intelligence analyst. Analyze the following competitors for the project "${analysis.name}".
+
+OUR PROJECT:
+- Name: ${analysis.name}
+- Value Proposition: ${analysis.valueProposition}
+- Target Audience: ${JSON.stringify(analysis.targetAudience)}
+- Brand Voice: ${constitution.brandVoice}
+
+COMPETITORS TO ANALYZE:
+${competitors.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+For each competitor, provide:
+1. Their likely strengths (what they do well)
+2. Their weaknesses (gaps, missing features, poor UX, limited reach)
+3. Our specific advantage over them
+
+Then provide an overall market positioning summary.
+
+Respond in Turkish. Respond ONLY with valid JSON:
+{
+  "competitors": [
+    {
+      "name": "Competitor Name",
+      "url": "competitor url if available",
+      "strengths": ["strength 1", "strength 2"],
+      "weaknesses": ["weakness 1", "weakness 2", "weakness 3"],
+      "ourAdvantage": "What we do better than them in one sentence"
+    }
+  ],
+  "marketPosition": "2-3 sentence summary of our position in the market and key differentiators"
+}
+
+Respond ONLY with valid JSON.`
+
+        const result = await this.callLLM(prompt)
+        try {
+            const parsed = JSON.parse(result)
+            return {
+                ...parsed,
+                generatedAt: new Date().toISOString(),
+            }
+        } catch {
+            return {
+                competitors: competitors.map(c => ({
+                    name: c,
+                    url: c,
+                    strengths: ['Pazar bilinirliği'],
+                    weaknesses: ['Detaylı analiz yapılamadı'],
+                    ourAdvantage: 'Daha yenilikçi bir yaklaşım sunuyoruz',
+                })),
+                marketPosition: 'Rakip analizi tamamlanamadı. Lütfen tekrar deneyin.',
+                generatedAt: new Date().toISOString(),
+            }
+        }
+    }
+
+    /**
+     * Generate A/B ad copy variations
+     */
+    async generateAdCopyVariations(
+        analysis: ProjectAnalysis,
+        constitution: MarketingConstitution,
+        influencerName?: string
+    ): Promise<AdCopyResult> {
+        const framework = constitution.messagingFramework || {}
+
+        const prompt = `
+You are an expert digital advertising copywriter. Create 5 COMPLETELY DIFFERENT ad copy variations for the following product.
+
+PRODUCT:
+- Name: ${analysis.name}
+- Description: ${analysis.description || analysis.valueProposition}
+- Value Proposition: ${analysis.valueProposition}
+- Target Audience: ${JSON.stringify(analysis.targetAudience)}
+
+BRAND MESSAGING FRAMEWORK:
+- Hook: ${framework.hook || 'N/A'}
+- Problem: ${framework.problem || 'N/A'}
+- Solution: ${framework.solution || 'N/A'}
+- CTA: ${framework.cta || 'N/A'}
+
+${influencerName ? `BRAND AMBASSADOR: ${influencerName}` : ''}
+
+Create 5 variations with DIFFERENT approaches:
+1. EMOTION-DRIVEN: Pull heartstrings, use storytelling
+2. URGENCY-BASED: Create FOMO, limited time/opportunity
+3. SOCIAL PROOF: Highlight community, trust, numbers
+4. PROBLEM-SOLUTION: Lead with pain point, offer relief
+5. ASPIRATIONAL: Paint a picture of the ideal outcome
+
+Each variation should be ready to copy-paste into Facebook Ads, Google Ads, or Instagram.
+
+Respond in Turkish. Respond ONLY with valid JSON:
+{
+  "variations": [
+    {
+      "id": 1,
+      "approach": "Duygusal",
+      "headline": "Attention-grabbing headline (max 40 chars)",
+      "body": "Compelling ad body text (2-3 sentences, max 150 chars)",
+      "cta": "Call to action button text (max 20 chars)",
+      "platform": "Facebook"
+    },
+    {
+      "id": 2,
+      "approach": "Aciliyet",
+      "headline": "...",
+      "body": "...",
+      "cta": "...",
+      "platform": "Google"
+    }
+  ]
+}
+
+Make sure each variation feels COMPLETELY DIFFERENT in tone and approach.
+Respond ONLY with valid JSON.`
+
+        const result = await this.callLLM(prompt)
+        try {
+            const parsed = JSON.parse(result)
+            return {
+                ...parsed,
+                generatedAt: new Date().toISOString(),
+            }
+        } catch {
+            return {
+                variations: [
+                    {
+                        id: 1,
+                        approach: 'Duygusal',
+                        headline: `${analysis.name} ile tanışın`,
+                        body: 'Hayatınızı kolaylaştıracak çözüm burada. Hemen deneyin ve farkı hissedin.',
+                        cta: 'Hemen Başla',
+                        platform: 'Facebook',
+                    },
+                ],
+                generatedAt: new Date().toISOString(),
+            }
         }
     }
 }
 
+// Types for new features
+interface CompetitorEntry {
+    name: string
+    url?: string
+    strengths: string[]
+    weaknesses: string[]
+    ourAdvantage: string
+}
+
+interface CompetitorAnalysis {
+    competitors: CompetitorEntry[]
+    marketPosition: string
+    generatedAt: string
+}
+
+interface AdCopyVariation {
+    id: number
+    approach: string
+    headline: string
+    body: string
+    cta: string
+    platform: string
+}
+
+interface AdCopyResult {
+    variations: AdCopyVariation[]
+    generatedAt: string
+}
+
 export const abacusAI = new AbacusAIService()
-export type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile }
+export type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile, CompetitorAnalysis, CompetitorEntry, AdCopyResult, AdCopyVariation }
+
