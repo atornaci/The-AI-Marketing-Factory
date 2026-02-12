@@ -6,7 +6,9 @@
 
 import type { Language } from '@/lib/i18n/translations'
 
-const ABACUS_API_BASE = 'https://api.abacus.ai/api/v0'
+// Route LLM API — OpenAI-compatible endpoint (no deployment needed)
+const ABACUS_API_BASE = 'https://routellm.abacus.ai/v1'
+const ABACUS_MODEL = 'route-llm' // Auto-routes to best model (Sonnet, GPT, Gemini)
 
 // Language-specific prompt instructions
 const LANGUAGE_PROMPTS: Record<Language, { name: string; instruction: string; adLang: string }> = {
@@ -72,28 +74,36 @@ class AbacusAIService {
     }
 
     private async callLLM(prompt: string, systemPrompt?: string): Promise<string> {
-        const response = await fetch(`${ABACUS_API_BASE}/predict`, {
+        const response = await fetch(`${ABACUS_API_BASE}/chat/completions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.apiKey}`,
             },
             body: JSON.stringify({
-                deploymentToken: this.apiKey,
-                deploymentId: process.env.ABACUS_DEPLOYMENT_ID || '',
-                arguments: {
-                    prompt,
-                    system_prompt: systemPrompt || 'You are an expert marketing strategist and content creator.',
-                },
+                model: ABACUS_MODEL,
+                messages: [
+                    {
+                        role: 'system',
+                        content: systemPrompt || 'You are an expert marketing strategist and content creator.',
+                    },
+                    {
+                        role: 'user',
+                        content: prompt,
+                    },
+                ],
+                temperature: 0.7,
+                max_tokens: 4096,
             }),
         })
 
         if (!response.ok) {
-            throw new Error(`Abacus AI API error: ${response.statusText}`)
+            const errorBody = await response.text().catch(() => '')
+            throw new Error(`Abacus AI API error: ${response.status} ${response.statusText} — ${errorBody}`)
         }
 
         const data = await response.json()
-        return data.result || data.prediction || ''
+        return data.choices?.[0]?.message?.content || ''
     }
 
     /**
