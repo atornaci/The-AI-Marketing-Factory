@@ -276,7 +276,7 @@ export default function ProjectDetailPage({
                                 animate={{ opacity: 1, y: 0 }}
                                 className="lg:col-span-2"
                             >
-                                <Card className="glass border-white/5 h-full">
+                                <Card className="glass border-white/15 h-full">
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <Target className="w-4 h-4 text-violet-400" />
@@ -300,7 +300,7 @@ export default function ProjectDetailPage({
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
                             >
-                                <Card className="glass border-white/5 h-full">
+                                <Card className="glass border-white/15 h-full">
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <Shield className="w-4 h-4 text-violet-400" />
@@ -332,7 +332,7 @@ export default function ProjectDetailPage({
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
                             >
-                                <Card className="glass border-white/5">
+                                <Card className="glass border-white/15">
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <Users className="w-4 h-4 text-violet-400" />
@@ -361,7 +361,7 @@ export default function ProjectDetailPage({
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
                             >
-                                <Card className="glass border-white/5">
+                                <Card className="glass border-white/15">
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <Zap className="w-4 h-4 text-violet-400" />
@@ -392,7 +392,7 @@ export default function ProjectDetailPage({
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                <Card className="glass border-white/5">
+                                <Card className="glass border-white/15">
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <FileText className="w-4 h-4 text-violet-400" />
@@ -429,7 +429,7 @@ export default function ProjectDetailPage({
                                 animate={{ opacity: 1, y: 0 }}
                                 className="lg:col-span-1"
                             >
-                                <Card className="glass border-white/5 overflow-hidden">
+                                <Card className="glass border-white/15 overflow-hidden">
                                     <div className="aspect-square bg-gradient-to-br from-violet-600/20 to-purple-500/20 flex items-center justify-center relative">
                                         <div className="text-8xl">{influencerData.avatarEmoji}</div>
                                         <div className="absolute bottom-4 right-4">
@@ -460,7 +460,7 @@ export default function ProjectDetailPage({
                                 transition={{ delay: 0.1 }}
                                 className="lg:col-span-2 space-y-6"
                             >
-                                <Card className="glass border-white/5">
+                                <Card className="glass border-white/15">
                                     <CardHeader>
                                         <CardTitle className="text-base">Kişilik Profili</CardTitle>
                                     </CardHeader>
@@ -471,7 +471,7 @@ export default function ProjectDetailPage({
                                     </CardContent>
                                 </Card>
 
-                                <Card className="glass border-white/5">
+                                <Card className="glass border-white/15">
                                     <CardHeader>
                                         <CardTitle className="text-base">Hızlı Video Üret</CardTitle>
                                         <CardDescription>
@@ -506,7 +506,7 @@ export default function ProjectDetailPage({
                                                     key={platform.key}
                                                     onClick={() => handleGenerateVideo(platform.key)}
                                                     disabled={isGenerating}
-                                                    className="group p-4 rounded-xl glass border border-white/5 hover:border-violet-500/30 transition-all duration-300 text-left disabled:opacity-50"
+                                                    className="group p-4 rounded-xl glass border border-white/15 hover:border-violet-500/30 transition-all duration-300 text-left disabled:opacity-50"
                                                 >
                                                     <div className="text-2xl mb-2">{platform.icon}</div>
                                                     <h4 className="text-sm font-medium group-hover:text-violet-300 transition-colors">
@@ -559,7 +559,7 @@ export default function ProjectDetailPage({
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.1 }}
                                     >
-                                        <Card className="glass border-white/5 overflow-hidden group hover:border-violet-500/20 transition-all">
+                                        <Card className="glass border-white/15 overflow-hidden group hover:border-violet-500/20 transition-all">
                                             {/* Video Preview */}
                                             <div
                                                 className={`aspect-video bg-gradient-to-br ${getPlatformColor(video.platform)} relative flex items-center justify-center`}
@@ -664,7 +664,7 @@ export default function ProjectDetailPage({
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: index * 0.1 }}
                                     >
-                                        <Card className="glass border-white/5 overflow-hidden group hover:border-violet-500/20 transition-all cursor-pointer">
+                                        <Card className="glass border-white/15 overflow-hidden group hover:border-violet-500/20 transition-all cursor-pointer">
                                             <div className="aspect-[16/10] bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center">
                                                 <span className="text-4xl opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all">
                                                     {ss.emoji}

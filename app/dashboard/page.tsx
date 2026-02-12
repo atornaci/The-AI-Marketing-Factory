@@ -307,7 +307,7 @@ function DashboardContent() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4, delay: index * 0.1 }}
                         >
-                            <Card className="glass border-white/5 hover:border-white/10 transition-colors">
+                            <Card className="glass border-white/15 hover:border-white/25 transition-colors">
                                 <CardContent className="p-5">
                                     <div className="flex items-start justify-between mb-3">
                                         <div
@@ -344,7 +344,7 @@ function DashboardContent() {
                                 transition={{ duration: 0.4, delay: index * 0.1 }}
                             >
                                 <Link href={`/project/${project.id}`}>
-                                    <Card className="glass border-white/5 hover:border-violet-500/30 transition-all duration-300 cursor-pointer group h-full">
+                                    <Card className="glass border-white/15 hover:border-violet-500/40 transition-all duration-300 cursor-pointer group h-full">
                                         <CardHeader className="pb-3">
                                             <div className="flex items-start justify-between">
                                                 <div className="flex items-center gap-3">
@@ -418,7 +418,7 @@ function DashboardContent() {
                                 onOpenChange={setCreateDialogOpen}
                             >
                                 <DialogTrigger asChild>
-                                    <Card className="glass border-dashed border-white/10 hover:border-violet-500/30 transition-all duration-300 cursor-pointer group h-full flex items-center justify-center min-h-[200px]">
+                                    <Card className="glass border-dashed border-white/15 hover:border-violet-500/40 transition-all duration-300 cursor-pointer group h-full flex items-center justify-center min-h-[200px]">
                                         <div className="text-center p-6">
                                             <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4 group-hover:bg-violet-500/10 transition-colors">
                                                 <Plus className="w-6 h-6 text-muted-foreground group-hover:text-violet-400 transition-colors" />
