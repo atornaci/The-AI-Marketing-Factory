@@ -89,9 +89,11 @@ function LightInput({
    ═══════════════════════════════════════════════ */
 export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
+    const [isForgotPassword, setIsForgotPassword] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -156,6 +158,27 @@ export default function AuthPage() {
                         ? "Bu e-posta zaten kayıtlı"
                         : message
             );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /* ─── Forgot Password ─── */
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+        setSuccess("");
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/auth?type=recovery`,
+            });
+            if (error) throw error;
+            setSuccess("Şifre sıfırlama bağlantısı e-posta adresine gönderildi!");
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Bir hata oluştu";
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -361,7 +384,7 @@ export default function AuthPage() {
                                         transition={{ delay: 0.2 }}
                                         className="text-xl font-bold text-foreground"
                                     >
-                                        {isLogin ? "Tekrar Hoş Geldin" : "Hesap Oluştur"}
+                                        {isLogin ? "Tekrar Hoş Geldin" : isForgotPassword ? "Şifremi Unuttum" : "Hesap Oluştur"}
                                     </motion.h1>
 
                                     <motion.p
@@ -371,12 +394,12 @@ export default function AuthPage() {
                                         className="text-muted-foreground text-xs"
                                     >
                                         AI Marketing Factory&apos;e{" "}
-                                        {isLogin ? "giriş yap" : "kayıt ol"}
+                                        {isLogin ? "giriş yap" : isForgotPassword ? "şifre sıfırla" : "kayıt ol"}
                                     </motion.p>
                                 </div>
 
                                 {/* ─── Form ─── */}
-                                <form onSubmit={handleSubmit} className="space-y-4">
+                                <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className="space-y-4">
                                     <motion.div className="space-y-3">
                                         {/* Email */}
                                         <motion.div
@@ -409,49 +432,100 @@ export default function AuthPage() {
                                             </div>
                                         </motion.div>
 
-                                        {/* Password */}
-                                        <motion.div
-                                            className={`relative ${focusedInput === "password" ? "z-10" : ""}`}
-                                            whileHover={{ scale: 1.01 }}
-                                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                                        >
-                                            <div className="relative flex items-center overflow-hidden rounded-lg">
-                                                <Lock className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "password" ? "text-violet-500" : "text-muted-foreground"}`} />
-                                                <LightInput
-                                                    type={showPassword ? "text" : "password"}
-                                                    placeholder="Şifre"
-                                                    value={password}
-                                                    onChange={(e) => setPassword(e.target.value)}
-                                                    onFocus={() => setFocusedInput("password")}
-                                                    onBlur={() => setFocusedInput(null)}
-                                                    required
-                                                    minLength={6}
-                                                    className="pl-10 pr-10"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute right-3 cursor-pointer"
-                                                >
-                                                    {showPassword ? (
-                                                        <Eye className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors duration-300" />
-                                                    ) : (
-                                                        <EyeOff className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors duration-300" />
-                                                    )}
-                                                </button>
-                                                {focusedInput === "password" && (
-                                                    <motion.div
-                                                        layoutId="input-highlight"
-                                                        className="absolute inset-0 bg-violet-50/50 -z-10"
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        exit={{ opacity: 0 }}
-                                                        transition={{ duration: 0.2 }}
+                                        {/* Password — hide in forgot password mode */}
+                                        {!isForgotPassword && (
+                                            <motion.div
+                                                className={`relative ${focusedInput === "password" ? "z-10" : ""}`}
+                                                whileHover={{ scale: 1.01 }}
+                                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                            >
+                                                <div className="relative flex items-center overflow-hidden rounded-lg">
+                                                    <Lock className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "password" ? "text-violet-500" : "text-muted-foreground"}`} />
+                                                    <LightInput
+                                                        type={showPassword ? "text" : "password"}
+                                                        placeholder="Şifre"
+                                                        value={password}
+                                                        onChange={(e) => setPassword(e.target.value)}
+                                                        onFocus={() => setFocusedInput("password")}
+                                                        onBlur={() => setFocusedInput(null)}
+                                                        required
+                                                        minLength={6}
+                                                        className="pl-10 pr-10"
                                                     />
-                                                )}
-                                            </div>
-                                        </motion.div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute right-3 cursor-pointer"
+                                                    >
+                                                        {showPassword ? (
+                                                            <Eye className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors duration-300" />
+                                                        ) : (
+                                                            <EyeOff className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors duration-300" />
+                                                        )}
+                                                    </button>
+                                                    {focusedInput === "password" && (
+                                                        <motion.div
+                                                            layoutId="input-highlight"
+                                                            className="absolute inset-0 bg-violet-50/50 -z-10"
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            exit={{ opacity: 0 }}
+                                                            transition={{ duration: 0.2 }}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        )}
                                     </motion.div>
+
+                                    {isLogin && !isForgotPassword && (
+                                        <div className="flex items-center justify-between mt-3 mb-1">
+                                            <label className="flex items-center gap-2.5 cursor-pointer group/check select-none">
+                                                <div className="relative">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={rememberMe}
+                                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                                        className="sr-only"
+                                                    />
+                                                    <div className={`w-5 h-5 rounded-md border-2 transition-all duration-200 flex items-center justify-center ${rememberMe
+                                                        ? "bg-violet-500 border-violet-500 shadow-md shadow-violet-500/30"
+                                                        : "border-gray-300 group-hover/check:border-violet-400 group-hover/check:shadow-sm"
+                                                        }`}>
+                                                        {rememberMe && (
+                                                            <motion.svg
+                                                                initial={{ scale: 0 }}
+                                                                animate={{ scale: 1 }}
+                                                                transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                                                                className="w-3.5 h-3.5 text-white"
+                                                                fill="none"
+                                                                viewBox="0 0 24 24"
+                                                                stroke="currentColor"
+                                                                strokeWidth={3}
+                                                            >
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                            </motion.svg>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <span className="text-sm text-gray-600 group-hover/check:text-gray-900 transition-colors font-medium">
+                                                    Beni hatırla
+                                                </span>
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsForgotPassword(true);
+                                                    setIsLogin(false);
+                                                    setError("");
+                                                    setSuccess("");
+                                                }}
+                                                className="text-sm text-violet-600 hover:text-violet-700 transition-all duration-200 font-semibold hover:underline underline-offset-2"
+                                            >
+                                                Şifremi unuttum?
+                                            </button>
+                                        </div>
+                                    )}
 
                                     {/* Error / Success */}
                                     <AnimatePresence>
@@ -500,7 +574,7 @@ export default function AuthPage() {
                                                     </motion.div>
                                                 ) : (
                                                     <motion.span key="text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center gap-1 text-sm font-medium">
-                                                        {isLogin ? "Giriş Yap" : "Kayıt Ol"}
+                                                        {isForgotPassword ? "Sıfırlama Bağlantısı Gönder" : isLogin ? "Giriş Yap" : "Kayıt Ol"}
                                                         <ArrowRight className="w-3 h-3 group-hover/button:translate-x-1 transition-transform duration-300" />
                                                     </motion.span>
                                                 )}
@@ -555,18 +629,23 @@ export default function AuthPage() {
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: 0.5 }}
                                     >
-                                        {isLogin ? "Hesabın yok mu? " : "Zaten hesabın var mı? "}
+                                        {isLogin ? "Hesabın yok mu? " : isForgotPassword ? "Şifreni hatırladın mı? " : "Zaten hesabın var mı? "}
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                setIsLogin(!isLogin);
+                                                if (isForgotPassword) {
+                                                    setIsForgotPassword(false);
+                                                    setIsLogin(true);
+                                                } else {
+                                                    setIsLogin(!isLogin);
+                                                }
                                                 setError("");
                                                 setSuccess("");
                                             }}
                                             className="relative inline-block group/toggle"
                                         >
                                             <span className="relative z-10 text-violet-600 group-hover/toggle:text-violet-500 transition-colors duration-300 font-medium">
-                                                {isLogin ? "Kayıt ol" : "Giriş yap"}
+                                                {isLogin ? "Kayıt ol" : isForgotPassword ? "Giriş yap" : "Giriş yap"}
                                             </span>
                                             <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-violet-500 group-hover/toggle:w-full transition-all duration-300" />
                                         </button>
