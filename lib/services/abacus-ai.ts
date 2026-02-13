@@ -521,18 +521,36 @@ Respond ONLY with valid JSON.`
             const age = vp?.ageRange || '28'
             const seed = Math.floor(Math.random() * 999999)
 
-            // English-only, short prompt — no LLM text (may contain non-ASCII)
-            const promptText = `photorealistic portrait headshot of a ${gender} aged ${age} wearing business casual, studio lighting, clean background, warm smile`
+            // Extract profile-specific features for visual variety
+            const features = (vp?.features || '').replace(/[^a-zA-Z0-9 ,.\-]/g, '').substring(0, 80)
+            const style = vp?.style || 'business casual'
+            const appearance = (profile.appearanceDescription || '')
+                .replace(/[^a-zA-Z0-9 ,.\-]/g, '')
+                .substring(0, 100)
+
+            // Random variety pools — ensures different looks even with similar profiles
+            const hairStyles = ['blonde', 'brunette', 'black-haired', 'auburn', 'red-haired', 'dark brown-haired', 'light brown-haired', 'platinum blonde']
+            const backgrounds = ['soft blue', 'warm beige', 'light gray', 'pastel green', 'white', 'gradient purple', 'sunset orange', 'teal']
+            const expressions = ['warm smile', 'confident gaze', 'friendly expression', 'gentle smile', 'bright smile', 'professional look']
+
+            const hair = hairStyles[Math.floor(Math.random() * hairStyles.length)]
+            const bg = backgrounds[Math.floor(Math.random() * backgrounds.length)]
+            const expr = expressions[Math.floor(Math.random() * expressions.length)]
+
+            // Build a specific, unique prompt using profile details + random variety
+            const detailPart = features || appearance || style
+            const promptText = `photorealistic portrait headshot of a ${hair} ${gender} aged ${age}, ${detailPart}, ${bg} background, studio lighting, ${expr}, 8k uhd`
 
             const encodedPrompt = encodeURIComponent(promptText)
             const avatarUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&seed=${seed}&nologo=true&model=flux`
 
+            console.log(`[Influencer] Avatar prompt: ${promptText}`)
             console.log(`[Influencer] Avatar URL length: ${avatarUrl.length}`)
 
             // Validate the URL works (HEAD request)
             const testResponse = await fetch(avatarUrl, { method: 'HEAD' })
             if (testResponse.ok) {
-                console.log(`[Influencer] ✅ Avatar generated (seed: ${seed})`)
+                console.log(`[Influencer] ✅ Avatar generated (seed: ${seed}, hair: ${hair}, bg: ${bg})`)
                 return avatarUrl
             } else {
                 console.error(`[Influencer] Pollinations.ai returned ${testResponse.status}`)
