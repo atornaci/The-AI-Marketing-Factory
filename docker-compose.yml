@@ -1,42 +1,65 @@
 version: '3.8'
 
 services:
-  # =========================================
+  # ═══════════════════════════════════════
+  # FRONTEND — Next.js Standalone
+  # ═══════════════════════════════════════
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        - NEXT_PUBLIC_N8N_WEBHOOK_BASE=${NEXT_PUBLIC_N8N_WEBHOOK_BASE}
+    container_name: marketing-frontend
+    environment:
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ABACUS_AI_API_KEY=${ABACUS_AI_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ═══════════════════════════════════════
   # n8n — Workflow Orchestrator
-  # =========================================
+  # ═══════════════════════════════════════
   n8n:
     image: n8nio/n8n:latest
     container_name: n8n
     ports:
       - "5678:5678"
     environment:
-      # n8n Basic Auth
+      # Auth
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
       - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
-      # Webhook URL (for external triggers)
-      - WEBHOOK_URL=${WEBHOOK_URL:-https://n8n.yourdomain.com/}
+      # Webhook
+      - WEBHOOK_URL=${WEBHOOK_URL:-https://n8n.srv1140504.hstgr.cloud/}
       # Timezone
       - GENERIC_TIMEZONE=Europe/Istanbul
       - TZ=Europe/Istanbul
-      # Execution settings
+      # Execution
       - EXECUTIONS_DATA_PRUNE=true
-      - EXECUTIONS_DATA_MAX_AGE=168  # Keep 7 days
-      # n8n settings
+      - EXECUTIONS_DATA_MAX_AGE=168
+      # Metrics
       - N8N_METRICS=true
       - N8N_LOG_LEVEL=info
     volumes:
       - n8n_data:/home/node/.n8n
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz" ]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # =========================================
-  # Caddy — Reverse Proxy with Auto SSL
-  # =========================================
+  # ═══════════════════════════════════════
+  # CADDY — Reverse Proxy + Auto SSL
+  # ═══════════════════════════════════════
   caddy:
     image: caddy:2-alpine
     container_name: caddy
@@ -50,6 +73,7 @@ services:
     restart: unless-stopped
     depends_on:
       - n8n
+      - frontend
 
 volumes:
   n8n_data:

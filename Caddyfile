@@ -1,10 +1,16 @@
-# =========================================
-# Caddy Reverse Proxy Configuration
-# Auto SSL via Let's Encrypt
-# =========================================
+# ═══════════════════════════════════════
+# Caddy Reverse Proxy — Auto SSL
+# ═══════════════════════════════════════
 
-# Replace 'n8n.yourdomain.com' with your actual domain
-n8n.yourdomain.com {
+# ── FRONTEND (Next.js) ──
+# Şimdilik VPS IP:80 üzerinden çalışıyor
+# Domain alındığında: app.yourdomain.com olarak değişecek
+:80 {
+    reverse_proxy frontend:3000
+}
+
+# ── n8n API + Webhooks ──
+n8n.srv1140504.hstgr.cloud {
     reverse_proxy n8n:5678
 
     # Security headers
@@ -16,15 +22,17 @@ n8n.yourdomain.com {
         -Server
     }
 
-    # Enable CORS for frontend webhook calls
+    # CORS — Frontend'den gelen webhook çağrıları
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    header Access-Control-Allow-Headers "Content-Type, Authorization"
+
     @cors_preflight method OPTIONS
     handle @cors_preflight {
-        header Access-Control-Allow-Origin "https://the-ai-marketing-factory.vercel.app"
+        header Access-Control-Allow-Origin "*"
         header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         header Access-Control-Allow-Headers "Content-Type, Authorization"
         header Access-Control-Max-Age "3600"
         respond "" 204
     }
-
-    header Access-Control-Allow-Origin "https://the-ai-marketing-factory.vercel.app"
 }

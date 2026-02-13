@@ -1,5 +1,7 @@
 "use client";
 
+import { N8N_ENDPOINTS } from "@/lib/config/n8n";
+
 import { useState, useEffect, use, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -282,7 +284,7 @@ export default function ProjectDetailPage({
 
             // Get generated images
             try {
-                const imgRes = await fetch(`/api/images?projectId=${id}`);
+                const imgRes = await fetch(`${N8N_ENDPOINTS.listImages}?projectId=${id}`);
                 if (imgRes.ok) {
                     const imgData = await imgRes.json();
                     setGeneratedImages(imgData.images || []);
@@ -793,7 +795,7 @@ export default function ProjectDetailPage({
                                                 onClick={async () => {
                                                     setIsAnalyzingCompetitors(true);
                                                     try {
-                                                        const res = await fetch('/api/workflows/competitor-analysis', {
+                                                        const res = await fetch(N8N_ENDPOINTS.competitorAnalysis, {
                                                             method: 'POST',
                                                             headers: { 'Content-Type': 'application/json' },
                                                             body: JSON.stringify({ projectId: project.id }),
@@ -994,7 +996,7 @@ export default function ProjectDetailPage({
                                                             setInfluencerProgress(5);
                                                             setInfluencerStep("Mevcut influencer siliniyor...");
 
-                                                            const res = await fetch(`/api/influencer/${influencer.id}`, { method: 'DELETE' });
+                                                            const res = await fetch(`${N8N_ENDPOINTS.deleteInfluencer}?id=${influencer.id}`, { method: 'DELETE' });
                                                             if (!res.ok) {
                                                                 const errData = await res.json().catch(() => ({}));
                                                                 throw new Error(errData.error || 'Silme işlemi başarısız');
@@ -1334,7 +1336,7 @@ export default function ProjectDetailPage({
                                         onClick={async () => {
                                             setIsGeneratingAdCopy(true);
                                             try {
-                                                const res = await fetch('/api/workflows/ad-copy', {
+                                                const res = await fetch(N8N_ENDPOINTS.adCopy, {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: JSON.stringify({ projectId: project.id }),
@@ -1534,7 +1536,7 @@ export default function ProjectDetailPage({
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
-                                                                        fetch(`/api/videos/${video.id}`, { method: 'DELETE' })
+                                                                        fetch(`${N8N_ENDPOINTS.deleteVideo}?id=${video.id}`, { method: 'DELETE' })
                                                                             .then(res => {
                                                                                 if (res.ok) {
                                                                                     setVideos(prev => prev.filter(v => v.id !== video.id))
@@ -1910,7 +1912,7 @@ export default function ProjectDetailPage({
                                         onClick={async () => {
                                             setIsGeneratingImage(true);
                                             try {
-                                                const res = await fetch('/api/images', {
+                                                const res = await fetch(N8N_ENDPOINTS.generateImage, {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: JSON.stringify({
@@ -2013,7 +2015,7 @@ export default function ProjectDetailPage({
                                                             <button
                                                                 onClick={async () => {
                                                                     try {
-                                                                        await fetch(`/api/images?imageId=${img.id}`, { method: 'DELETE' });
+                                                                        await fetch(`${N8N_ENDPOINTS.deleteImage}?imageId=${img.id}`, { method: 'DELETE' });
                                                                         setGeneratedImages(prev => prev.filter(i => i.id !== img.id));
                                                                     } catch (err) {
                                                                         console.error('Delete error:', err);
