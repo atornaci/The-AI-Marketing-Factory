@@ -136,6 +136,14 @@ interface VideoData {
         cta?: string;
         error?: string;
     };
+    storyboard?: {
+        hookVariations?: { id: number; text: string; style: string; estimatedImpact: string }[];
+        selectedHook?: number;
+        scenes?: { sceneNumber: number; startSecond: number; endSecond: number; narration: string; visualDescription: string; screenContent?: string; cameraDirection: string; emotion: string }[];
+        totalDuration?: number;
+        platform?: string;
+        problemSolutionMap?: { problem: string; feature: string; videoMoment: string }[];
+    };
     created_at: string;
 }
 
@@ -1601,6 +1609,101 @@ export default function ProjectDetailPage({
                                         </DialogContent>
                                     </Dialog>
                                 </>
+                            )}
+
+                            {/* ═══ STORYBOARD SECTION ═══ */}
+                            {videos.some(v => v.storyboard?.scenes?.length) && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, delay: 0.2 }}
+                                    className="mt-8 space-y-6"
+                                >
+                                    <h3 className="text-lg font-bold flex items-center gap-2">
+                                        <span className="text-2xl">🎬</span> Storyboard & Hook'lar
+                                    </h3>
+                                    {videos.filter(v => v.storyboard).map((video) => (
+                                        <div key={`sb-${video.id}`} className="space-y-4">
+                                            {/* Hook Variations */}
+                                            {video.storyboard?.hookVariations && video.storyboard.hookVariations.length > 0 && (
+                                                <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+                                                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                                        <span>🪝</span> Hook Varyasyonları
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                        {video.storyboard.hookVariations.map((hook) => (
+                                                            <div
+                                                                key={hook.id}
+                                                                className={`rounded-lg p-3 border text-sm ${hook.id === video.storyboard?.selectedHook
+                                                                        ? 'border-violet-500 bg-violet-500/10'
+                                                                        : 'border-border/30 bg-muted/30'
+                                                                    }`}
+                                                            >
+                                                                <div className="flex items-center justify-between mb-1">
+                                                                    <span className="text-xs font-medium text-muted-foreground capitalize">{hook.style}</span>
+                                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${hook.estimatedImpact === 'high' ? 'bg-green-500/20 text-green-400' :
+                                                                            hook.estimatedImpact === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                                'bg-gray-500/20 text-gray-400'
+                                                                        }`}>{hook.estimatedImpact}</span>
+                                                                </div>
+                                                                <p className="font-medium">&ldquo;{hook.text}&rdquo;</p>
+                                                                {hook.id === video.storyboard?.selectedHook && (
+                                                                    <span className="text-xs text-violet-400 mt-1 block">✓ Seçili Hook</span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Scene Timeline */}
+                                            {video.storyboard?.scenes && video.storyboard.scenes.length > 0 && (
+                                                <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+                                                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                                        <span>🎞️</span> Sahne Planı ({video.storyboard.totalDuration}s)
+                                                    </h4>
+                                                    <div className="space-y-3">
+                                                        {video.storyboard.scenes.map((scene) => (
+                                                            <div key={scene.sceneNumber} className="flex gap-3 rounded-lg bg-muted/20 p-3">
+                                                                <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-violet-500/10 flex flex-col items-center justify-center">
+                                                                    <span className="text-lg font-bold text-violet-400">{scene.sceneNumber}</span>
+                                                                    <span className="text-[10px] text-muted-foreground">{scene.startSecond}-{scene.endSecond}s</span>
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">{scene.cameraDirection}</span>
+                                                                        <span className="text-xs px-2 py-0.5 rounded bg-pink-500/20 text-pink-400">{scene.emotion}</span>
+                                                                    </div>
+                                                                    <p className="text-sm font-medium truncate">&ldquo;{scene.narration}&rdquo;</p>
+                                                                    <p className="text-xs text-muted-foreground mt-0.5">{scene.visualDescription}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Problem-Solution Map */}
+                                            {video.storyboard?.problemSolutionMap && video.storyboard.problemSolutionMap.length > 0 && (
+                                                <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+                                                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                                        <span>🎯</span> Problem → Çözüm Eşlemesi
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        {video.storyboard.problemSolutionMap.map((item, i) => (
+                                                            <div key={i} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-muted/20">
+                                                                <span className="text-red-400 font-medium flex-shrink-0">❌ {item.problem}</span>
+                                                                <span className="text-muted-foreground">→</span>
+                                                                <span className="text-green-400 font-medium">{item.feature}</span>
+                                                                <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">{item.videoMoment}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </motion.div>
                             )}
                         </TabsContent>
 

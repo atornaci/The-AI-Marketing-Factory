@@ -5,6 +5,7 @@
 // =========================================
 
 import type { Language } from '@/lib/i18n/translations'
+import type { HookVariation, Storyboard, StoryboardScene, ProblemSolutionPair } from '@/lib/types/storyboard'
 
 // Route LLM API — OpenAI-compatible endpoint (no deployment needed)
 const ABACUS_API_BASE = 'https://routellm.abacus.ai/v1'
@@ -81,7 +82,7 @@ class AbacusAIService {
         this.apiKey = process.env.ABACUS_AI_API_KEY || ''
     }
 
-    private async callLLM(prompt: string, systemPrompt?: string, preferredModel?: string): Promise<string> {
+    private async callLLM(prompt: string, systemPrompt?: string, preferredModel?: string, maxTokens?: number): Promise<string> {
         const model = preferredModel || ABACUS_MODEL
         const MAX_RETRIES = 3
         const TIMEOUT_MS = 90_000 // 90 seconds — below Cloudflare's 100s limit
@@ -116,7 +117,7 @@ class AbacusAIService {
                             },
                         ],
                         temperature: 0.7,
-                        max_tokens: 2048,
+                        max_tokens: maxTokens || 2048,
                     }),
                     signal: controller.signal,
                 })
@@ -1046,6 +1047,169 @@ Respond ONLY with valid JSON.`
                     },
                 ],
                 generatedAt: new Date().toISOString(),
+            }
+        }
+    }
+
+    // =========================================
+    // Marketing Intelligence — Hook & Storyboard
+    // =========================================
+
+    async generateHookVariations(
+        analysis: ProjectAnalysis,
+        platform: 'instagram' | 'tiktok' | 'linkedin',
+        language: Language = 'tr'
+    ): Promise<HookVariation[]> {
+        const lang = LANGUAGE_PROMPTS[language]
+        const prompt = `
+You are a viral content strategist. Create 5 HOOK variations for the first 3 seconds of a ${platform} marketing video.
+
+Project: ${analysis.name}
+Value: ${analysis.valueProposition}
+Target: ${JSON.stringify(analysis.targetAudience)}
+
+Each hook must STOP the viewer from scrolling. Use these 5 different styles:
+1. question — Ask a provocative question
+2. shock — Share a shocking statistic or statement
+3. curiosity — Create an information gap
+4. pain-point — Hit a nerve they feel daily
+5. social-proof — Reference what others are doing
+
+IMPORTANT: Write ALL hooks in ${lang.name}.
+
+Respond ONLY with valid JSON:
+[
+  {
+    "id": 1,
+    "text": "Hook text (max 15 words)",
+    "style": "question",
+    "estimatedImpact": "high"
+  }
+]
+
+Respond ONLY with valid JSON array.`
+
+        const result = await this.callLLM(prompt, 'You are a viral content expert who writes hooks that stop people from scrolling.', MODELS.creative)
+        try {
+            const parsed = JSON.parse(result)
+            return Array.isArray(parsed) ? parsed : []
+        } catch {
+            return [
+                { id: 1, text: `${analysis.name} ile tanışın!`, style: 'curiosity' as const, estimatedImpact: 'medium' as const },
+            ]
+        }
+    }
+
+    async generateStoryboard(
+        analysis: ProjectAnalysis,
+        constitution: MarketingConstitution,
+        hooks: HookVariation[],
+        platform: 'instagram' | 'tiktok' | 'linkedin',
+        language: Language = 'tr'
+    ): Promise<Storyboard> {
+        const lang = LANGUAGE_PROMPTS[language]
+        const duration = platform === 'linkedin' ? 60 : platform === 'tiktok' ? 30 : 45
+        const bestHook = hooks.find(h => h.estimatedImpact === 'high') || hooks[0]
+
+        const prompt = `
+You are a professional video director creating a STORYBOARD for a ${platform} marketing video.
+Total duration: ${duration} seconds.
+
+Project: ${analysis.name}
+Description: ${analysis.description || ''}
+Value Proposition: ${analysis.valueProposition}
+Features/Keywords: ${analysis.keywords?.join(', ')}
+Brand Voice: ${constitution.brandVoice}
+Brand Colors: ${constitution.visualGuidelines?.colorPalette?.join(', ')}
+
+Selected Hook: "${bestHook.text}"
+
+Create a scene-by-scene storyboard following Hook → Problem → Solution → CTA structure.
+
+For EACH scene provide:
+- sceneNumber, startSecond, endSecond
+- narration: What the influencer says (in ${lang.name})
+- visualDescription: Detailed visual direction for AI render
+- screenContent: What app/website screenshot to show (if applicable)
+- cameraDirection: Close-up / Medium shot / Wide / Over-shoulder / Screen recording
+- emotion: Character emotional state
+
+Also create a problemSolutionMap: which project feature solves which user problem.
+
+IMPORTANT: All text in ${lang.name}.
+
+Respond ONLY with valid JSON:
+{
+  "scenes": [
+    {
+      "sceneNumber": 1,
+      "startSecond": 0,
+      "endSecond": 3,
+      "narration": "Hook text",
+      "visualDescription": "Close-up of influencer looking into camera",
+      "screenContent": "",
+      "cameraDirection": "Close-up",
+      "emotion": "curious"
+    }
+  ],
+  "problemSolutionMap": [
+    {
+      "problem": "User problem",
+      "feature": "App feature that solves it",
+      "videoMoment": "Scene 3 (12-18s)"
+    }
+  ]
+}
+
+Respond ONLY with valid JSON.`
+
+        const result = await this.callLLM(
+            prompt,
+            'You are an award-winning video director who creates storyboards that feel cinematic yet authentic.',
+            MODELS.creative,
+            4096
+        )
+
+        try {
+            const parsed = JSON.parse(result)
+            return {
+                hookVariations: hooks,
+                selectedHook: bestHook.id,
+                scenes: parsed.scenes || [],
+                totalDuration: duration,
+                platform,
+                problemSolutionMap: parsed.problemSolutionMap || [],
+                createdAt: new Date().toISOString(),
+            }
+        } catch {
+            return {
+                hookVariations: hooks,
+                selectedHook: bestHook.id,
+                scenes: [
+                    {
+                        sceneNumber: 1, startSecond: 0, endSecond: 3,
+                        narration: bestHook.text,
+                        visualDescription: 'Close-up of influencer looking at camera',
+                        cameraDirection: 'Close-up', emotion: 'excited',
+                    },
+                    {
+                        sceneNumber: 2, startSecond: 3, endSecond: Math.floor(duration * 0.7),
+                        narration: analysis.valueProposition,
+                        visualDescription: 'Medium shot, influencer showing app on phone',
+                        screenContent: analysis.name,
+                        cameraDirection: 'Medium shot', emotion: 'enthusiastic',
+                    },
+                    {
+                        sceneNumber: 3, startSecond: Math.floor(duration * 0.7), endSecond: duration,
+                        narration: 'Hemen deneyin!',
+                        visualDescription: 'Close-up with CTA overlay',
+                        cameraDirection: 'Close-up', emotion: 'confident',
+                    },
+                ],
+                totalDuration: duration,
+                platform,
+                problemSolutionMap: [],
+                createdAt: new Date().toISOString(),
             }
         }
     }

@@ -8,6 +8,7 @@ import { abacusAI } from '@/lib/services/abacus-ai'
 import { elevenLabs } from '@/lib/services/elevenlabs'
 import { captureWebsite, uploadScreenshot, scrapeWebsiteInfo, uploadMediaToStorage } from '@/lib/services/screenshot'
 import type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile } from '@/lib/services/abacus-ai'
+import type { Storyboard } from '@/lib/types/storyboard'
 
 export interface WorkflowStatus {
     id: string
@@ -37,6 +38,7 @@ export interface VideoResult {
     videoUrl: string
     thumbnailUrl: string
     script: VideoScript
+    storyboard?: Storyboard
 }
 
 // =========================================
@@ -147,6 +149,21 @@ export async function generateVideo(
 ): Promise<VideoResult> {
     const report = (step: string) => onProgress?.(step)
 
+    // Step 0.1: Generate Hook Variations
+    report('Generating 5 hook variations...')
+    let storyboard: Storyboard | undefined
+    try {
+        const hooks = await abacusAI.generateHookVariations(analysis, platform)
+        console.log(`[Workflow] ✅ ${hooks.length} hooks generated`)
+
+        // Step 0.2: Generate Storyboard
+        report('Creating cinematic storyboard...')
+        storyboard = await abacusAI.generateStoryboard(analysis, constitution, hooks, platform)
+        console.log(`[Workflow] ✅ Storyboard: ${storyboard.scenes.length} scenes, ${storyboard.totalDuration}s`)
+    } catch (error) {
+        console.warn('[Workflow] ⚠️ Hook/Storyboard generation failed, continuing with script:', error)
+    }
+
     // Step 1: Generate script
     report('Writing viral video script...')
     let script: VideoScript
@@ -222,6 +239,7 @@ export async function generateVideo(
         videoUrl,
         thumbnailUrl,
         script,
+        storyboard,
     }
 }
 
