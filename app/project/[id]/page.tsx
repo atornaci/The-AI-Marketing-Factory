@@ -555,13 +555,7 @@ export default function ProjectDetailPage({
                         <Button
                             size="sm"
                             onClick={() => {
-                                setActiveTab("influencer");
-                                // Scroll to video gen section
-                                setTimeout(() => {
-                                    document
-                                        .getElementById("quick-video-gen")
-                                        ?.scrollIntoView({ behavior: "smooth" });
-                                }, 200);
+                                setActiveTab("videos");
                             }}
                             className="rounded-xl h-9 bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/20 text-xs font-medium"
                         >
@@ -1351,23 +1345,73 @@ export default function ProjectDetailPage({
                                     initial={{ opacity: 0, y: 16 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.4 }}
-                                    className="text-center py-16"
+                                    className="py-8"
                                 >
-                                    <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
-                                        <Video className="w-8 h-8 text-violet-500" />
+                                    <div className="text-center mb-8">
+                                        <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
+                                            <Video className="w-8 h-8 text-violet-500" />
+                                        </div>
+                                        <h3 className="font-bold mb-2">Henüz Video Yok</h3>
+                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                                            Platform seçin ve AI ilk videonuzu otomatik oluştursun
+                                        </p>
                                     </div>
-                                    <h3 className="font-bold mb-2">Henüz Video Yok</h3>
-                                    <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-                                        AI Influencer sekmesinden ilk videonuzu otomatik olarak
-                                        oluşturun
-                                    </p>
-                                    <Button
-                                        onClick={() => setActiveTab("influencer")}
-                                        className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 border-0 shadow-lg shadow-violet-500/20"
-                                    >
-                                        <Wand2 className="w-4 h-4 mr-2" />
-                                        Video Oluştur
-                                    </Button>
+
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
+                                        {([
+                                            { key: "instagram" as const, label: "Instagram", img: "/images/platforms/instagram.png", desc: "Reels (60s)" },
+                                            { key: "tiktok" as const, label: "TikTok", img: "/images/platforms/tiktok.png", desc: "Short (60s)" },
+                                            { key: "youtube" as const, label: "YouTube", img: "/images/platforms/youtube.png", desc: "Shorts (60s)" },
+                                            { key: "linkedin" as const, label: "LinkedIn", img: "/images/platforms/linkedin.png", desc: "Video (120s)" },
+                                        ]).map((platform) => (
+                                            <button
+                                                key={platform.key}
+                                                onClick={() => handleGenerateVideo(platform.key)}
+                                                disabled={isGenerating}
+                                                className="group relative overflow-hidden rounded-xl border border-border/50 hover:border-violet-300/50 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <div className="relative w-full aspect-[4/3] overflow-hidden">
+                                                    <Image
+                                                        src={platform.img}
+                                                        alt={platform.label}
+                                                        fill
+                                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                                        sizes="(max-width: 640px) 50vw, 25vw"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                                                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                                                        <h4 className="text-sm font-semibold text-white drop-shadow-lg">
+                                                            {platform.label}
+                                                        </h4>
+                                                        <p className="text-[11px] text-white/80">
+                                                            {platform.desc}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <AnimatePresence>
+                                        {isGenerating && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: "auto" }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="mt-5 p-4 rounded-xl bg-muted/30 space-y-3 max-w-2xl mx-auto"
+                                            >
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    {genError ? (
+                                                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                                                    ) : (
+                                                        <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
+                                                    )}
+                                                    <span className="capitalize">{generatingPlatform}</span> — {genStep}
+                                                </div>
+                                                <Progress value={genProgress} className="h-1.5" />
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </motion.div>
                             ) : (
                                 <>
