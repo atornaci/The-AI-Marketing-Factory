@@ -418,6 +418,7 @@ export default function ProjectDetailPage({
                 };
             case "rendering":
             case "scripting":
+            case "voicing":
             case "voiceover":
                 return {
                     color: "bg-violet-50 text-violet-600 border-violet-200",

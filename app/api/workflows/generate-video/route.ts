@@ -87,37 +87,53 @@ export async function POST(req: NextRequest) {
             .update({ status: 'voicing' })
             .eq('id', videoRecord.id)
 
-        const result = await generateVideo(
-            {
-                name: project.name,
-                description: project.description || '',
-                valueProposition: project.value_proposition || '',
-                targetAudience: project.target_audience || { demographics: [], interests: [], painPoints: [] },
-                competitors: project.competitors || [],
-                brandTone: 'professional',
-                keywords: [],
-            },
-            project.marketing_constitution || {
-                brandVoice: 'Professional',
-                contentPillars: [],
-                messagingFramework: { hook: '', problem: '', solution: '', cta: '' },
-                visualGuidelines: { colorPalette: [], mood: '', style: '' },
-            },
-            influencer?.visual_profile || {},
-            influencer?.voice_id || '',
-            screenshotUrls,
-            platform,
-            projectId
-        )
+        // Wrap the generateVideo call with a 4-minute timeout to prevent infinite hangs
+        const VIDEO_TIMEOUT_MS = 240_000 // 4 minutes
+        let result;
+        try {
+            result = await Promise.race([
+                generateVideo(
+                    {
+                        name: project.name,
+                        description: project.description || '',
+                        valueProposition: project.value_proposition || '',
+                        targetAudience: project.target_audience || { demographics: [], interests: [], painPoints: [] },
+                        competitors: project.competitors || [],
+                        brandTone: 'professional',
+                        keywords: [],
+                    },
+                    project.marketing_constitution || {
+                        brandVoice: 'Professional',
+                        contentPillars: [],
+                        messagingFramework: { hook: '', problem: '', solution: '', cta: '' },
+                        visualGuidelines: { colorPalette: [], mood: '', style: '' },
+                    },
+                    influencer?.visual_profile || {},
+                    influencer?.voice_id || '',
+                    screenshotUrls,
+                    platform,
+                    projectId
+                ),
+                new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Video generation timed out after 4 minutes')), VIDEO_TIMEOUT_MS)
+                ),
+            ])
+        } catch (timeoutError) {
+            console.error('Video generation timeout/error:', timeoutError)
+            // Mark as failed instead of leaving stuck
+            await supabase
+                .from('videos')
+                .update({
+                    status: 'failed',
+                    metadata: { error: String(timeoutError) },
+                })
+                .eq('id', videoRecord.id)
+            throw timeoutError
+        }
 
-        // Update status to 'rendering' before video gen
-        await supabase
-            .from('videos')
-            .update({ status: 'rendering' })
-            .eq('id', videoRecord.id)
-
-        // Determine final status based on video URL availability
-        const finalStatus = result.videoUrl ? 'ready' : 'rendering'
+        // Always set to 'ready' when pipeline completes — even without videoUrl,
+        // the script, audio, and metadata are still produced and useful
+        const finalStatus = 'ready'
 
         // Update video record with results
         const { error: updateError } = await supabase
@@ -125,8 +141,8 @@ export async function POST(req: NextRequest) {
             .update({
                 title: result.script.title,
                 script: result.script.fullScript,
-                video_url: result.videoUrl,
-                thumbnail_url: result.thumbnailUrl,
+                video_url: result.videoUrl || '',
+                thumbnail_url: result.thumbnailUrl || '',
                 duration_seconds: result.script.estimatedDuration,
                 status: finalStatus,
                 metadata: {
