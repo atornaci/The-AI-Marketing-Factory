@@ -1,0 +1,188 @@
+{
+    "name": "Ad Copy Generator",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "ad-copy",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "read",
+                "schema": "public",
+                "table": "projects",
+                "filters": {
+                    "conditions": [
+                        {
+                            "keyValue": {
+                                "key": "id",
+                                "value": "={{ $json.body.projectId }}"
+                            }
+                        }
+                    ]
+                }
+            },
+            "name": "Get Project",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                400,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "SUPABASE_CREDENTIAL_ID",
+                    "name": "Supabase"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.abcai.space/api/v0/route-llm",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{ $credentials.abacusAiApi.apiKey }}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "body",
+                            "value": "={{ JSON.stringify({ messages: [{ role: 'system', content: 'Sen bir dijital pazarlama ve reklam metin yazarısın. Verilen proje için 3 farklı A/B test varyasyonu oluştur. Her varyasyon için başlık, metin, CTA butonu ve hedef kitle belirt. JSON formatında yanıtla: { variations: [{ name, headline, body, cta, target_audience, tone, platform_notes }] }' }, { role: 'user', content: 'Proje: ' + $json[0].name + ', Sektör: ' + ($json[0].industry || 'Genel') + ', Analiz: ' + JSON.stringify($json[0].analysis || {}).substring(0, 500) }], model: 'claude-3-5-sonnet-20241022' }) }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 60000
+                }
+            },
+            "name": "Generate Ad Copy",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                600,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "schema": "public",
+                "table": "projects",
+                "filters": {
+                    "conditions": [
+                        {
+                            "keyValue": {
+                                "key": "id",
+                                "value": "={{ $('Webhook').item.json.body.projectId }}"
+                            }
+                        }
+                    ]
+                },
+                "fieldsToSend": {
+                    "values": [
+                        {
+                            "fieldName": "ad_copies",
+                            "fieldValue": "={{ $json.data.choices[0].message.content }}"
+                        }
+                    ]
+                }
+            },
+            "name": "Save Copies",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                800,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "SUPABASE_CREDENTIAL_ID",
+                    "name": "Supabase"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: true, adCopies: $('Generate Ad Copy').item.json.data.choices[0].message.content }) }}"
+            },
+            "name": "Respond",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Get Project",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Project": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Ad Copy",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Ad Copy": {
+            "main": [
+                [
+                    {
+                        "node": "Save Copies",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Save Copies": {
+            "main": [
+                [
+                    {
+                        "node": "Respond",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}

@@ -1,0 +1,188 @@
+{
+    "name": "Competitor Analysis",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "competitor-analysis",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "read",
+                "schema": "public",
+                "table": "projects",
+                "filters": {
+                    "conditions": [
+                        {
+                            "keyValue": {
+                                "key": "id",
+                                "value": "={{ $json.body.projectId }}"
+                            }
+                        }
+                    ]
+                }
+            },
+            "name": "Get Project",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                400,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "SUPABASE_CREDENTIAL_ID",
+                    "name": "Supabase"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.abcai.space/api/v0/route-llm",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{ $credentials.abacusAiApi.apiKey }}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "body",
+                            "value": "={{ JSON.stringify({ messages: [{ role: 'system', content: 'Sen bir pazarlama stratejisti ve rekabet analizi uzmanısın. Verilen proje bilgilerine dayanarak kapsamlı bir SWOT analizi ve rakip değerlendirmesi yap. Yanıtını JSON formatında ver: { competitors: [{ name, url, strengths, weaknesses }], swot: { strengths: [], weaknesses: [], opportunities: [], threats: [] }, recommendations: [] }' }, { role: 'user', content: 'Proje: ' + $json[0].name + ', URL: ' + $json[0].url + ', Sektör: ' + ($json[0].industry || 'Belirtilmemiş') }], model: 'claude-3-5-sonnet-20241022' }) }}"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 120000
+                }
+            },
+            "name": "AI Analysis",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                600,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "schema": "public",
+                "table": "projects",
+                "filters": {
+                    "conditions": [
+                        {
+                            "keyValue": {
+                                "key": "id",
+                                "value": "={{ $('Webhook').item.json.body.projectId }}"
+                            }
+                        }
+                    ]
+                },
+                "fieldsToSend": {
+                    "values": [
+                        {
+                            "fieldName": "competitor_analysis",
+                            "fieldValue": "={{ $json.data.choices[0].message.content }}"
+                        }
+                    ]
+                }
+            },
+            "name": "Save Analysis",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                800,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "SUPABASE_CREDENTIAL_ID",
+                    "name": "Supabase"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: true, analysis: $('AI Analysis').item.json.data.choices[0].message.content }) }}"
+            },
+            "name": "Respond",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Get Project",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Project": {
+            "main": [
+                [
+                    {
+                        "node": "AI Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "Save Analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Save Analysis": {
+            "main": [
+                [
+                    {
+                        "node": "Respond",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}

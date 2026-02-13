@@ -1,0 +1,86 @@
+{
+  "name": "Generate Image",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-image",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.abcai.space/api/v0/route-llm",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $credentials.abacusAiApi.apiKey }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "body",
+              "value": "={{ JSON.stringify({ messages: [{ role: 'system', content: 'You are a marketing visual prompt expert. Enhance this prompt for AI image generation. Add professional marketing details, brand consistency elements, and visual composition guidance. Output ONLY the enhanced prompt.' }, { role: 'user', content: $json.body.prompt }], model: 'claude-3-5-sonnet-20241022' }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Enhance Prompt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://image.pollinations.ai/prompt/{{ encodeURIComponent($json.data.choices[0].message.content) }}?width={{ $('Webhook').item.json.body.width || 1080 }}&height={{ $('Webhook').item.json.body.height || 1080 }}&model=flux&nologo=true&enhance=true",
+        "options": { "timeout": 60000 }
+      },
+      "name": "Generate Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "generated_images",
+        "columns": "project_id, image_type, prompt, image_url, width, height, platform, status, brand_colors, has_logo",
+        "values": "={{ JSON.stringify({ project_id: $('Webhook').item.json.body.projectId, image_type: $('Webhook').item.json.body.imageType, prompt: $('Enhance Prompt').item.json.data.choices[0].message.content, image_url: $json.url, width: $('Webhook').item.json.body.width || 1080, height: $('Webhook').item.json.body.height || 1080, platform: $('Webhook').item.json.body.platform, status: 'ready', brand_colors: '[]', has_logo: false }) }}"
+      },
+      "name": "Save to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [800, 300],
+      "credentials": { "supabaseApi": { "id": "SUPABASE_CREDENTIAL_ID", "name": "Supabase" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, image: $json }) }}"
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Enhance Prompt", "type": "main", "index": 0 }]] },
+    "Enhance Prompt": { "main": [[{ "node": "Generate Image", "type": "main", "index": 0 }]] },
+    "Generate Image": { "main": [[{ "node": "Save to Supabase", "type": "main", "index": 0 }]] },
+    "Save to Supabase": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

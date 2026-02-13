@@ -1,0 +1,100 @@
+{
+    "name": "List Images",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "GET",
+                "path": "list-images",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "read",
+                "schema": "public",
+                "table": "generated_images",
+                "filters": {
+                    "conditions": [
+                        {
+                            "keyValue": {
+                                "key": "project_id",
+                                "value": "={{ $json.query.projectId }}"
+                            }
+                        }
+                    ]
+                },
+                "options": {
+                    "orderBy": {
+                        "values": [
+                            {
+                                "column": "created_at",
+                                "direction": "DESC"
+                            }
+                        ]
+                    }
+                }
+            },
+            "name": "Get Images",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                400,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "SUPABASE_CREDENTIAL_ID",
+                    "name": "Supabase"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ images: $json }) }}"
+            },
+            "name": "Respond",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                600,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Get Images",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Images": {
+            "main": [
+                [
+                    {
+                        "node": "Respond",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}
