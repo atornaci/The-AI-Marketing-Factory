@@ -86,9 +86,14 @@ interface ProjectData {
             url?: string;
             strengths: string[];
             weaknesses: string[];
+            opportunities?: string[];
+            threats?: string[];
             ourAdvantage: string;
+            estimatedPosition?: string;
         }[];
         marketPosition?: string;
+        marketOpportunities?: string[];
+        attackStrategies?: string[];
         generatedAt?: string;
     };
     ad_copies?: {
@@ -795,14 +800,21 @@ export default function ProjectDetailPage({
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                                     {project.competitor_analysis.competitors.map((comp, i) => (
                                                         <div key={i} className="p-4 rounded-xl bg-background/60 border border-border/30 space-y-3">
-                                                            <div className="font-semibold text-sm flex items-center gap-2">
-                                                                <span className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-600">
-                                                                    {i + 1}
-                                                                </span>
-                                                                {comp.name}
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="font-semibold text-sm flex items-center gap-2">
+                                                                    <span className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-600">
+                                                                        {i + 1}
+                                                                    </span>
+                                                                    {comp.name}
+                                                                </div>
+                                                                {comp.estimatedPosition && (
+                                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium">
+                                                                        {comp.estimatedPosition}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <div>
-                                                                <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">Güçlü Yönleri</p>
+                                                                <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">💪 Güçlü Yönleri</p>
                                                                 <ul className="space-y-0.5">
                                                                     {comp.strengths.map((s, si) => (
                                                                         <li key={si} className="text-xs text-muted-foreground flex items-start gap-1">
@@ -812,7 +824,7 @@ export default function ProjectDetailPage({
                                                                 </ul>
                                                             </div>
                                                             <div>
-                                                                <p className="text-xs font-medium text-rose-600 dark:text-rose-400 mb-1">Zayıf Noktaları</p>
+                                                                <p className="text-xs font-medium text-rose-600 dark:text-rose-400 mb-1">⚠️ Zayıf Noktaları</p>
                                                                 <ul className="space-y-0.5">
                                                                     {comp.weaknesses.map((w, wi) => (
                                                                         <li key={wi} className="text-xs text-muted-foreground flex items-start gap-1">
@@ -821,6 +833,30 @@ export default function ProjectDetailPage({
                                                                     ))}
                                                                 </ul>
                                                             </div>
+                                                            {comp.opportunities && comp.opportunities.length > 0 && (
+                                                                <div>
+                                                                    <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">🔍 Fırsatlar</p>
+                                                                    <ul className="space-y-0.5">
+                                                                        {comp.opportunities.map((o, oi) => (
+                                                                            <li key={oi} className="text-xs text-muted-foreground flex items-start gap-1">
+                                                                                <span className="text-blue-400 mt-0.5">◆</span> {o}
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+                                                            {comp.threats && comp.threats.length > 0 && (
+                                                                <div>
+                                                                    <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mb-1">⚡ Tehditler</p>
+                                                                    <ul className="space-y-0.5">
+                                                                        {comp.threats.map((t, ti) => (
+                                                                            <li key={ti} className="text-xs text-muted-foreground flex items-start gap-1">
+                                                                                <span className="text-orange-400 mt-0.5">!</span> {t}
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
                                                             <div className="pt-2 border-t border-border/30">
                                                                 <p className="text-xs font-medium text-violet-600 dark:text-violet-400 mb-1">🎯 Bizim Avantajımız</p>
                                                                 <p className="text-xs text-muted-foreground">{comp.ourAdvantage}</p>
@@ -828,6 +864,36 @@ export default function ProjectDetailPage({
                                                         </div>
                                                     ))}
                                                 </div>
+
+                                                {/* Market Opportunities */}
+                                                {project.competitor_analysis.marketOpportunities && project.competitor_analysis.marketOpportunities.length > 0 && (
+                                                    <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+                                                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">🚀 Pazar Fırsatları</p>
+                                                        <ul className="space-y-1.5">
+                                                            {project.competitor_analysis.marketOpportunities.map((opp, oi) => (
+                                                                <li key={oi} className="text-xs text-muted-foreground flex items-start gap-2">
+                                                                    <span className="text-blue-500 font-bold mt-0.5">{oi + 1}.</span>
+                                                                    <span>{opp}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+
+                                                {/* Attack Strategies */}
+                                                {project.competitor_analysis.attackStrategies && project.competitor_analysis.attackStrategies.length > 0 && (
+                                                    <div className="mt-3 p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20">
+                                                        <p className="text-sm font-medium text-violet-600 dark:text-violet-400 mb-2">⚔️ Saldırı Stratejileri</p>
+                                                        <ul className="space-y-1.5">
+                                                            {project.competitor_analysis.attackStrategies.map((strat, si) => (
+                                                                <li key={si} className="text-xs text-muted-foreground flex items-start gap-2">
+                                                                    <span className="text-violet-500 font-bold mt-0.5">→</span>
+                                                                    <span>{strat}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
                                             </>
                                         ) : (
                                             <p className="text-sm text-muted-foreground">

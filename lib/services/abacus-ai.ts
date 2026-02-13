@@ -10,6 +10,13 @@ import type { Language } from '@/lib/i18n/translations'
 const ABACUS_API_BASE = 'https://routellm.abacus.ai/v1'
 const ABACUS_MODEL = 'route-llm' // Auto-routes to best model (Sonnet, GPT, Gemini)
 
+// Task-specific models for higher quality output
+const MODELS = {
+    default: 'route-llm',
+    analysis: 'gpt-5-mini',      // Better structured analysis & reasoning
+    creative: 'claude-sonnet-4',  // Better creative writing & storytelling
+} as const
+
 // Language-specific prompt instructions
 const LANGUAGE_PROMPTS: Record<Language, { name: string; instruction: string; adLang: string }> = {
     tr: { name: 'Turkish', instruction: 'Türkçe yaz. Doğal, günlük konuşma dili kullan.', adLang: 'Türkçe' },
@@ -74,7 +81,8 @@ class AbacusAIService {
         this.apiKey = process.env.ABACUS_AI_API_KEY || ''
     }
 
-    private async callLLM(prompt: string, systemPrompt?: string): Promise<string> {
+    private async callLLM(prompt: string, systemPrompt?: string, preferredModel?: string): Promise<string> {
+        const model = preferredModel || ABACUS_MODEL
         const MAX_RETRIES = 3
         const TIMEOUT_MS = 90_000 // 90 seconds — below Cloudflare's 100s limit
 
@@ -83,6 +91,12 @@ class AbacusAIService {
                 const controller = new AbortController()
                 const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
+                // On last retry, fallback to route-llm if using a specific model
+                const activeModel = (attempt === MAX_RETRIES && model !== ABACUS_MODEL) ? ABACUS_MODEL : model
+                if (activeModel !== model) {
+                    console.warn(`[LLM] Falling back to ${ABACUS_MODEL} after ${attempt - 1} failed attempts with ${model}`)
+                }
+
                 const response = await fetch(`${ABACUS_API_BASE}/chat/completions`, {
                     method: 'POST',
                     headers: {
@@ -90,7 +104,7 @@ class AbacusAIService {
                         'Authorization': `Bearer ${this.apiKey}`,
                     },
                     body: JSON.stringify({
-                        model: ABACUS_MODEL,
+                        model: activeModel,
                         messages: [
                             {
                                 role: 'system',
@@ -168,7 +182,7 @@ Respond with a JSON object containing (all values in ${lang.name}):
 
 Respond ONLY with valid JSON, no additional text.`
 
-        const result = await this.callLLM(prompt)
+        const result = await this.callLLM(prompt, undefined, MODELS.analysis)
         try {
             return JSON.parse(result)
         } catch {
@@ -218,7 +232,7 @@ Respond with a JSON object (all values in ${lang.name}):
 
 Respond ONLY with valid JSON.`
 
-        const result = await this.callLLM(prompt)
+        const result = await this.callLLM(prompt, undefined, MODELS.creative)
         try {
             return JSON.parse(result)
         } catch {
@@ -369,7 +383,7 @@ Your expertise: Presenting products not as ads, but as genuine personal experien
 When people watch your videos, they don't think "this is an ad" — they think "my friend is recommending something."
 IMPORTANT: Always respond in ${lang.name} (${lang.adLang}). Every single word of the script MUST be in ${lang.name}.`
 
-        const result = await this.callLLM(prompt, systemPrompt)
+        const result = await this.callLLM(prompt, systemPrompt, MODELS.creative)
         try {
             return JSON.parse(result)
         } catch {
@@ -465,7 +479,7 @@ Respond with a JSON object:
 
 Respond ONLY with valid JSON.`
 
-        const result = await this.callLLM(prompt)
+        const result = await this.callLLM(prompt, undefined, MODELS.analysis)
         try {
             return JSON.parse(result)
         } catch {
@@ -812,7 +826,8 @@ The video should feel authentic and organic, like a real person sharing their ge
     }
 
     /**
-     * Generate a video thumbnail using RouteLLM image generation
+     * Generate a video thumbnail using Pollinations.ai
+     * (RouteLLM /images/generations endpoint returns 404)
      */
     private async generateVideoThumbnail(
         script: string,
@@ -820,29 +835,23 @@ The video should feel authentic and organic, like a real person sharing their ge
         platform: string
     ): Promise<string> {
         try {
-            const prompt = `Create a video thumbnail for a ${platform} marketing video. The presenter: ${influencerDesc}. Topic: ${script.substring(0, 200)}`
+            const topic = script.substring(0, 60).replace(/[^a-zA-Z0-9 ]/g, '')
+            const orientation = platform === 'linkedin' ? 'landscape' : 'portrait'
+            const width = platform === 'linkedin' ? 1024 : 512
+            const height = platform === 'linkedin' ? 576 : 910
+            const seed = Math.floor(Math.random() * 999999)
 
-            const response = await fetch(`${ABACUS_API_BASE}/images/generations`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`,
-                },
-                body: JSON.stringify({
-                    model: 'dall-e-3',
-                    prompt,
-                    n: 1,
-                    size: platform === 'linkedin' ? '1792x1024' : '1024x1792',
-                }),
-            })
+            const promptText = `${orientation} video thumbnail, ${topic}, professional marketing, vibrant colors, clean design`
+            const encodedPrompt = encodeURIComponent(promptText)
+            const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`
 
-            if (!response.ok) {
-                console.warn(`[Video] Thumbnail generation failed: ${response.status}`)
-                return ''
+            const testResponse = await fetch(url, { method: 'HEAD' })
+            if (testResponse.ok) {
+                console.log(`[Video] ✅ Thumbnail generated via Pollinations.ai`)
+                return url
             }
-
-            const data = await response.json()
-            return data.data?.[0]?.url || ''
+            console.warn(`[Video] Thumbnail validation failed: ${testResponse.status}`)
+            return ''
         } catch (error) {
             console.warn(`[Video] Thumbnail error:`, error)
             return ''
@@ -850,7 +859,8 @@ The video should feel authentic and organic, like a real person sharing their ge
     }
 
     /**
-     * Analyze competitors and identify weaknesses/opportunities
+     * Deep Research — Advanced competitor analysis with SWOT, market gaps, and attack strategies
+     * Uses multi-step reasoning with gpt-5-mini for deeper insights
      */
     async analyzeCompetitors(
         analysis: ProjectAnalysis,
@@ -862,46 +872,73 @@ The video should feel authentic and organic, like a real person sharing their ge
             return {
                 competitors: [],
                 marketPosition: 'Rakip bilgisi bulunamadı. Projeyi yeniden analiz edin.',
+                marketOpportunities: [],
+                attackStrategies: [],
                 generatedAt: new Date().toISOString(),
             }
         }
 
         const prompt = `
-You are a competitive intelligence analyst. Analyze the following competitors for the project "${analysis.name}".
+You are a world-class competitive intelligence analyst conducting DEEP RESEARCH.
+Perform an exhaustive multi-dimensional analysis.
 
-OUR PROJECT:
-- Name: ${analysis.name}
-- Value Proposition: ${analysis.valueProposition}
-- Target Audience: ${JSON.stringify(analysis.targetAudience)}
-- Brand Voice: ${constitution.brandVoice}
+=== OUR PROJECT ===
+Name: ${analysis.name}
+Description: ${analysis.description || ''}
+Value Proposition: ${analysis.valueProposition}
+Target Audience: ${JSON.stringify(analysis.targetAudience)}
+Brand Voice: ${constitution.brandVoice}
+Keywords: ${analysis.keywords?.join(', ')}
 
-COMPETITORS TO ANALYZE:
+=== COMPETITORS ===
 ${competitors.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 
-For each competitor, provide:
-1. Their likely strengths (what they do well)
-2. Their weaknesses (gaps, missing features, poor UX, limited reach)
-3. Our specific advantage over them
+=== ANALYSIS REQUIRED ===
 
-Then provide an overall market positioning summary.
+For EACH competitor, provide a COMPREHENSIVE analysis:
+1. SWOT Analysis:
+   - Strengths (minimum 3): What they genuinely do well
+   - Weaknesses (minimum 3): Real gaps, missing features, poor UX, pricing issues, limited reach
+   - Opportunities: Market gaps they haven't exploited
+   - Threats: Ways they could outcompete us
+2. Our specific advantage over them (detailed, actionable)
+3. Their estimated market share or positioning
+
+Then provide:
+- Overall market positioning summary (3-5 sentences)
+- Top 3 market opportunities WE can exploit
+- Attack strategies: specific marketing tactics against each competitor
 
 Respond in Turkish. Respond ONLY with valid JSON:
 {
   "competitors": [
     {
-      "name": "Competitor Name",
-      "url": "competitor url if available",
-      "strengths": ["strength 1", "strength 2"],
+      "name": "Name",
+      "url": "url if known",
+      "strengths": ["strength 1", "strength 2", "strength 3"],
       "weaknesses": ["weakness 1", "weakness 2", "weakness 3"],
-      "ourAdvantage": "What we do better than them in one sentence"
+      "opportunities": ["opp 1", "opp 2"],
+      "threats": ["threat 1", "threat 2"],
+      "ourAdvantage": "Detailed advantage statement",
+      "estimatedPosition": "Market leader / Strong challenger / Niche player / Emerging"
     }
   ],
-  "marketPosition": "2-3 sentence summary of our position in the market and key differentiators"
+  "marketPosition": "3-5 sentence market positioning summary",
+  "marketOpportunities": [
+    "Opportunity 1: detailed description",
+    "Opportunity 2: detailed description",
+    "Opportunity 3: detailed description"
+  ],
+  "attackStrategies": [
+    "Strategy 1: specific tactic against a competitor",
+    "Strategy 2: specific tactic",
+    "Strategy 3: specific tactic"
+  ]
 }
 
 Respond ONLY with valid JSON.`
 
-        const result = await this.callLLM(prompt)
+        const result = await this.callLLM(prompt, undefined, MODELS.analysis)
         try {
             const parsed = JSON.parse(result)
             return {
@@ -915,9 +952,14 @@ Respond ONLY with valid JSON.`
                     url: c,
                     strengths: ['Pazar bilinirliği'],
                     weaknesses: ['Detaylı analiz yapılamadı'],
+                    opportunities: [],
+                    threats: [],
                     ourAdvantage: 'Daha yenilikçi bir yaklaşım sunuyoruz',
+                    estimatedPosition: 'Bilinmiyor',
                 })),
                 marketPosition: 'Rakip analizi tamamlanamadı. Lütfen tekrar deneyin.',
+                marketOpportunities: [],
+                attackStrategies: [],
                 generatedAt: new Date().toISOString(),
             }
         }
@@ -984,7 +1026,7 @@ Respond in Turkish. Respond ONLY with valid JSON:
 Make sure each variation feels COMPLETELY DIFFERENT in tone and approach.
 Respond ONLY with valid JSON.`
 
-        const result = await this.callLLM(prompt)
+        const result = await this.callLLM(prompt, undefined, MODELS.creative)
         try {
             const parsed = JSON.parse(result)
             return {
@@ -1015,12 +1057,17 @@ interface CompetitorEntry {
     url?: string
     strengths: string[]
     weaknesses: string[]
+    opportunities?: string[]
+    threats?: string[]
     ourAdvantage: string
+    estimatedPosition?: string
 }
 
 interface CompetitorAnalysis {
     competitors: CompetitorEntry[]
     marketPosition: string
+    marketOpportunities?: string[]
+    attackStrategies?: string[]
     generatedAt: string
 }
 
