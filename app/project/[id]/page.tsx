@@ -956,18 +956,31 @@ export default function ProjectDetailPage({
                                                     variant="outline"
                                                     disabled={isCreatingInfluencer}
                                                     onClick={async () => {
-                                                        if (!confirm('Mevcut influencer silinip yenisi oluşturulacak. Devam etmek istiyor musunuz?')) return;
                                                         try {
+                                                            // Start loading immediately so progress is visible
+                                                            setIsCreatingInfluencer(true);
+                                                            setInfluencerProgress(5);
+                                                            setInfluencerStep("Mevcut influencer siliniyor...");
+
                                                             const res = await fetch(`/api/influencer/${influencer.id}`, { method: 'DELETE' });
-                                                            if (res.ok) {
-                                                                setInfluencer(null);
-                                                                // Immediately create a new one
-                                                                await handleCreateInfluencer();
-                                                            } else {
-                                                                console.error('Failed to delete influencer');
+                                                            if (!res.ok) {
+                                                                const errData = await res.json().catch(() => ({}));
+                                                                throw new Error(errData.error || 'Silme işlemi başarısız');
                                                             }
+
+                                                            setInfluencer(null);
+                                                            setInfluencerProgress(10);
+                                                            setInfluencerStep("Yeni influencer oluşturuluyor...");
+
+                                                            // Create new influencer
+                                                            await handleCreateInfluencer();
                                                         } catch (err) {
                                                             console.error('Influencer recreation failed:', err);
+                                                            const errMsg = err instanceof Error ? err.message : 'Bilinmeyen hata';
+                                                            setInfluencerError(errMsg);
+                                                            setInfluencerStep(`Hata: ${errMsg}`);
+                                                            setIsCreatingInfluencer(false);
+                                                            alert(`Influencer yeniden oluşturma hatası: ${errMsg}`);
                                                         }
                                                     }}
                                                     className="w-full rounded-lg text-xs border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-800 dark:text-orange-400 dark:hover:bg-orange-950/30"
@@ -1069,6 +1082,32 @@ export default function ProjectDetailPage({
                                     transition={{ duration: 0.4, delay: 0.1 }}
                                     className="lg:col-span-2 space-y-5"
                                 >
+                                    {/* Creation progress — full width card */}
+                                    {!influencer && isCreatingInfluencer && (
+                                        <div className="p-8 rounded-2xl border border-violet-300/30 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center">
+                                                    <Loader2 className="w-6 h-6 animate-spin text-violet-500" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-base font-semibold">AI Influencer Oluşturuluyor</h3>
+                                                    <p className="text-xs text-muted-foreground">Bu işlem 15-30 saniye sürebilir</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    {influencerError ? (
+                                                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                                                    ) : (
+                                                        <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
+                                                    )}
+                                                    <span>{influencerStep || "Başlatılıyor..."}</span>
+                                                </div>
+                                                <Progress value={influencerProgress} className="h-2" />
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Influencer yok ise büyük oluşturma kartı */}
                                     {!influencer && !isCreatingInfluencer && (
                                         <div className="p-8 rounded-2xl border border-border/50 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
