@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+    motion,
+    AnimatePresence,
+    useMotionValue,
+    useTransform,
+} from "framer-motion";
 import {
     Sparkles,
     Mail,
@@ -13,14 +17,12 @@ import {
     Eye,
     EyeOff,
     ArrowRight,
-    Loader2,
-    Zap,
     Globe,
     Video,
     Bot,
     Share2,
 } from "lucide-react";
-import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 /* ─── Squiggle SVG underline ─── */
 const SquiggleUnderline = () => (
@@ -58,39 +60,64 @@ const itemVariants = {
 
 /* ─── Features for side panel ─── */
 const sideFeatures = [
-    {
-        icon: Globe,
-        title: "Proje Analizi",
-        desc: "URL girin, AI analiz etsin",
-    },
-    {
-        icon: Bot,
-        title: "AI Influencer",
-        desc: "Markanıza özel karakter",
-    },
-    {
-        icon: Video,
-        title: "Video Üretimi",
-        desc: "Platformlara özel içerik",
-    },
-    {
-        icon: Share2,
-        title: "Otonom Dağıtım",
-        desc: "Otomatik yayınlama",
-    },
+    { icon: Globe, title: "Proje Analizi", desc: "URL girin, AI analiz etsin" },
+    { icon: Bot, title: "AI Influencer", desc: "Markanıza özel karakter" },
+    { icon: Video, title: "Video Üretimi", desc: "Platformlara özel içerik" },
+    { icon: Share2, title: "Otonom Dağıtım", desc: "Otomatik yayınlama" },
 ];
 
+/* ─── Dark Input ─── */
+function LightInput({
+    className,
+    ...props
+}: React.ComponentProps<"input">) {
+    return (
+        <input
+            className={cn(
+                "placeholder:text-muted-foreground/50 flex h-10 w-full min-w-0 rounded-lg border bg-muted/50 border-border/60 px-3 py-1 text-sm text-foreground shadow-xs transition-all duration-300 outline-none",
+                "focus:border-violet-300 focus:bg-background focus:ring-1 focus:ring-violet-200",
+                "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+                className
+            )}
+            {...props}
+        />
+    );
+}
+
+/* ═══════════════════════════════════════════════
+   AUTH PAGE
+   ═══════════════════════════════════════════════ */
 export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
+    const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
     const router = useRouter();
     const supabase = createClient();
 
+    // 3D card effect
+    const mouseX = useMotionValue(0);
+    const mouseY = useMotionValue(0);
+    const rotateX = useTransform(mouseY, [-300, 300], [10, -10]);
+    const rotateY = useTransform(mouseX, [-300, 300], [-10, 10]);
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        mouseX.set(e.clientX - rect.left - rect.width / 2);
+        mouseY.set(e.clientY - rect.top - rect.height / 2);
+    };
+
+    const handleMouseLeave = () => {
+        mouseX.set(0);
+        mouseY.set(0);
+    };
+
+    /* ─── Supabase Auth ─── */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -136,7 +163,9 @@ export default function AuthPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground flex">
-            {/* ─── Left Panel: Branding & Features ─── */}
+            {/* ═══════════════════════════════════════
+                LEFT PANEL — Branding & Features
+               ═══════════════════════════════════════ */}
             <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
                 {/* Background effects */}
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.1),transparent_70%)]" />
@@ -219,164 +248,332 @@ export default function AuthPage() {
                 </div>
             </div>
 
-            {/* ─── Right Panel: Auth Form ─── */}
-            <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-12">
+            {/* ═══════════════════════════════════════
+                RIGHT PANEL — Glassmorphism Login Card
+               ═══════════════════════════════════════ */}
+            <div className="flex-1 relative overflow-hidden flex items-center justify-center px-6 py-12">
+                {/* Subtle background accent */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.06),transparent_70%)]" />
+
+                {/* Mobile logo */}
                 <motion.div
-                    className="w-full max-w-md"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="lg:hidden absolute top-6 left-6 z-20"
                 >
-                    {/* Mobile logo */}
-                    <motion.div variants={itemVariants} className="lg:hidden mb-8">
-                        <Link
-                            href="/"
-                            className="flex items-center justify-center gap-2.5"
-                        >
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                                <Sparkles className="w-4.5 h-4.5 text-white" />
-                            </div>
-                            <span className="text-lg font-bold tracking-tight">
-                                AI Marketing{" "}
-                                <span className="gradient-text">Factory</span>
-                            </span>
-                        </Link>
-                    </motion.div>
-
-                    {/* Header */}
-                    <motion.div variants={itemVariants} className="text-center mb-8">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border/60 bg-background/50 text-xs mb-4">
-                            <Zap className="w-3 h-3 text-violet-400" />
-                            <span className="text-muted-foreground">
-                                {isLogin ? "Hesabına giriş yap" : "Yeni hesap oluştur"}
-                            </span>
+                    <Link href="/" className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                            <Sparkles className="w-4 h-4 text-white" />
                         </div>
-                        <h2 className="text-2xl font-bold">
-                            {isLogin ? "Giriş Yap" : "Kayıt Ol"}
-                        </h2>
-                    </motion.div>
+                        <span className="text-base font-bold tracking-tight">
+                            AI Marketing <span className="gradient-text">Factory</span>
+                        </span>
+                    </Link>
+                </motion.div>
 
-                    {/* Form */}
-                    <motion.form
-                        variants={itemVariants}
-                        onSubmit={handleSubmit}
-                        className="space-y-4"
-                    >
-                        {/* Email */}
-                        <div className="relative group">
-                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 group-focus-within:text-violet-400 transition-colors">
-                                <Mail className="w-4.5 h-4.5" />
-                            </div>
-                            <Input
-                                type="email"
-                                placeholder="E-posta adresi"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="pl-11 h-12 rounded-xl border-border/50 bg-background/50 focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
-                            />
-                        </div>
-
-                        {/* Password */}
-                        <div className="relative group">
-                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 group-focus-within:text-violet-400 transition-colors">
-                                <Lock className="w-4.5 h-4.5" />
-                            </div>
-                            <Input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="Şifre"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={6}
-                                className="pl-11 pr-11 h-12 rounded-xl border-border/50 bg-background/50 focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
-                            >
-                                {showPassword ? (
-                                    <EyeOff className="w-4.5 h-4.5" />
-                                ) : (
-                                    <Eye className="w-4.5 h-4.5" />
-                                )}
-                            </button>
-                        </div>
-
-                        {/* Error/Success */}
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="p-3 rounded-xl border border-red-500/30 bg-red-500/5 text-sm text-red-400"
-                            >
-                                {error}
-                            </motion.div>
-                        )}
-                        {success && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 text-sm text-emerald-400"
-                            >
-                                {success}
-                            </motion.div>
-                        )}
-
-                        {/* Submit */}
-                        <Button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full h-12 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 text-base font-semibold shadow-lg shadow-violet-500/25 transition-all"
-                        >
-                            {loading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <>
-                                    {isLogin ? "Giriş Yap" : "Kayıt Ol"}
-                                    <ArrowRight className="ml-2 w-4 h-4" />
-                                </>
-                            )}
-                        </Button>
-                    </motion.form>
-
-                    {/* Divider */}
+                {/* ─── 3D Card ─── */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="w-full max-w-sm relative z-10"
+                    style={{ perspective: 1500 }}
+                >
                     <motion.div
-                        variants={itemVariants}
-                        className="my-6 flex items-center gap-3"
+                        className="relative"
+                        style={{ rotateX, rotateY }}
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={handleMouseLeave}
+                        whileHover={{ z: 10 }}
                     >
-                        <div className="flex-1 h-px bg-border/50" />
-                        <span className="text-xs text-muted-foreground">veya</span>
-                        <div className="flex-1 h-px bg-border/50" />
-                    </motion.div>
-
-                    {/* Toggle */}
-                    <motion.div variants={itemVariants} className="text-center">
-                        <p className="text-sm text-muted-foreground">
-                            {isLogin ? "Hesabın yok mu? " : "Zaten hesabın var mı? "}
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsLogin(!isLogin);
-                                    setError("");
-                                    setSuccess("");
+                        <div className="relative group">
+                            {/* Card glow */}
+                            <motion.div
+                                className="absolute -inset-[1px] rounded-2xl opacity-0 group-hover:opacity-70 transition-opacity duration-700"
+                                animate={{
+                                    boxShadow: [
+                                        "0 0 10px 2px rgba(124,58,237,0.05)",
+                                        "0 0 15px 5px rgba(124,58,237,0.1)",
+                                        "0 0 10px 2px rgba(124,58,237,0.05)",
+                                    ],
+                                    opacity: [0.2, 0.4, 0.2],
                                 }}
-                                className="text-violet-400 hover:text-violet-300 font-semibold transition-colors"
-                            >
-                                {isLogin ? "Kayıt ol" : "Giriş yap"}
-                            </button>
-                        </p>
-                    </motion.div>
+                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatType: "mirror" }}
+                            />
 
-                    {/* Back to landing */}
-                    <motion.div variants={itemVariants} className="mt-8 text-center">
-                        <Link
-                            href="/"
-                            className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                        >
-                            ← Ana sayfaya dön
-                        </Link>
+                            {/* ─── Traveling light beams ─── */}
+                            <div className="absolute -inset-[1px] rounded-2xl overflow-hidden">
+                                <motion.div
+                                    className="absolute top-0 left-0 h-[2px] w-[50%] bg-gradient-to-r from-transparent via-violet-400 to-transparent opacity-50"
+                                    initial={{ filter: "blur(1px)" }}
+                                    animate={{ left: ["-50%", "100%"], opacity: [0.2, 0.5, 0.2] }}
+                                    transition={{ left: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1 }, opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror" } }}
+                                />
+                                <motion.div
+                                    className="absolute top-0 right-0 h-[50%] w-[2px] bg-gradient-to-b from-transparent via-violet-400 to-transparent opacity-50"
+                                    initial={{ filter: "blur(1px)" }}
+                                    animate={{ top: ["-50%", "100%"], opacity: [0.2, 0.5, 0.2] }}
+                                    transition={{ top: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 0.6 }, opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror", delay: 0.6 } }}
+                                />
+                                <motion.div
+                                    className="absolute bottom-0 right-0 h-[2px] w-[50%] bg-gradient-to-r from-transparent via-violet-400 to-transparent opacity-50"
+                                    initial={{ filter: "blur(1px)" }}
+                                    animate={{ right: ["-50%", "100%"], opacity: [0.2, 0.5, 0.2] }}
+                                    transition={{ right: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 1.2 }, opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror", delay: 1.2 } }}
+                                />
+                                <motion.div
+                                    className="absolute bottom-0 left-0 h-[50%] w-[2px] bg-gradient-to-b from-transparent via-violet-400 to-transparent opacity-50"
+                                    initial={{ filter: "blur(1px)" }}
+                                    animate={{ bottom: ["-50%", "100%"], opacity: [0.2, 0.5, 0.2] }}
+                                    transition={{ bottom: { duration: 2.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1, delay: 1.8 }, opacity: { duration: 1.2, repeat: Infinity, repeatType: "mirror", delay: 1.8 } }}
+                                />
+                            </div>
+
+                            {/* Card border glow */}
+                            <div className="absolute -inset-[0.5px] rounded-2xl bg-gradient-to-r from-violet-500/[0.05] via-violet-500/[0.1] to-violet-500/[0.05] opacity-0 group-hover:opacity-70 transition-opacity duration-500" />
+
+                            {/* ═══ Glass Card ═══ */}
+                            <div className="relative bg-background backdrop-blur-xl rounded-2xl p-6 border border-border/60 shadow-xl overflow-hidden">
+                                {/* Inner pattern */}
+                                <div
+                                    className="absolute inset-0 opacity-[0.02]"
+                                    style={{
+                                        backgroundImage: `linear-gradient(135deg, rgba(124,58,237,0.3) 0.5px, transparent 0.5px), linear-gradient(45deg, rgba(124,58,237,0.3) 0.5px, transparent 0.5px)`,
+                                        backgroundSize: "30px 30px",
+                                    }}
+                                />
+
+                                {/* Logo & Header */}
+                                <div className="text-center space-y-1 mb-5">
+                                    <motion.div
+                                        initial={{ scale: 0.5, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ type: "spring", duration: 0.8 }}
+                                        className="mx-auto w-10 h-10 rounded-full border border-violet-200 flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-violet-600 to-purple-500 shadow-lg shadow-violet-500/25"
+                                    >
+                                        <Sparkles className="w-5 h-5 text-white" />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-50" />
+                                    </motion.div>
+
+                                    <motion.h1
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                        className="text-xl font-bold text-foreground"
+                                    >
+                                        {isLogin ? "Tekrar Hoş Geldin" : "Hesap Oluştur"}
+                                    </motion.h1>
+
+                                    <motion.p
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.3 }}
+                                        className="text-muted-foreground text-xs"
+                                    >
+                                        AI Marketing Factory&apos;e{" "}
+                                        {isLogin ? "giriş yap" : "kayıt ol"}
+                                    </motion.p>
+                                </div>
+
+                                {/* ─── Form ─── */}
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <motion.div className="space-y-3">
+                                        {/* Email */}
+                                        <motion.div
+                                            className={`relative ${focusedInput === "email" ? "z-10" : ""}`}
+                                            whileHover={{ scale: 1.01 }}
+                                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                        >
+                                            <div className="relative flex items-center overflow-hidden rounded-lg">
+                                                <Mail className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "email" ? "text-violet-500" : "text-muted-foreground"}`} />
+                                                <LightInput
+                                                    type="email"
+                                                    placeholder="E-posta adresi"
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    onFocus={() => setFocusedInput("email")}
+                                                    onBlur={() => setFocusedInput(null)}
+                                                    required
+                                                    className="pl-10 pr-3"
+                                                />
+                                                {focusedInput === "email" && (
+                                                    <motion.div
+                                                        layoutId="input-highlight"
+                                                        className="absolute inset-0 bg-white/5 -z-10"
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.2 }}
+                                                    />
+                                                )}
+                                            </div>
+                                        </motion.div>
+
+                                        {/* Password */}
+                                        <motion.div
+                                            className={`relative ${focusedInput === "password" ? "z-10" : ""}`}
+                                            whileHover={{ scale: 1.01 }}
+                                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                        >
+                                            <div className="relative flex items-center overflow-hidden rounded-lg">
+                                                <Lock className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "password" ? "text-violet-500" : "text-muted-foreground"}`} />
+                                                <LightInput
+                                                    type={showPassword ? "text" : "password"}
+                                                    placeholder="Şifre"
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                    onFocus={() => setFocusedInput("password")}
+                                                    onBlur={() => setFocusedInput(null)}
+                                                    required
+                                                    minLength={6}
+                                                    className="pl-10 pr-10"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 cursor-pointer"
+                                                >
+                                                    {showPassword ? (
+                                                        <Eye className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors duration-300" />
+                                                    ) : (
+                                                        <EyeOff className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors duration-300" />
+                                                    )}
+                                                </button>
+                                                {focusedInput === "password" && (
+                                                    <motion.div
+                                                        layoutId="input-highlight"
+                                                        className="absolute inset-0 bg-violet-50/50 -z-10"
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.2 }}
+                                                    />
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    </motion.div>
+
+                                    {/* Error / Success */}
+                                    <AnimatePresence>
+                                        {error && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -8 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -8 }}
+                                                className="p-3 rounded-lg border border-red-200 bg-red-50 text-sm text-red-600"
+                                            >
+                                                {error}
+                                            </motion.div>
+                                        )}
+                                        {success && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -8 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -8 }}
+                                                className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-sm text-emerald-600"
+                                            >
+                                                {success}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    {/* Submit */}
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full relative group/button mt-5"
+                                    >
+                                        <div className="absolute inset-0 bg-violet-500/10 rounded-lg blur-lg opacity-0 group-hover/button:opacity-70 transition-opacity duration-300" />
+                                        <div className="relative overflow-hidden bg-gradient-to-r from-violet-600 to-purple-500 text-white font-medium h-10 rounded-lg transition-all duration-300 flex items-center justify-center shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40">
+                                            <motion.div
+                                                className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 -z-10"
+                                                animate={{ x: ["-100%", "100%"] }}
+                                                transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1 }}
+                                                style={{ opacity: loading ? 1 : 0, transition: "opacity 0.3s ease" }}
+                                            />
+                                            <AnimatePresence mode="wait">
+                                                {loading ? (
+                                                    <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                                        <div className="w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
+                                                    </motion.div>
+                                                ) : (
+                                                    <motion.span key="text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center gap-1 text-sm font-medium">
+                                                        {isLogin ? "Giriş Yap" : "Kayıt Ol"}
+                                                        <ArrowRight className="w-3 h-3 group-hover/button:translate-x-1 transition-transform duration-300" />
+                                                    </motion.span>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    </motion.button>
+
+                                    {/* Divider */}
+                                    <div className="relative mt-2 mb-5 flex items-center">
+                                        <div className="flex-grow border-t border-border" />
+                                        <motion.span
+                                            className="mx-3 text-xs text-muted-foreground"
+                                            initial={{ opacity: 0.7 }}
+                                            animate={{ opacity: [0.7, 0.9, 0.7] }}
+                                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                        >
+                                            veya
+                                        </motion.span>
+                                        <div className="flex-grow border-t border-border" />
+                                    </div>
+
+                                    {/* Google */}
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        type="button"
+                                        className="w-full relative group/google"
+                                    >
+                                        <div className="absolute inset-0 bg-muted/30 rounded-lg blur opacity-0 group-hover/google:opacity-70 transition-opacity duration-300" />
+                                        <div className="relative overflow-hidden bg-background text-foreground font-medium h-10 rounded-lg border border-border hover:border-border/80 hover:bg-muted/50 transition-all duration-300 flex items-center justify-center gap-2">
+                                            <img
+                                                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                                                alt="Google"
+                                                className="w-4 h-4"
+                                            />
+                                            <span className="text-muted-foreground group-hover/google:text-foreground transition-colors text-xs">
+                                                Google ile giriş yap
+                                            </span>
+                                            <motion.div
+                                                className="absolute inset-0 bg-gradient-to-r from-transparent via-muted/30 to-transparent"
+                                                initial={{ x: "-100%" }}
+                                                whileHover={{ x: "100%" }}
+                                                transition={{ duration: 1, ease: "easeInOut" }}
+                                            />
+                                        </div>
+                                    </motion.button>
+
+                                    {/* Toggle */}
+                                    <motion.p
+                                        className="text-center text-xs text-muted-foreground mt-4"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.5 }}
+                                    >
+                                        {isLogin ? "Hesabın yok mu? " : "Zaten hesabın var mı? "}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsLogin(!isLogin);
+                                                setError("");
+                                                setSuccess("");
+                                            }}
+                                            className="relative inline-block group/toggle"
+                                        >
+                                            <span className="relative z-10 text-violet-600 group-hover/toggle:text-violet-500 transition-colors duration-300 font-medium">
+                                                {isLogin ? "Kayıt ol" : "Giriş yap"}
+                                            </span>
+                                            <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-violet-500 group-hover/toggle:w-full transition-all duration-300" />
+                                        </button>
+                                    </motion.p>
+                                </form>
+                            </div>
+                        </div>
                     </motion.div>
                 </motion.div>
             </div>
