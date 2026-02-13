@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateVideo } from '@/lib/workflows/autonomous-marketing'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
+// Allow up to 5 minutes for video generation pipeline
+export const maxDuration = 300
+
 export async function POST(req: NextRequest) {
     try {
         const { projectId, platform } = await req.json()

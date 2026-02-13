@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createInfluencer } from '@/lib/workflows/autonomous-marketing'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
+// Allow up to 2 minutes for influencer creation
+export const maxDuration = 120
+
 export async function POST(req: NextRequest) {
     try {
         const { projectId, gender } = await req.json()
