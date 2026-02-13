@@ -1502,15 +1502,19 @@ export default function ProjectDetailPage({
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
-                                                                        if (!confirm('Bu videoyu silmek istediğinizden emin misiniz?')) return
                                                                         fetch(`/api/videos/${video.id}`, { method: 'DELETE' })
                                                                             .then(res => {
                                                                                 if (res.ok) {
                                                                                     setVideos(prev => prev.filter(v => v.id !== video.id))
+                                                                                } else {
+                                                                                    alert('Video silinemedi. Lütfen tekrar deneyin.')
                                                                                 }
                                                                             })
+                                                                            .catch(() => {
+                                                                                alert('Video silme hatası. Lütfen tekrar deneyin.')
+                                                                            })
                                                                     }}
-                                                                    className="w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
+                                                                    className="w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm flex items-center justify-center transition-opacity hover:bg-red-500/80"
                                                                     title="Videoyu Sil"
                                                                 >
                                                                     <Trash2 className="w-3.5 h-3.5 text-white" />
