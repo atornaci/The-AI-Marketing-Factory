@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,25 +11,29 @@ import {
   Globe,
   ArrowRight,
   Bot,
-  BarChart3,
   Share2,
   ChevronRight,
-  Instagram,
   PlayCircle,
-  Wand2,
   Target,
   TrendingUp,
-  Layers,
-  Eye,
+  Star,
+  CheckCircle2,
+  Shield,
+  Clock,
+  DollarSign,
+  Users,
+  BarChart3,
+  Quote,
 } from "lucide-react";
 import Link from "next/link";
+import { useRef } from "react";
 
-/* ─── Squiggle SVG underline component ─── */
+/* ─── Squiggle SVG underline ─── */
 const SquiggleUnderline = () => (
   <svg
     aria-hidden="true"
     viewBox="0 0 418 42"
-    className="absolute -bottom-2 left-0 w-full h-[0.6em]"
+    className="absolute -bottom-2 left-0 w-full h-[0.58em]"
     preserveAspectRatio="none"
   >
     <path
@@ -39,33 +43,6 @@ const SquiggleUnderline = () => (
     />
   </svg>
 );
-
-/* ─── Highlighted Title component ─── */
-const HighlightedTitle = ({
-  text,
-  className = "",
-}: {
-  text: string;
-  className?: string;
-}) => {
-  const parts = text.split(/~/);
-  return (
-    <h2
-      className={`text-4xl md:text-6xl font-bold tracking-tight ${className}`}
-    >
-      {parts.map((part, index) =>
-        index === 1 ? (
-          <span key={index} className="relative whitespace-nowrap">
-            <span className="relative gradient-text">{part}</span>
-            <SquiggleUnderline />
-          </span>
-        ) : (
-          <span key={index}>{part}</span>
-        )
-      )}
-    </h2>
-  );
-};
 
 /* ─── Animation variants ─── */
 const containerVariants = {
@@ -95,127 +72,133 @@ const fadeInUp = {
 };
 
 /* ─── Data ─── */
-const integrations = [
-  {
-    icon: Instagram,
-    name: "Instagram",
-    description: "Reels ve hikayeler otomatik yayınlanır",
-    color: "from-pink-500 to-rose-500",
-  },
-  {
-    icon: Video,
-    name: "TikTok",
-    description: "Viral TikTok videoları oluşturulur",
-    color: "from-cyan-500 to-blue-500",
-  },
-  {
-    icon: PlayCircle,
-    name: "YouTube",
-    description: "Shorts ve video içerikler üretilir",
-    color: "from-red-500 to-rose-600",
-  },
-  {
-    icon: Share2,
-    name: "LinkedIn",
-    description: "Profesyonel paylaşımlar yapılır",
-    color: "from-blue-600 to-indigo-600",
-  },
-  {
-    icon: Wand2,
-    name: "Abacus.AI",
-    description: "Akıllı içerik analizi ve senaryo yazımı",
-    color: "from-violet-500 to-purple-600",
-  },
-  {
-    icon: Bot,
-    name: "ElevenLabs",
-    description: "Doğal sesli anlatım üretimi",
-    color: "from-emerald-500 to-teal-500",
-  },
+const stats = [
+  { value: "%90", label: "Maliyet Tasarrufu", icon: DollarSign },
+  { value: "10x", label: "Daha Hızlı İçerik", icon: Zap },
+  { value: "4+", label: "Platform Desteği", icon: Globe },
+  { value: "7/24", label: "Otonom Çalışır", icon: Clock },
 ];
 
 const features = [
   {
-    icon: Globe,
-    title: "Proje Analizi",
+    icon: Target,
+    title: "URL Girin, AI Analiz Etsin",
     description:
-      "URL girin, AI projenizi analiz etsin. Değer önerisi, hedef kitle ve rakip analizi otomatik yapılır.",
+      "Web sitenizin URL'sini girin, 30 saniyede projeniz analiz edilsin. Değer önerisi, hedef kitle ve rakip analizi hazır.",
+    benefit: "Manuel analiz yerine anında sonuç",
     gradient: "from-blue-500 to-cyan-500",
   },
   {
     icon: Bot,
-    title: "AI Influencer",
+    title: "AI Influencer Oluşturun",
     description:
-      "Markanıza özel, tutarlı bir AI Influencer karakteri — her videoda aynı yüz ve ses.",
+      "Markanıza özel, tutarlı bir AI karakter yaratın — her videoda aynı yüz, aynı ses, aynı kimlik.",
+    benefit: "Influencer maliyeti olmadan marka yüzü",
     gradient: "from-violet-500 to-purple-500",
   },
   {
     icon: Video,
-    title: "Video Üretimi",
+    title: "Profesyonel Videolar Üretin",
     description:
-      "Instagram, TikTok, YouTube ve LinkedIn için platforma özgü videolar üretilir.",
+      "Instagram, TikTok, YouTube ve LinkedIn için platformlara özel, profesyonel videolar otomatik üretilir.",
+    benefit: "Video ekibi gerektirmez",
     gradient: "from-pink-500 to-rose-500",
   },
   {
     icon: Share2,
     title: "Otonom Dağıtım",
     description:
-      "Hazırlanan videolar otomatik olarak sosyal medya platformlarına yayınlanır.",
+      "Hazırlanan videolar otomatik olarak tüm sosyal medya platformlarına yayınlanır. Siz izleyin.",
+    benefit: "Zaman ve emek tasarrufu",
     gradient: "from-orange-500 to-amber-500",
   },
 ];
 
-const steps = [
+const testimonials = [
   {
-    number: "01",
-    title: "URL Girin",
-    description: "Pazarlamak istediğiniz web projesinin URL'sini girin",
-    icon: Target,
+    name: "Elif Demir",
+    role: "Kurucu, TechStart",
+    avatar: "ED",
+    content:
+      "Video içerik maliyetimizi %90 düşürdük. Eskiden her video için 3000₺ ödüyorduk, şimdi AI ile dakikalar içinde profesyonel videolar üretiyoruz.",
+    stat: "%90 maliyet düşüşü",
+    stars: 5,
   },
   {
-    number: "02",
-    title: "AI Analiz Eder",
-    description:
-      "Sistem projenizi analiz eder ve Pazarlama Anayasası oluşturur",
-    icon: Eye,
+    name: "Kaan Yılmaz",
+    role: "Dijital Pazarlama Müdürü",
+    avatar: "KY",
+    content:
+      "Haftalık 20 saat harcadığımız sosyal medya içerik üretimini 2 saate indirdik. AI Influencer özelliği marka tutarlılığımızı da artırdı.",
+    stat: "10x zaman tasarrufu",
+    stars: 5,
   },
   {
-    number: "03",
-    title: "Influencer Oluşur",
-    description: "Markanıza özel bir AI Influencer karakteri yaratılır",
-    icon: Wand2,
-  },
-  {
-    number: "04",
-    title: "Video Yayınlanır",
-    description:
-      "Tüm platformlar için profesyonel videolar üretilir ve yayınlanır",
-    icon: TrendingUp,
+    name: "Selin Acar",
+    role: "E-ticaret Girişimcisi",
+    avatar: "SA",
+    content:
+      "Küçük bir ekipiz ama büyük markaların içerik kalitesinde videolar üretebiliyoruz. 4 platformda aynı anda yayın yapmak inanılmaz.",
+    stat: "4 platform, tek tıklama",
+    stars: 5,
   },
 ];
 
-const stats = [
-  { value: "10x", label: "Daha Hızlı İçerik" },
-  { value: "4+", label: "Platform Desteği" },
-  { value: "AI", label: "Otonom Motor" },
-  { value: "∞", label: "Ölçeklenebilir" },
+const integrations = [
+  { name: "Instagram", desc: "Reels & Stories", color: "from-pink-500 to-rose-500" },
+  { name: "TikTok", desc: "Viral Videolar", color: "from-cyan-400 to-teal-500" },
+  { name: "YouTube", desc: "Shorts & Video", color: "from-red-500 to-red-600" },
+  { name: "LinkedIn", desc: "Profesyonel İçerik", color: "from-blue-600 to-blue-700" },
 ];
 
+const trustedBy = [
+  { name: "Abacus.AI", desc: "Akıllı İçerik Motoru" },
+  { name: "ElevenLabs", desc: "Doğal Ses Üretimi" },
+  { name: "OpenAI", desc: "GPT Teknolojisi" },
+];
+
+/* ─── Section wrapper with useInView ─── */
+function AnimatedSection({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  return (
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      variants={containerVariants}
+      className={className}
+    >
+      {children}
+    </motion.section>
+  );
+}
+
+/* ─── Main Component ─── */
 export default function LandingPage() {
   const [url, setUrl] = useState("");
-  const [mounted, setMounted] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  if (!mounted) return null;
-
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-hidden">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      {/* ═══════════════════════════════════════════ */}
+      {/* NAVBAR                                      */}
+      {/* ═══════════════════════════════════════════ */}
+      <motion.nav
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+            ? "bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
+            : "bg-transparent"
+          }`}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
               <Sparkles className="w-4.5 h-4.5 text-white" />
@@ -224,399 +207,411 @@ export default function LandingPage() {
               AI Marketing <span className="gradient-text">Factory</span>
             </span>
           </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
-            >
-              Dashboard
+          <div className="flex items-center gap-3">
+            <Link href="/auth">
+              <Button variant="ghost" size="sm" className="text-sm">
+                Giriş Yap
+              </Button>
             </Link>
-            <Button
-              asChild
-              size="sm"
-              className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25"
-            >
-              <Link href="/auth">Başla</Link>
-            </Button>
+            <Link href="/auth">
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white rounded-xl text-sm px-5 shadow-lg shadow-violet-500/25"
+              >
+                Ücretsiz Deneyin
+                <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
+              </Button>
+            </Link>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
-      {/* ══════════════ Hero Section ══════════════ */}
-      <section className="relative min-h-screen flex items-center justify-center pt-20">
-        {/* Background effects */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.08),transparent_70%)]" />
-        <div className="absolute inset-0 grid-bg opacity-50" />
+      {/* ═══════════════════════════════════════════ */}
+      {/* HERO SECTION                                */}
+      {/* ═══════════════════════════════════════════ */}
+      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.08),transparent_60%)]" />
+        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-[100px]" />
 
-        {/* Animated gradient orbs */}
-        <motion.div
-          className="absolute top-1/4 left-1/6 w-[400px] h-[400px] bg-violet-500/10 rounded-full blur-[100px]"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-1/4 right-1/6 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px]"
-          animate={{
-            scale: [1.1, 1, 1.1],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-500/5 rounded-full blur-[150px]"
-          animate={{
-            scale: [1, 1.15, 1],
-            opacity: [0.1, 0.3, 0.1],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        />
-
-        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+        <div className="relative max-w-7xl mx-auto px-6">
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
+            className="text-center max-w-4xl mx-auto"
           >
             {/* Badge */}
             <motion.div variants={itemVariants} className="mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border/60 bg-background/50 backdrop-blur-sm text-sm">
-                <Zap className="w-3.5 h-3.5 text-violet-400" />
-                <span className="text-muted-foreground">
-                  Otonom AI Pazarlama Motoru
-                </span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-violet-500/20 bg-violet-500/5 text-sm">
+                <Sparkles className="w-4 h-4 text-violet-500" />
+                <span className="text-muted-foreground">Türkiye&apos;nin İlk Otonom AI Pazarlama Motoru</span>
+                <ChevronRight className="w-3.5 h-3.5 text-violet-400" />
               </div>
             </motion.div>
 
-            {/* Title with squiggle */}
-            <motion.div variants={itemVariants} className="mb-6">
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05]">
-                Projeniz İçin
-                <br />
-                <span className="relative whitespace-nowrap">
-                  <span className="relative gradient-text">AI Influencer</span>
-                  <SquiggleUnderline />
-                </span>
-                <br />
-                Oluşturun
-              </h1>
-            </motion.div>
+            {/* Heading */}
+            <motion.h1
+              variants={itemVariants}
+              className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6"
+            >
+              Video Pazarlamanızı
+              <br />
+              <span className="relative whitespace-nowrap">
+                <span className="relative gradient-text">Tamamen Otomatikleştirin</span>
+                <SquiggleUnderline />
+              </span>
+            </motion.h1>
 
-            {/* Subtitle */}
+            {/* Subheading */}
             <motion.p
               variants={itemVariants}
-              className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
+              className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
             >
-              Herhangi bir web projesini analiz edin, ona özel bir AI Influencer
-              yaratın ve tüm sosyal medya platformları için{" "}
-              <span className="text-foreground font-semibold">
-                profesyonel videolar
-              </span>{" "}
-              tamamen otonom üretin.
+              URL&apos;nizi girin → AI analiz etsin → 4 platformda profesyonel videolar üretilsin.
+              <br />
+              <strong className="text-foreground">Ekip kurmadan, ajans tutmadan, dakikalar içinde.</strong>
             </motion.p>
 
-            {/* URL Input */}
-            <motion.div variants={itemVariants} className="max-w-xl mx-auto mb-4">
-              <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 via-purple-500 to-pink-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
-                <div className="relative flex gap-2 p-2 rounded-2xl border border-border/50 bg-background/80 backdrop-blur-sm">
-                  <Input
-                    type="url"
-                    placeholder="https://yourproject.com"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    className="flex-1 bg-transparent border-0 text-lg h-12 focus-visible:ring-0 placeholder:text-muted-foreground/40"
-                  />
-                  <Button
-                    asChild
-                    size="lg"
-                    className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 px-6 h-12 rounded-xl shadow-lg shadow-violet-500/25"
-                  >
-                    <Link
-                      href={
-                        url
-                          ? `/dashboard?url=${encodeURIComponent(url)}`
-                          : "/auth"
-                      }
-                    >
-                      Analiz Et
-                      <ArrowRight className="ml-2 w-4 h-4" />
-                    </Link>
-                  </Button>
-                </div>
+            {/* URL Input + CTA */}
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto mb-6"
+            >
+              <div className="flex-1 relative">
+                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50" />
+                <Input
+                  type="url"
+                  placeholder="https://yourproject.com"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className="pl-12 h-14 rounded-2xl text-base border-border/50 bg-background/80 backdrop-blur-sm focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20"
+                />
               </div>
+              <Link href={url ? `/auth?url=${encodeURIComponent(url)}` : "/auth"}>
+                <Button className="h-14 px-8 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-base font-semibold shadow-xl shadow-violet-500/25 transition-all hover:shadow-2xl hover:shadow-violet-500/30 w-full sm:w-auto">
+                  Ücretsiz Deneyin
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
             </motion.div>
 
+            {/* Trust line */}
             <motion.p
               variants={itemVariants}
-              className="text-sm text-muted-foreground/50"
+              className="flex items-center justify-center gap-2 text-sm text-muted-foreground/60"
             >
-              Herhangi bir URL girin — web sitesi, SaaS, e-ticaret, uygulama...
+              <Shield className="w-4 h-4" />
+              Kredi kartı gerekmez · 30 saniyede başlayın
             </motion.p>
           </motion.div>
-        </div>
 
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-1.5">
-            <motion.div
-              className="w-1.5 h-1.5 rounded-full bg-violet-400"
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </div>
-        </motion.div>
+          {/* Stats bar */}
+          <motion.div
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            className="mt-16 max-w-3xl mx-auto"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {stats.map((s) => (
+                <div
+                  key={s.label}
+                  className="flex flex-col items-center p-5 rounded-2xl border border-border/40 bg-background/60 backdrop-blur-sm hover:border-violet-500/30 transition-colors"
+                >
+                  <s.icon className="w-5 h-5 text-violet-500 mb-2" />
+                  <div className="text-2xl font-bold gradient-text">{s.value}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
       </section>
 
-      {/* ══════════════ Stats Strip ══════════════ */}
-      <section className="py-12 border-y border-border/30">
-        <motion.div
-          className="max-w-5xl mx-auto px-6"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.5 }}
-        >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <motion.div
-                key={stat.label}
-                variants={itemVariants}
-                className="text-center"
-              >
-                <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">
-                  {stat.value}
+      {/* ═══════════════════════════════════════════ */}
+      {/* POWERED BY / TRUST LOGOS                    */}
+      {/* ═══════════════════════════════════════════ */}
+      <AnimatedSection className="py-12 border-y border-border/30 bg-muted/20">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div variants={itemVariants} className="text-center mb-8">
+            <p className="text-sm text-muted-foreground/60 uppercase tracking-widest font-medium">
+              Güçlü Teknoloji Altyapısı
+            </p>
+          </motion.div>
+          <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-8 md:gap-16">
+            {trustedBy.map((t) => (
+              <div key={t.name} className="flex items-center gap-3 text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-violet-400" />
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {stat.label}
+                <div>
+                  <div className="text-sm font-semibold text-foreground/70">{t.name}</div>
+                  <div className="text-xs">{t.desc}</div>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </AnimatedSection>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* HOW IT WORKS — Result-Oriented              */}
+      {/* ═══════════════════════════════════════════ */}
+      <AnimatedSection className="py-24 lg:py-32">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div variants={itemVariants} className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-background/50 text-xs mb-4">
+              <PlayCircle className="w-3.5 h-3.5 text-violet-400" />
+              <span className="text-muted-foreground">Sadece 3 adım</span>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
+              Nasıl{" "}
+              <span className="relative whitespace-nowrap">
+                <span className="relative gradient-text">Çalışır</span>
+                <SquiggleUnderline />
+              </span>
+              ?
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Tamamen otonom bir AI pazarlama motoru. URL&apos;nizi girin, gerisini biz halledelim.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                variants={itemVariants}
+                className="group relative p-6 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-300"
+              >
+                <div className="mb-4">
+                  <div
+                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.gradient} flex items-center justify-center shadow-lg`}
+                  >
+                    <f.icon className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="text-xs font-bold text-muted-foreground/40 mb-2">
+                  ADIM {String(i + 1).padStart(2, "0")}
+                </div>
+                <h3 className="text-lg font-bold mb-2">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                  {f.description}
+                </p>
+                <div className="flex items-center gap-1.5 text-xs text-violet-500 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {f.benefit}
                 </div>
               </motion.div>
             ))}
           </div>
-        </motion.div>
-      </section>
-
-      {/* ══════════════ Features Section ══════════════ */}
-      <section className="py-28 relative">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            variants={containerVariants}
-          >
-            <motion.div variants={itemVariants} className="text-center mb-16">
-              <HighlightedTitle
-                text="Nasıl ~Çalışır~?"
-                className="mb-4"
-              />
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Tamamen otonom bir AI pazarlama motoru. Sadece URL&apos;nizi
-                girin, gerisini biz halledelim.
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map((feature) => (
-                <motion.div key={feature.title} variants={itemVariants}>
-                  <div className="group relative h-full p-6 rounded-2xl border border-border/50 bg-background/50 hover:bg-muted/50 hover:border-violet-500/30 transition-all duration-300 cursor-pointer">
-                    <div className="relative z-10">
-                      <div
-                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-lg transition-all duration-300`}
-                      >
-                        <feature.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <h3 className="text-lg font-semibold mb-2">
-                        {feature.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
         </div>
-      </section>
+      </AnimatedSection>
 
-      {/* ══════════════ Integration Showcase ══════════════ */}
-      <section className="py-28 relative">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.06),transparent_60%)]" />
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            variants={containerVariants}
-          >
-            {/* Header */}
-            <motion.div
-              variants={itemVariants}
-              className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-16"
-            >
-              <div>
-                <HighlightedTitle
-                  text="Tüm ~Platformlarla~ Entegre"
-                  className="mb-4 text-left"
-                />
-                <p className="text-muted-foreground text-lg">
-                  Popüler sosyal medya platformlarına ve AI servislerine
-                  doğrudan bağlanın. İçerikleriniz tam otomatik yayınlansın.
+      {/* ═══════════════════════════════════════════ */}
+      {/* PLATFORM SUPPORT                            */}
+      {/* ═══════════════════════════════════════════ */}
+      <AnimatedSection className="py-24 lg:py-32 bg-muted/20">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div variants={itemVariants} className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
+              Tüm{" "}
+              <span className="relative whitespace-nowrap">
+                <span className="relative gradient-text">Platformlarla</span>
+                <SquiggleUnderline />
+              </span>
+              {" "}Entegre
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Her platformun formatına, boyutuna ve trendine uygun videolar otomatik üretilir.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {integrations.map((int) => (
+              <motion.div
+                key={int.name}
+                variants={itemVariants}
+                className="group p-6 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/30 transition-all duration-300 text-center"
+              >
+                <div
+                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${int.color} flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform`}
+                >
+                  <Video className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="font-bold text-lg mb-1">{int.name}</h3>
+                <p className="text-sm text-muted-foreground">{int.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </AnimatedSection>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* TESTIMONIALS                                */}
+      {/* ═══════════════════════════════════════════ */}
+      <AnimatedSection className="py-24 lg:py-32">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div variants={itemVariants} className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-background/50 text-xs mb-4">
+              <Users className="w-3.5 h-3.5 text-violet-400" />
+              <span className="text-muted-foreground">Kullanıcı Yorumları</span>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
+              Kullanıcılarımız{" "}
+              <span className="relative whitespace-nowrap">
+                <span className="relative gradient-text">Ne Diyor</span>
+                <SquiggleUnderline />
+              </span>
+              ?
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {testimonials.map((t) => (
+              <motion.div
+                key={t.name}
+                variants={itemVariants}
+                className="relative p-6 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/20 transition-all"
+              >
+                <Quote className="w-8 h-8 text-violet-500/20 mb-4" />
+                {/* Stars */}
+                <div className="flex gap-1 mb-4">
+                  {Array.from({ length: t.stars }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className="w-4 h-4 text-amber-400 fill-amber-400"
+                    />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                  &ldquo;{t.content}&rdquo;
                 </p>
-              </div>
-              <div className="flex items-center justify-center">
-                <motion.div
-                  className="relative w-48 h-48"
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{
-                    duration: 6,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 blur-2xl" />
-                  <div className="relative w-full h-full rounded-3xl border border-border/50 bg-background/50 backdrop-blur-sm flex items-center justify-center">
-                    <Layers className="w-20 h-20 text-violet-400/60" />
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Integration Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {integrations.map((item) => (
-                <motion.div
-                  key={item.name}
-                  variants={itemVariants}
-                  className="group flex items-center gap-4 p-4 rounded-xl border border-border/50 bg-background/50 hover:bg-muted/50 hover:border-violet-500/30 transition-all duration-300"
-                >
-                  <div
-                    className={`flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <item.icon className="w-5 h-5 text-white" />
+                {/* Stat badge */}
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 text-violet-500 text-xs font-semibold mb-4">
+                  <TrendingUp className="w-3 h-3" />
+                  {t.stat}
+                </div>
+                {/* Author */}
+                <div className="flex items-center gap-3 pt-4 border-t border-border/30">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                    {t.avatar}
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold">{item.name}</h3>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      {item.description}
-                    </p>
+                    <div className="text-sm font-semibold">{t.name}</div>
+                    <div className="text-xs text-muted-foreground">{t.role}</div>
                   </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══════════════ Steps Section ══════════════ */}
-      <section className="py-28 relative">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(124,58,237,0.06),transparent_70%)]" />
-        <div className="max-w-5xl mx-auto px-6 relative z-10">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            variants={containerVariants}
-          >
-            <motion.div variants={itemVariants} className="text-center mb-16">
-              <HighlightedTitle
-                text="4 Adımda ~Viral Video~"
-                className="mb-4"
-              />
-            </motion.div>
-
-            <div className="space-y-4">
-              {steps.map((step) => (
-                <motion.div
-                  key={step.number}
-                  variants={itemVariants}
-                  className="group flex items-center gap-6 md:gap-8 p-5 md:p-6 rounded-2xl border border-border/50 bg-background/50 hover:bg-muted/50 hover:border-violet-500/30 transition-all duration-300"
-                >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-violet-500/20 group-hover:to-purple-500/20 transition-colors">
-                    <step.icon className="w-5 h-5 text-violet-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="text-xs font-mono text-violet-400/70">
-                        {step.number}
-                      </span>
-                      <h3 className="text-lg font-semibold">{step.title}</h3>
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                      {step.description}
-                    </p>
-                  </div>
-                  <ChevronRight className="flex-shrink-0 w-5 h-5 text-muted-foreground/40 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══════════════ CTA Section ══════════════ */}
-      <section className="py-28 relative">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={containerVariants}
-            className="relative p-12 md:p-16 rounded-3xl border border-border/50 bg-background/50 overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-purple-500/3 to-pink-500/5" />
-
-            {/* Decorative corner orbs */}
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl" />
-
-            <motion.div variants={itemVariants} className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center mx-auto mb-6">
-                <BarChart3 className="w-7 h-7 text-violet-400" />
-              </div>
-              <HighlightedTitle
-                text="Pazarlamanızı ~Otomatikleştirin~"
-                className="text-3xl md:text-4xl mb-4"
-              />
-              <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
-                AI Marketing Factory ile haftalar süren içerik üretimini
-                dakikalara indirin.
-              </p>
-              <Button
-                asChild
-                size="lg"
-                className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 text-lg px-8 h-14 rounded-xl shadow-lg shadow-violet-500/25"
-              >
-                <Link href="/auth">
-                  Hemen Başla
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══════════════ Footer ══════════════ */}
-      <footer className="py-12 border-t border-border/30">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="text-sm font-semibold">AI Marketing Factory</span>
+                </div>
+              </motion.div>
+            ))}
           </div>
-          <p className="text-sm text-muted-foreground">
-            © 2026 AI Marketing Factory. Powered by Abacus.AI &amp; ElevenLabs
-          </p>
+        </div>
+      </AnimatedSection>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* CTA SECTION                                 */}
+      {/* ═══════════════════════════════════════════ */}
+      <AnimatedSection className="py-24 lg:py-32">
+        <div className="max-w-4xl mx-auto px-6">
+          <motion.div
+            variants={itemVariants}
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-violet-700 p-12 lg:p-16 text-center text-white"
+          >
+            {/* Decorative circles */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 text-sm mb-8">
+                <Zap className="w-4 h-4" />
+                Hemen Başlayın
+              </div>
+              <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
+                İlk Videonuzu Şimdi Üretin
+              </h2>
+              <p className="text-lg text-white/80 max-w-xl mx-auto mb-8">
+                Kredi kartı gerekmez. 30 saniyede kaydolun, URL&apos;nizi girin ve
+                AI&apos;ın sihirini izleyin.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/auth">
+                  <Button
+                    size="lg"
+                    className="h-14 px-10 rounded-2xl bg-white text-violet-700 hover:bg-white/90 text-base font-bold shadow-xl"
+                  >
+                    Ücretsiz Deneyin
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </Link>
+              </div>
+              <div className="flex items-center justify-center gap-6 mt-8 text-sm text-white/60">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Kredi kartı gerekmez
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Anında kurulum
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                  İstediğiniz zaman iptal
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </AnimatedSection>
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* FOOTER                                      */}
+      {/* ═══════════════════════════════════════════ */}
+      <footer className="border-t border-border/30 bg-muted/10">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Logo */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-bold tracking-tight">
+                AI Marketing <span className="gradient-text">Factory</span>
+              </span>
+            </div>
+
+            {/* Links */}
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <Link href="/auth" className="hover:text-foreground transition-colors">
+                Giriş Yap
+              </Link>
+              <Link href="/auth" className="hover:text-foreground transition-colors">
+                Kayıt Ol
+              </Link>
+            </div>
+
+            {/* Copyright */}
+            <div className="text-xs text-muted-foreground/50">
+              © {new Date().getFullYear()} AI Marketing Factory. Tüm hakları saklıdır.
+            </div>
+          </div>
+
+          {/* Trust badges */}
+          <div className="flex items-center justify-center gap-6 mt-8 pt-8 border-t border-border/20">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/40">
+              <Shield className="w-3.5 h-3.5" />
+              SSL Korumalı
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/40">
+              <Globe className="w-3.5 h-3.5" />
+              KVKK Uyumlu
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/40">
+              <BarChart3 className="w-3.5 h-3.5" />
+              Vercel ile Çalışır
+            </div>
+          </div>
         </div>
       </footer>
     </div>
