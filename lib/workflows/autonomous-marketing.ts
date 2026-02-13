@@ -143,7 +143,7 @@ export async function generateVideo(
     influencerProfile: Record<string, unknown>,
     voiceId: string,
     screenshotUrls: string[],
-    platform: 'instagram' | 'tiktok' | 'linkedin',
+    platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube',
     projectId: string,
     onProgress?: (step: string) => void
 ): Promise<VideoResult> {
@@ -249,7 +249,7 @@ export async function generateVideo(
 export async function runFullPipeline(
     url: string,
     userId: string,
-    platform: 'instagram' | 'tiktok' | 'linkedin',
+    platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube',
     projectId: string,
     onProgress?: (step: string) => void
 ): Promise<{

@@ -13,9 +13,9 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        if (!['instagram', 'tiktok', 'linkedin'].includes(platform)) {
+        if (!['instagram', 'tiktok', 'linkedin', 'youtube'].includes(platform)) {
             return NextResponse.json(
-                { error: 'Invalid platform. Must be instagram, tiktok, or linkedin' },
+                { error: 'Invalid platform. Must be instagram, tiktok, linkedin, or youtube' },
                 { status: 400 }
             )
         }

@@ -333,7 +333,7 @@ export default function ProjectDetailPage({
 
     /* ─── Generate Video ─── */
     const handleGenerateVideo = async (
-        platform: "instagram" | "tiktok" | "linkedin"
+        platform: "instagram" | "tiktok" | "linkedin" | "youtube"
     ) => {
         setIsGenerating(true);
         setGeneratingPlatform(platform);
@@ -1171,25 +1171,31 @@ export default function ProjectDetailPage({
                                             Platform seçin ve AI videoyu otomatik oluştursun
                                         </p>
 
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                             {(
                                                 [
                                                     {
                                                         key: "instagram" as const,
                                                         label: "Instagram",
-                                                        icon: "📸",
+                                                        img: "/images/platforms/instagram.png",
                                                         desc: "Reels (60s)",
                                                     },
                                                     {
                                                         key: "tiktok" as const,
                                                         label: "TikTok",
-                                                        icon: "🎵",
+                                                        img: "/images/platforms/tiktok.png",
                                                         desc: "Short (60s)",
+                                                    },
+                                                    {
+                                                        key: "youtube" as const,
+                                                        label: "YouTube",
+                                                        img: "/images/platforms/youtube.png",
+                                                        desc: "Shorts (60s)",
                                                     },
                                                     {
                                                         key: "linkedin" as const,
                                                         label: "LinkedIn",
-                                                        icon: "💼",
+                                                        img: "/images/platforms/linkedin.png",
                                                         desc: "Video (120s)",
                                                     },
                                                 ]
@@ -1198,15 +1204,26 @@ export default function ProjectDetailPage({
                                                     key={platform.key}
                                                     onClick={() => handleGenerateVideo(platform.key)}
                                                     disabled={isGenerating}
-                                                    className="group p-4 rounded-xl border border-border/50 hover:border-violet-300/50 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-300 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="group relative overflow-hidden rounded-xl border border-border/50 hover:border-violet-300/50 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
-                                                    <div className="text-2xl mb-2">{platform.icon}</div>
-                                                    <h4 className="text-sm font-medium group-hover:text-violet-600 transition-colors">
-                                                        {platform.label}
-                                                    </h4>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {platform.desc}
-                                                    </p>
+                                                    <div className="relative w-full aspect-[4/3] overflow-hidden">
+                                                        <Image
+                                                            src={platform.img}
+                                                            alt={platform.label}
+                                                            fill
+                                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                                            sizes="(max-width: 640px) 50vw, 25vw"
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                                                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                                                            <h4 className="text-sm font-semibold text-white drop-shadow-lg">
+                                                                {platform.label}
+                                                            </h4>
+                                                            <p className="text-[11px] text-white/80">
+                                                                {platform.desc}
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </button>
                                             ))}
                                         </div>
@@ -1635,15 +1652,15 @@ export default function ProjectDetailPage({
                                                             <div
                                                                 key={hook.id}
                                                                 className={`rounded-lg p-3 border text-sm ${hook.id === video.storyboard?.selectedHook
-                                                                        ? 'border-violet-500 bg-violet-500/10'
-                                                                        : 'border-border/30 bg-muted/30'
+                                                                    ? 'border-violet-500 bg-violet-500/10'
+                                                                    : 'border-border/30 bg-muted/30'
                                                                     }`}
                                                             >
                                                                 <div className="flex items-center justify-between mb-1">
                                                                     <span className="text-xs font-medium text-muted-foreground capitalize">{hook.style}</span>
                                                                     <span className={`text-xs px-2 py-0.5 rounded-full ${hook.estimatedImpact === 'high' ? 'bg-green-500/20 text-green-400' :
-                                                                            hook.estimatedImpact === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                                                'bg-gray-500/20 text-gray-400'
+                                                                        hook.estimatedImpact === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                            'bg-gray-500/20 text-gray-400'
                                                                         }`}>{hook.estimatedImpact}</span>
                                                                 </div>
                                                                 <p className="font-medium">&ldquo;{hook.text}&rdquo;</p>

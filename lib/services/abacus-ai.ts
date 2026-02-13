@@ -263,7 +263,7 @@ Respond ONLY with valid JSON.`
     async generateVideoScript(
         analysis: ProjectAnalysis,
         constitution: MarketingConstitution,
-        platform: 'instagram' | 'tiktok' | 'linkedin',
+        platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube',
         language: Language = 'tr'
     ): Promise<VideoScript> {
         const lang = LANGUAGE_PROMPTS[language]
@@ -288,6 +288,13 @@ Respond ONLY with valid JSON.`
                 format: 'Professional video',
                 tone: 'Deneyim paylaşan bir meslektaş gibi - otoriter ama samimi',
                 storyStyle: 'Profesyonel bir zorlukla başla → çözüm arayışını anlat → keşfi paylaş → somut sonuçları göster. Veri ve kişisel deneyimi harmanla.',
+            },
+            youtube: {
+                maxDuration: 60,
+                style: 'Hızlı, enerjik, eğlenceli, YouTube Shorts viral formatı',
+                format: 'YouTube Shorts',
+                tone: 'Enerjik, samimi, heyecanlı - sanki keşif paylaşıyormuş gibi',
+                storyStyle: '\"Bunu bilmiyordunuz ama...\" veya \"3 saniyede hayatınız değişecek\" gibi merak uyandıran bir açılış. Hızlı kesimler, dinamik geçişler.',
             },
         }
 
@@ -546,7 +553,7 @@ Respond ONLY with valid JSON.`
         audioUrl: string
         influencerProfile: Record<string, unknown>
         screenshotUrls: string[]
-        platform: 'instagram' | 'tiktok' | 'linkedin'
+        platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube'
     }): Promise<{ videoUrl: string; thumbnailUrl: string }> {
         console.log(`[Video] Starting Abacus AI video generation...`)
         console.log(`[Video] Script: ${params.script.length} chars, platform: ${params.platform}`)
@@ -557,6 +564,7 @@ Respond ONLY with valid JSON.`
         const platformSettings = {
             instagram: { aspectRatio: '9:16', maxDuration: 60 },
             tiktok: { aspectRatio: '9:16', maxDuration: 60 },
+            youtube: { aspectRatio: '9:16', maxDuration: 60 },
             linkedin: { aspectRatio: '16:9', maxDuration: 120 },
         }
         const settings = platformSettings[params.platform]
@@ -1057,7 +1065,7 @@ Respond ONLY with valid JSON.`
 
     async generateHookVariations(
         analysis: ProjectAnalysis,
-        platform: 'instagram' | 'tiktok' | 'linkedin',
+        platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube',
         language: Language = 'tr'
     ): Promise<HookVariation[]> {
         const lang = LANGUAGE_PROMPTS[language]
@@ -1104,7 +1112,7 @@ Respond ONLY with valid JSON array.`
         analysis: ProjectAnalysis,
         constitution: MarketingConstitution,
         hooks: HookVariation[],
-        platform: 'instagram' | 'tiktok' | 'linkedin',
+        platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube',
         language: Language = 'tr'
     ): Promise<Storyboard> {
         const lang = LANGUAGE_PROMPTS[language]
