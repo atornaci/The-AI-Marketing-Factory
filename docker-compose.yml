@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # =========================================
+  # n8n — Workflow Orchestrator
+  # =========================================
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      # n8n Basic Auth
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
+      # Webhook URL (for external triggers)
+      - WEBHOOK_URL=${WEBHOOK_URL:-https://n8n.yourdomain.com/}
+      # Timezone
+      - GENERIC_TIMEZONE=Europe/Istanbul
+      - TZ=Europe/Istanbul
+      # Execution settings
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168  # Keep 7 days
+      # n8n settings
+      - N8N_METRICS=true
+      - N8N_LOG_LEVEL=info
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =========================================
+  # Caddy — Reverse Proxy with Auto SSL
+  # =========================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - n8n
+
+volumes:
+  n8n_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local

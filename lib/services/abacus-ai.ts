@@ -1239,7 +1239,91 @@ Respond ONLY with valid JSON.`
             }
         }
     }
+
+    /**
+     * Enhance a user prompt with brand context for image generation
+     * Uses LLM to transform a basic prompt into a detailed, production-ready image gen prompt
+     */
+    async generateEnhancedPrompt(
+        userPrompt: string,
+        brandContext: string,
+        brandColors: string[],
+        imageType: string,
+        platform: string
+    ): Promise<string> {
+        const colorStr = brandColors.length > 0 ? brandColors.join(', ') : 'vibrant, modern'
+        const systemPrompt = `You are a professional graphic designer creating marketing visuals.
+Generate a single, detailed image generation prompt in English based on the user's request.
+The prompt must be:
+- Under 200 characters (Pollinations.ai URL limit)
+- English only, no special characters
+- Professional marketing quality
+- Include the brand color scheme: ${colorStr}
+- Optimized for ${platform} ${imageType}
+Brand context: ${brandContext}
+Return ONLY the prompt text, nothing else.`
+
+        try {
+            const enhanced = await this.callLLM(userPrompt, systemPrompt, 'creative', 200)
+            // Clean for URL usage
+            return enhanced.replace(/[^a-zA-Z0-9 ,.!?\-]/g, '').substring(0, 300)
+        } catch {
+            // Fallback: use the original prompt cleaned
+            return userPrompt.replace(/[^a-zA-Z0-9 ,.!?\-]/g, '').substring(0, 200)
+        }
+    }
+
+    /**
+     * Generate a marketing image using Pollinations.ai (free, no API key)
+     * Supports: static_post, carousel_slide, thumbnail, story, banner, custom
+     */
+    async generateMarketingImage(params: {
+        prompt: string
+        imageType: string
+        platform: string
+        brandColors?: string[]
+        brandContext?: string
+    }): Promise<{ imageUrl: string; width: number; height: number; enhancedPrompt: string }> {
+        const { prompt, imageType, platform, brandColors = [], brandContext = '' } = params
+
+        // Get dimensions for this type/platform combo
+        const typeDims = IMAGE_DIMENSIONS[imageType] || IMAGE_DIMENSIONS.custom
+        const dims = typeDims[platform] || typeDims.instagram || { width: 1080, height: 1080 }
+
+        // Clamp to Pollinations max (2048)
+        const width = Math.min(dims.width, 2048)
+        const height = Math.min(dims.height, 2048)
+
+        console.log(`[Image] Generating ${imageType} for ${platform} (${width}x${height})...`)
+
+        // Enhance the prompt with brand context via LLM
+        const enhancedPrompt = await this.generateEnhancedPrompt(
+            prompt, brandContext, brandColors, imageType, platform
+        )
+
+        const seed = Math.floor(Math.random() * 999999)
+        const encodedPrompt = encodeURIComponent(enhancedPrompt)
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`
+
+        console.log(`[Image] Enhanced prompt: ${enhancedPrompt}`)
+        console.log(`[Image] URL length: ${imageUrl.length}`)
+
+        // Validate the URL works
+        try {
+            const testResponse = await fetch(imageUrl, { method: 'HEAD' })
+            if (testResponse.ok) {
+                console.log(`[Image] ✅ Image generated successfully (seed: ${seed})`)
+                return { imageUrl, width, height, enhancedPrompt }
+            }
+            console.warn(`[Image] Pollinations returned ${testResponse.status}`)
+        } catch (error) {
+            console.error(`[Image] Generation error:`, error)
+        }
+
+        return { imageUrl: '', width, height, enhancedPrompt }
+    }
 }
+
 
 // Types for new features
 interface CompetitorEntry {
@@ -1275,6 +1359,66 @@ interface AdCopyResult {
     generatedAt: string
 }
 
+// =========================================
+// Image Generation Types
+// =========================================
+interface ImageGenParams {
+    prompt: string
+    imageType: 'static_post' | 'carousel_slide' | 'thumbnail' | 'story' | 'banner' | 'custom'
+    platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube'
+    brandColors?: string[]
+    brandContext?: string  // project name, description etc.
+    withLogo?: boolean
+}
+
+interface GeneratedImage {
+    imageUrl: string
+    width: number
+    height: number
+    prompt: string
+}
+
+// Platform + type specific dimensions
+const IMAGE_DIMENSIONS: Record<string, Record<string, { width: number; height: number }>> = {
+    static_post: {
+        instagram: { width: 1080, height: 1080 },
+        tiktok: { width: 1080, height: 1080 },
+        linkedin: { width: 1200, height: 627 },
+        youtube: { width: 1280, height: 720 },
+    },
+    carousel_slide: {
+        instagram: { width: 1080, height: 1080 },
+        linkedin: { width: 1080, height: 1080 },
+        tiktok: { width: 1080, height: 1080 },
+        youtube: { width: 1280, height: 720 },
+    },
+    thumbnail: {
+        instagram: { width: 1080, height: 1080 },
+        tiktok: { width: 1080, height: 1920 },
+        linkedin: { width: 1280, height: 720 },
+        youtube: { width: 1280, height: 720 },
+    },
+    story: {
+        instagram: { width: 1080, height: 1920 },
+        tiktok: { width: 1080, height: 1920 },
+        linkedin: { width: 1080, height: 1920 },
+        youtube: { width: 1080, height: 1920 },
+    },
+    banner: {
+        instagram: { width: 1080, height: 566 },
+        tiktok: { width: 1080, height: 566 },
+        linkedin: { width: 1584, height: 396 },
+        youtube: { width: 2560, height: 1440 },
+    },
+    custom: {
+        instagram: { width: 1080, height: 1080 },
+        tiktok: { width: 1080, height: 1920 },
+        linkedin: { width: 1200, height: 627 },
+        youtube: { width: 1280, height: 720 },
+    },
+}
+
 export const abacusAI = new AbacusAIService()
-export type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile, CompetitorAnalysis, CompetitorEntry, AdCopyResult, AdCopyVariation }
+export type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile, CompetitorAnalysis, CompetitorEntry, AdCopyResult, AdCopyVariation, ImageGenParams, GeneratedImage }
+export { IMAGE_DIMENSIONS }
 

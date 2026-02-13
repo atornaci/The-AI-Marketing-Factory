@@ -1,0 +1,30 @@
+# =========================================
+# Caddy Reverse Proxy Configuration
+# Auto SSL via Let's Encrypt
+# =========================================
+
+# Replace 'n8n.yourdomain.com' with your actual domain
+n8n.yourdomain.com {
+    reverse_proxy n8n:5678
+
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+    }
+
+    # Enable CORS for frontend webhook calls
+    @cors_preflight method OPTIONS
+    handle @cors_preflight {
+        header Access-Control-Allow-Origin "https://the-ai-marketing-factory.vercel.app"
+        header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type, Authorization"
+        header Access-Control-Max-Age "3600"
+        respond "" 204
+    }
+
+    header Access-Control-Allow-Origin "https://the-ai-marketing-factory.vercel.app"
+}
