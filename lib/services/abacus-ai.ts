@@ -21,6 +21,13 @@ const MODELS = {
 // Universal negative prompt pool — appended to every fal.ai image/video request
 const NEGATIVE_PROMPT = 'lowres, bad anatomy, text overlap, distorted UI, cartoon, messy background, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs'
 
+// UGC Authenticity Keywords — makes AI video prompts feel like real creator content
+const UGC_AUTHENTICITY_KEYWORDS = [
+    'smartphone selfie', 'handheld realism', 'raw unfiltered',
+    'TikTok aesthetic', 'real voice', 'micro hand jitters',
+    'trust builder', 'phone selfie', 'natural front-camera look',
+] as const
+
 // Language-specific prompt instructions
 const LANGUAGE_PROMPTS: Record<Language, { name: string; instruction: string; adLang: string }> = {
     tr: { name: 'Turkish', instruction: 'Türkçe yaz. Doğal, günlük konuşma dili kullan.', adLang: 'Türkçe' },
@@ -599,6 +606,7 @@ Respond ONLY with valid JSON.`
         visualDna?: string
         brandPersona?: string
         brandColors?: string
+        scenes?: unknown[]
     }): Promise<{ videoUrl: string; thumbnailUrl: string }> {
         console.log(`[Video] Starting video generation...`)
         console.log(`[Video] Script: ${params.script.length} chars, platform: ${params.platform}`)
@@ -620,7 +628,11 @@ Respond ONLY with valid JSON.`
             || 'A professional, modern-looking presenter'
 
         // Build the video generation prompt
-        const videoPrompt = this.buildVideoPrompt(params.script, influencerDesc as string, settings, params.screenshotUrls, params.visualDna, params.brandPersona, params.brandColors)
+        const videoPrompt = this.buildVideoPrompt(
+            params.script, influencerDesc as string, settings, params.screenshotUrls,
+            params.visualDna, params.brandPersona, params.brandColors,
+            params.influencerProfile, params.scenes as Array<Record<string, unknown>> | undefined
+        )
 
         try {
             // Method 1: Try ChatLLM video generation endpoint
@@ -649,7 +661,28 @@ Respond ONLY with valid JSON.`
     }
 
     /**
-     * Build the video generation prompt for ChatLLM
+     * Build a character reference string from influencer profile
+     * Creates a consistent identity anchor for all video/image prompts
+     */
+    private buildCharacterReference(
+        influencerProfile: Record<string, unknown>
+    ): string {
+        const vp = influencerProfile?.visualProfile as Record<string, string> | undefined
+        const name = (influencerProfile?.name as string) || 'Influencer'
+        const gender = vp?.gender === 'male' ? 'man' : 'woman'
+        const age = vp?.ageRange || '28'
+        const appearance = (influencerProfile?.appearanceDescription as string || '')
+            .replace(/[^a-zA-Z0-9 ,.\-]/g, '')
+            .substring(0, 200)
+        const style = vp?.style || 'casual'
+        const features = vp?.features || ''
+
+        return `Character: @${name.toLowerCase().replace(/\s+/g, '_')} | ${gender}, aged ${age}, ${appearance || style}${features ? `, ${features}` : ''}. Maintain this exact character appearance across ALL scenes for visual consistency.`
+    }
+
+    /**
+     * Build a cinematic video generation prompt
+     * Incorporates: character reference, scene-level cinematography, UGC authenticity, Visual DNA
      */
     private buildVideoPrompt(
         script: string,
@@ -658,34 +691,67 @@ Respond ONLY with valid JSON.`
         screenshotUrls: string[],
         visualDna?: string,
         brandPersona?: string,
-        brandColors?: string
+        brandColors?: string,
+        influencerProfile?: Record<string, unknown>,
+        scenes?: Array<Record<string, unknown>>
     ): string {
         // Extract just the spoken parts (remove stage directions in brackets)
         const spokenScript = script
             .replace(/\[.*?\]/g, '')
             .replace(/\(.*?\)/g, '')
             .trim()
-            .substring(0, 500) // Keep prompt manageable
+            .substring(0, 500)
 
         const screenshotContext = screenshotUrls.length > 0
             ? `\nReference images from the product/app are available. The video should show app screenshots naturally integrated.`
             : ''
 
+        // Build character reference for identity consistency
+        const characterRef = influencerProfile
+            ? this.buildCharacterReference(influencerProfile)
+            : `Character: ${influencerDesc}`
+
+        // Build scene-by-scene cinematography breakdown
+        let sceneBreakdown = ''
+        if (scenes && scenes.length > 0) {
+            sceneBreakdown = '\n\nSCENE-BY-SCENE BREAKDOWN:\n' + scenes.map(scene => {
+                const lens = scene.lens || 'iPhone 15 PRO front-camera (~23mm)'
+                const lighting = scene.lighting || 'natural window light, soft and warm'
+                const performance = scene.performanceDirection || 'warm eye contact with lens'
+                const ugc = (scene.ugcKeywords as string[])?.join(', ') || 'smartphone selfie, handheld realism'
+                return `Scene ${scene.sceneNumber} (${scene.startSecond}s-${scene.endSecond}s):
+  Camera: ${scene.cameraDirection || 'Medium shot'} | Lens: ${lens}
+  Lighting: ${lighting}
+  Performance: ${performance} | Emotion: ${scene.emotion || 'confident'}
+  Visual: ${scene.visualDescription || ''}
+  UGC Feel: ${ugc}`
+            }).join('\n')
+        }
+
+        // UGC authenticity keywords
+        const ugcStr = UGC_AUTHENTICITY_KEYWORDS.slice(0, 6).join(', ')
+
         return `Create a ${settings.maxDuration}-second marketing video in ${settings.aspectRatio} format.
 
-PRESENTER: ${influencerDesc}
-The presenter is a professional content creator speaking directly to the camera in an engaging, authentic way.
+${characterRef}
+The presenter is speaking directly to the camera in an engaging, authentic way — like a real person sharing a genuine experience.
 
 SCRIPT/STORY:
 ${spokenScript}
+${sceneBreakdown}
 
-STYLE: Modern social media marketing video. Dynamic camera angles, smooth transitions, text overlays highlighting key points. Professional lighting, vibrant colors.
+CINEMATOGRAPHY:
+- Default Lens & DOF: iPhone 15 PRO front-camera (~23mm), deep depth of field, background slightly soft
+- Default Lighting: bright window/light from the side (Rembrandt style), creating crisp exposure on face
+- Framing: centered, medium shot as baseline, close-up for hooks and CTAs
+
+UGC AUTHENTICITY:
+${ugcStr}
+The video must look like real creator content — NOT like a corporate ad. Handheld feel, natural expressions, genuine emotion.
 ${visualDna ? `\nVISUAL DNA (match this aesthetic): ${visualDna}` : ''}
 ${brandPersona ? `\nBRAND PERSONA (match this environment): ${brandPersona}` : ''}
 ${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}
-${screenshotContext}
-
-The video should feel authentic and organic, like a real person sharing their genuine experience — not like a corporate ad.`
+${screenshotContext}`
     }
 
     /**
@@ -1187,8 +1253,7 @@ Respond ONLY with valid JSON array.`
         const duration = platform === 'linkedin' ? 60 : platform === 'tiktok' ? 30 : 45
         const bestHook = hooks.find(h => h.estimatedImpact === 'high') || hooks[0]
 
-        const prompt = `
-You are a professional video director creating a STORYBOARD for a ${platform} marketing video.
+        const prompt = `You are a professional video director creating a STORYBOARD for a ${platform} marketing video.
 Total duration: ${duration} seconds.
 
 Project: ${analysis.name}
@@ -1197,10 +1262,13 @@ Value Proposition: ${analysis.valueProposition}
 Features/Keywords: ${analysis.keywords?.join(', ')}
 Brand Voice: ${constitution.brandVoice}
 Brand Colors: ${constitution.visualGuidelines?.colorPalette?.join(', ')}
+${constitution.visualDna ? `Visual DNA: ${constitution.visualDna}` : ''}
+${constitution.brandPersona ? `Brand Persona: ${constitution.brandPersona}` : ''}
 
 Selected Hook: "${bestHook.text}"
 
 Create a scene-by-scene storyboard following Hook → Problem → Solution → CTA structure.
+This should feel like a real creator making UGC (User Generated Content) — NOT a corporate ad.
 
 For EACH scene provide:
 - sceneNumber, startSecond, endSecond
@@ -1209,10 +1277,14 @@ For EACH scene provide:
 - screenContent: What app/website screenshot to show (if applicable)
 - cameraDirection: Close-up / Medium shot / Wide / Over-shoulder / Screen recording
 - emotion: Character emotional state
+- lens: Camera/lens spec (default: "iPhone 15 PRO front-camera (~23mm)")
+- lighting: Lighting direction (e.g. "bright window/light from side (Rembrandt style)", "warm studio light", "natural daylight")
+- performanceDirection: Acting cues (e.g. "warm eye contact, lean forward, broad hand gestures")
+- ugcKeywords: Array of UGC authenticity tags (e.g. ["smartphone selfie", "handheld realism", "raw unfiltered TikTok aesthetic"])
 
 Also create a problemSolutionMap: which project feature solves which user problem.
 
-IMPORTANT: All text in ${lang.name}.
+IMPORTANT: All narration text in ${lang.name}.
 
 Respond ONLY with valid JSON:
 {
@@ -1222,10 +1294,14 @@ Respond ONLY with valid JSON:
       "startSecond": 0,
       "endSecond": 3,
       "narration": "Hook text",
-      "visualDescription": "Close-up of influencer looking into camera",
+      "visualDescription": "Close-up of influencer looking into camera with a wake-up call expression",
       "screenContent": "",
       "cameraDirection": "Close-up",
-      "emotion": "curious"
+      "emotion": "curious",
+      "lens": "iPhone 15 PRO front-camera (~23mm)",
+      "lighting": "bright window/light from side (Rembrandt style)",
+      "performanceDirection": "looks directly into lens, slight head tilt, eyebrows raised",
+      "ugcKeywords": ["smartphone selfie", "handheld realism", "raw unfiltered"]
     }
   ],
   "problemSolutionMap": [
@@ -1265,21 +1341,33 @@ Respond ONLY with valid JSON.`
                     {
                         sceneNumber: 1, startSecond: 0, endSecond: 3,
                         narration: bestHook.text,
-                        visualDescription: 'Close-up of influencer looking at camera',
+                        visualDescription: 'Close-up of influencer looking at camera with a wake-up call expression',
                         cameraDirection: 'Close-up', emotion: 'excited',
+                        lens: 'iPhone 15 PRO front-camera (~23mm)',
+                        lighting: 'bright window/light from side (Rembrandt style)',
+                        performanceDirection: 'looks directly into lens, eyebrows raised, slight lean forward',
+                        ugcKeywords: ['smartphone selfie', 'handheld realism', 'raw unfiltered'],
                     },
                     {
                         sceneNumber: 2, startSecond: 3, endSecond: Math.floor(duration * 0.7),
                         narration: analysis.valueProposition,
-                        visualDescription: 'Medium shot, influencer showing app on phone',
+                        visualDescription: 'Medium shot, influencer showing app on phone, gesturing enthusiastically',
                         screenContent: analysis.name,
                         cameraDirection: 'Medium shot', emotion: 'enthusiastic',
+                        lens: 'iPhone 15 PRO front-camera (~23mm)',
+                        lighting: 'natural daylight, warm tone',
+                        performanceDirection: 'holds phone at arm length, broad hand gestures, leans forward',
+                        ugcKeywords: ['smartphone selfie', 'TikTok aesthetic', 'trust builder'],
                     },
                     {
                         sceneNumber: 3, startSecond: Math.floor(duration * 0.7), endSecond: duration,
                         narration: 'Hemen deneyin!',
-                        visualDescription: 'Close-up with CTA overlay',
+                        visualDescription: 'Close-up with CTA overlay, genuine smile',
                         cameraDirection: 'Close-up', emotion: 'confident',
+                        lens: 'iPhone 15 PRO front-camera (~23mm)',
+                        lighting: 'bright window/light from side',
+                        performanceDirection: 'warm confident smile, nods, points at camera',
+                        ugcKeywords: ['real voice', 'micro hand jitters', 'natural front-camera look'],
                     },
                 ],
                 totalDuration: duration,

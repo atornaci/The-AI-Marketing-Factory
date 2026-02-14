@@ -19,6 +19,11 @@ export interface StoryboardScene {
     screenContent?: string
     cameraDirection: string
     emotion: string
+    // Advanced cinematography (from tldraw video production)
+    lens?: string               // e.g. "iPhone 15 PRO front-camera (~23mm)"
+    lighting?: string           // e.g. "bright window/light from side (Rembrandt style)"
+    performanceDirection?: string  // e.g. "warm eye contact, broad hand gestures, pointing at camera"
+    ugcKeywords?: string[]      // e.g. ["smartphone selfie", "handheld realism", "raw unfiltered"]
 }
 
 export interface Storyboard {

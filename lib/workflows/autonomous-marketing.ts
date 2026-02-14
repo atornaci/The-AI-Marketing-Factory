@@ -229,6 +229,7 @@ export async function generateVideo(
             visualDna: constitution?.visualDna,
             brandPersona: constitution?.brandPersona,
             brandColors: constitution?.visualGuidelines?.colorPalette?.join(', '),
+            scenes: storyboard?.scenes,
         })
         videoUrl = videoResult.videoUrl
         thumbnailUrl = videoResult.thumbnailUrl
