@@ -116,9 +116,9 @@ export async function createInfluencer(
     report('Generating influencer personality...')
     const profile = await abacusAI.generateInfluencerProfile(analysis, constitution)
 
-    // Step 2: Generate unique avatar image
+    // Step 2: Generate unique avatar image (with Visual DNA for brand-consistent look)
     report('Generating influencer photo...')
-    const avatarUrl = await abacusAI.generateInfluencerAvatar(profile)
+    const avatarUrl = await abacusAI.generateInfluencerAvatar(profile, constitution.visualDna)
 
     // Step 3: Select appropriate voice
     report('Selecting brand voice...')
@@ -226,6 +226,9 @@ export async function generateVideo(
             influencerProfile,
             screenshotUrls,
             platform,
+            visualDna: constitution?.visualDna,
+            brandPersona: constitution?.brandPersona,
+            brandColors: constitution?.visualGuidelines?.colorPalette?.join(', '),
         })
         videoUrl = videoResult.videoUrl
         thumbnailUrl = videoResult.thumbnailUrl

@@ -18,6 +18,9 @@ const MODELS = {
     creative: 'anthropic/claude-sonnet-4-20250514',    // Better creative writing & storytelling
 } as const
 
+// Universal negative prompt pool — appended to every fal.ai image/video request
+const NEGATIVE_PROMPT = 'lowres, bad anatomy, text overlap, distorted UI, cartoon, messy background, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs'
+
 // Language-specific prompt instructions
 const LANGUAGE_PROMPTS: Record<Language, { name: string; instruction: string; adLang: string }> = {
     tr: { name: 'Turkish', instruction: 'Türkçe yaz. Doğal, günlük konuşma dili kullan.', adLang: 'Türkçe' },
@@ -55,6 +58,8 @@ interface MarketingConstitution {
         mood: string
         style: string
     }
+    brandPersona?: string   // "If this brand were a person" — environment, clothing, energy
+    visualDna?: string      // fal.ai keywords: "cyberpunk, 8k, clinical white, soft bokeh..."
 }
 
 interface VideoScript {
@@ -228,7 +233,9 @@ Respond with a JSON object (all values in ${lang.name}):
     "colorPalette": ["#color1", "#color2"],
     "mood": "Visual mood in ${lang.name}",
     "style": "Visual style in ${lang.name}"
-  }
+  },
+  "brandPersona": "Bu marka bir insan olsaydı nasıl giyinirdi, nasıl bir ortamda çalışırdı? Detaylı bir karakter tanımı yaz. Örn: 'Minimalist ofiste çalışan, şık giyinen, sakin ama kararlı bir profesyonel' veya 'Şefkatli bir ev ortamında, pastel renkli yumuşak kıyafetler giyen, sıcak gülümsemesiyle güven veren bir anne figürü'",
+  "visualDna": "fal.ai görsel üretimi için kullanılacak İngilizce anahtar kelimeler. Markanın ruhunu yansıtan teknik ve stilistik terimler. Örn: 'photorealistic, 8k UHD, warm studio lighting, clean white environment, soft bokeh, professional vibes' veya 'cyberpunk aesthetic, neon glow, dark moody, cinematic lighting, tech lab environment'"
 }
 
 Respond ONLY with valid JSON.`
@@ -251,6 +258,8 @@ Respond ONLY with valid JSON.`
                     mood: 'Modern and dynamic',
                     style: 'Clean and professional',
                 },
+                brandPersona: 'Modern, profesyonel ve yenilikçi bir karakter',
+                visualDna: 'photorealistic, 8k UHD, clean modern environment, soft studio lighting, professional vibes',
             }
         }
     }
@@ -513,7 +522,7 @@ Respond ONLY with valid JSON.`
      * Generate a unique AI influencer avatar/headshot using fal.ai
      * Uses flux-pro/v1.1 model for high-quality portrait generation
      */
-    async generateInfluencerAvatar(profile: InfluencerProfile): Promise<string> {
+    async generateInfluencerAvatar(profile: InfluencerProfile, visualDna?: string): Promise<string> {
         try {
             const falKey = process.env.FAL_KEY
             if (!falKey) {
@@ -540,7 +549,8 @@ Respond ONLY with valid JSON.`
             const expr = expressions[Math.floor(Math.random() * expressions.length)]
 
             const detailPart = features || appearance || style
-            const promptText = `photorealistic portrait headshot of a ${hair} ${gender} aged ${age}, ${detailPart}, ${bg} background, studio lighting, ${expr}, 8k uhd`
+            const dnaKeywords = visualDna ? `, ${visualDna}` : ''
+            const promptText = `photorealistic portrait headshot of a ${hair} ${gender} aged ${age}, ${detailPart}, ${bg} background, studio lighting, ${expr}, 8k uhd${dnaKeywords}`
 
             console.log(`[Influencer] Avatar prompt: ${promptText}`)
 
@@ -552,6 +562,7 @@ Respond ONLY with valid JSON.`
                 },
                 body: JSON.stringify({
                     prompt: promptText,
+                    negative_prompt: NEGATIVE_PROMPT,
                     image_size: { width: 512, height: 512 },
                     num_images: 1,
                     safety_tolerance: '2',
@@ -585,6 +596,9 @@ Respond ONLY with valid JSON.`
         influencerProfile: Record<string, unknown>
         screenshotUrls: string[]
         platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube'
+        visualDna?: string
+        brandPersona?: string
+        brandColors?: string
     }): Promise<{ videoUrl: string; thumbnailUrl: string }> {
         console.log(`[Video] Starting video generation...`)
         console.log(`[Video] Script: ${params.script.length} chars, platform: ${params.platform}`)
@@ -606,7 +620,7 @@ Respond ONLY with valid JSON.`
             || 'A professional, modern-looking presenter'
 
         // Build the video generation prompt
-        const videoPrompt = this.buildVideoPrompt(params.script, influencerDesc as string, settings, params.screenshotUrls)
+        const videoPrompt = this.buildVideoPrompt(params.script, influencerDesc as string, settings, params.screenshotUrls, params.visualDna, params.brandPersona, params.brandColors)
 
         try {
             // Method 1: Try ChatLLM video generation endpoint
@@ -619,7 +633,7 @@ Respond ONLY with valid JSON.`
 
             // Method 2: Fallback — try RouteLLM with image generation for thumbnail
             console.log(`[Video] ChatLLM video gen returned no URL, generating thumbnail...`)
-            const thumbnailUrl = await this.generateVideoThumbnail(params.script, influencerDesc as string, params.platform)
+            const thumbnailUrl = await this.generateVideoThumbnail(params.script, influencerDesc as string, params.platform, params.visualDna)
 
             return {
                 videoUrl: '',
@@ -641,7 +655,10 @@ Respond ONLY with valid JSON.`
         script: string,
         influencerDesc: string,
         settings: { aspectRatio: string; maxDuration: number },
-        screenshotUrls: string[]
+        screenshotUrls: string[],
+        visualDna?: string,
+        brandPersona?: string,
+        brandColors?: string
     ): string {
         // Extract just the spoken parts (remove stage directions in brackets)
         const spokenScript = script
@@ -663,6 +680,9 @@ SCRIPT/STORY:
 ${spokenScript}
 
 STYLE: Modern social media marketing video. Dynamic camera angles, smooth transitions, text overlays highlighting key points. Professional lighting, vibrant colors.
+${visualDna ? `\nVISUAL DNA (match this aesthetic): ${visualDna}` : ''}
+${brandPersona ? `\nBRAND PERSONA (match this environment): ${brandPersona}` : ''}
+${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}
 ${screenshotContext}
 
 The video should feel authentic and organic, like a real person sharing their genuine experience — not like a corporate ad.`
@@ -870,7 +890,8 @@ The video should feel authentic and organic, like a real person sharing their ge
     private async generateVideoThumbnail(
         script: string,
         influencerDesc: string,
-        platform: string
+        platform: string,
+        visualDna?: string
     ): Promise<string> {
         try {
             const falKey = process.env.FAL_KEY
@@ -881,7 +902,8 @@ The video should feel authentic and organic, like a real person sharing their ge
             const width = platform === 'linkedin' ? 1024 : 512
             const height = platform === 'linkedin' ? 576 : 910
 
-            const promptText = `${orientation} video thumbnail, ${topic}, professional marketing, vibrant colors, clean design`
+            const dnaKeywords = visualDna ? `, ${visualDna}` : ', vibrant colors, clean design'
+            const promptText = `${orientation} video thumbnail, ${topic}, professional marketing${dnaKeywords}`
 
             const response = await fetch('https://queue.fal.run/fal-ai/flux-pro/v1.1', {
                 method: 'POST',
@@ -891,6 +913,7 @@ The video should feel authentic and organic, like a real person sharing their ge
                 },
                 body: JSON.stringify({
                     prompt: promptText,
+                    negative_prompt: NEGATIVE_PROMPT,
                     image_size: { width, height },
                     num_images: 1,
                     safety_tolerance: '2',
@@ -1276,23 +1299,32 @@ Respond ONLY with valid JSON.`
         brandContext: string,
         brandColors: string[],
         imageType: string,
-        platform: string
+        platform: string,
+        visualDna?: string,
+        brandPersona?: string
     ): Promise<string> {
         const colorStr = brandColors.length > 0 ? brandColors.join(', ') : 'vibrant, modern'
-        const systemPrompt = `You are a professional graphic designer creating marketing visuals.
-Generate a single, detailed image generation prompt in English based on the user's request.
+        const dnaSection = visualDna
+            ? `\n- Visual DNA (incorporate these stylistic keywords into the prompt): ${visualDna}`
+            : ''
+        const personaSection = brandPersona
+            ? `\n- Brand Persona (match this environment/mood): ${brandPersona}`
+            : ''
+        const systemPrompt = `You are an expert prompt engineer specializing in AI image generation.
+Generate a single, highly detailed image generation prompt in English based on the user's request.
 The prompt must be:
-- Under 500 characters
+- Under 600 characters
 - English only, no special characters
-- Professional marketing quality
+- Professional marketing quality, photorealistic
 - Include the brand color scheme: ${colorStr}
-- Optimized for ${platform} ${imageType}
+- Optimized for ${platform} ${imageType}${dnaSection}${personaSection}
+- Output format: 'A high-end, photorealistic [SUBJECT] in a [ENVIRONMENT], [LIGHTING_STYLE], [TECHNICAL_SPECS]'
 Brand context: ${brandContext}
 Return ONLY the prompt text, nothing else.`
 
         try {
-            const enhanced = await this.callLLM(userPrompt, systemPrompt, MODELS.creative, 300)
-            return enhanced.replace(/[^a-zA-Z0-9 ,.!?\-]/g, '').substring(0, 500)
+            const enhanced = await this.callLLM(userPrompt, systemPrompt, MODELS.creative, 400)
+            return enhanced.replace(/[^a-zA-Z0-9 ,.!?\-]/g, '').substring(0, 600)
         } catch {
             return userPrompt.replace(/[^a-zA-Z0-9 ,.!?\-]/g, '').substring(0, 300)
         }
@@ -1308,8 +1340,10 @@ Return ONLY the prompt text, nothing else.`
         platform: string
         brandColors?: string[]
         brandContext?: string
+        visualDna?: string
+        brandPersona?: string
     }): Promise<{ imageUrl: string; width: number; height: number; enhancedPrompt: string }> {
-        const { prompt, imageType, platform, brandColors = [], brandContext = '' } = params
+        const { prompt, imageType, platform, brandColors = [], brandContext = '', visualDna, brandPersona } = params
 
         // Get dimensions for this type/platform combo
         const typeDims = IMAGE_DIMENSIONS[imageType] || IMAGE_DIMENSIONS.custom
@@ -1321,7 +1355,7 @@ Return ONLY the prompt text, nothing else.`
 
         // Enhance the prompt with brand context via LLM
         const enhancedPrompt = await this.generateEnhancedPrompt(
-            prompt, brandContext, brandColors, imageType, platform
+            prompt, brandContext, brandColors, imageType, platform, visualDna, brandPersona
         )
 
         console.log(`[Image] Enhanced prompt: ${enhancedPrompt}`)
@@ -1341,6 +1375,7 @@ Return ONLY the prompt text, nothing else.`
                 },
                 body: JSON.stringify({
                     prompt: enhancedPrompt,
+                    negative_prompt: NEGATIVE_PROMPT,
                     image_size: { width, height },
                     num_images: 1,
                     safety_tolerance: '2',

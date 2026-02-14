@@ -31,14 +31,19 @@ export async function POST(req: NextRequest) {
         // Build brand context
         const brandContext = `${project.name}: ${project.description || project.value_proposition || ''}`
         const brandColors = (project.brand_colors as string[]) || []
+        const constitution = project.marketing_constitution as Record<string, unknown> | undefined
+        const visualDna = (constitution?.visualDna as string) || undefined
+        const brandPersona = (constitution?.brandPersona as string) || undefined
 
-        // Generate the image
+        // Generate the image (with Visual DNA for brand-consistent output)
         const result = await abacusAI.generateMarketingImage({
             prompt,
             imageType,
             platform,
             brandColors: withBrandOverlay ? brandColors : [],
             brandContext,
+            visualDna,
+            brandPersona,
         })
 
         if (!result.imageUrl) {
