@@ -2,7 +2,7 @@
 
 import { N8N_ENDPOINTS } from "@/lib/config/n8n";
 
-import { useState, useEffect, use, useCallback } from "react";
+import React, { useState, useEffect, use, useCallback, Component } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -174,7 +174,36 @@ const itemVariants = {
     },
 };
 
-export default function ProjectDetailPage({
+// Error Boundary to capture actual error details
+class ProjectErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error('ProjectPage Error:', error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', fontFamily: 'monospace' }}>
+                    <h1 style={{ color: 'red' }}>⚠️ Project Page Error</h1>
+                    <p><strong>Error:</strong> {this.state.error?.message}</p>
+                    <pre style={{ background: '#f0f0f0', padding: '16px', borderRadius: '8px', overflow: 'auto', fontSize: '12px', whiteSpace: 'pre-wrap' }}>
+                        {this.state.error?.stack}
+                    </pre>
+                    <button onClick={() => window.location.href = '/dashboard'} style={{ marginTop: '16px', padding: '8px 16px', cursor: 'pointer' }}>← Back to Dashboard</button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+function ProjectDetailPageInner({
     params,
 }: {
     params: Promise<{ id: string }>;
@@ -287,7 +316,8 @@ export default function ProjectDetailPage({
                 const imgRes = await fetch(`${N8N_ENDPOINTS.listImages}?projectId=${id}`);
                 if (imgRes.ok) {
                     const imgData = await imgRes.json();
-                    setGeneratedImages(imgData.images || []);
+                    const imgs = imgData.images;
+                    setGeneratedImages(Array.isArray(imgs) ? imgs : []);
                 }
             } catch {
                 // generated_images table may not exist yet
@@ -1976,9 +2006,9 @@ export default function ProjectDetailPage({
 
                             {/* ═══ IMAGE GALLERY ═══ */}
                             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
-                                {generatedImages.filter(img => imageFilter === 'all' || img.image_type === imageFilter).length > 0 ? (
+                                {(Array.isArray(generatedImages) ? generatedImages : []).filter(img => imageFilter === 'all' || img.image_type === imageFilter).length > 0 ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {generatedImages
+                                        {(Array.isArray(generatedImages) ? generatedImages : [])
                                             .filter(img => imageFilter === 'all' || img.image_type === imageFilter)
                                             .map((img, index) => (
                                                 <motion.div
@@ -2094,5 +2124,13 @@ export default function ProjectDetailPage({
                 </motion.div>
             </main >
         </div >
+    );
+}
+
+export default function ProjectDetailPage(props: { params: Promise<{ id: string }> }) {
+    return (
+        <ProjectErrorBoundary>
+            <ProjectDetailPageInner {...props} />
+        </ProjectErrorBoundary>
     );
 }

@@ -131,15 +131,22 @@ function DashboardContent() {
                 .eq("user_id", user.id)
                 .order("created_at", { ascending: false });
 
-            const { data: videosData } = await supabase
-                .from("videos")
-                .select("project_id")
-                .eq("user_id", user.id);
+            // videos and ai_influencers don't have user_id — filter by project_id
+            const projectIds = (projectsData || []).map((p: { id: string }) => p.id);
 
-            const { data: influencersData } = await supabase
-                .from("ai_influencers")
-                .select("id, name, project_id")
-                .eq("user_id", user.id);
+            const { data: videosData } = projectIds.length > 0
+                ? await supabase
+                    .from("videos")
+                    .select("project_id")
+                    .in("project_id", projectIds)
+                : { data: [] as { project_id: string }[] };
+
+            const { data: influencersData } = projectIds.length > 0
+                ? await supabase
+                    .from("ai_influencers")
+                    .select("id, name, project_id")
+                    .in("project_id", projectIds)
+                : { data: [] as { id: string; name: string; project_id: string }[] };
 
             const videoCounts: Record<string, number> = {};
             videosData?.forEach((v) => {

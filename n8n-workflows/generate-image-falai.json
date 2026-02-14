@@ -1,0 +1,213 @@
+{
+    "id": "Dx8kyh4pHeSzFC8q",
+    "name": "Generate Image",
+    "active": true,
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "generate-image",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "id": "999c0f3a-d05b-43c6-b7db-e01495be1dbe",
+            "webhookId": "4601d8fa-7fbf-455f-91a4-5802afb88ab0"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://openrouter.ai/api/v1/chat/completions",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer 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"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ messages: [{ role: 'system', content: 'You are a marketing visual prompt expert. Enhance this prompt for AI image generation. Add professional marketing details, brand consistency elements, and visual composition guidance. Output ONLY the enhanced prompt text, nothing else.' }, { role: 'user', content: $json.body.prompt }], model: 'anthropic/claude-3.5-sonnet' }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "name": "Enhance Prompt",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                208,
+                0
+            ],
+            "id": "a7eacb0d-0ec0-4d9e-acfc-059123381647"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://fal.run/fal-ai/flux-pro/v1.1",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ prompt: $json.choices[0].message.content, image_size: { width: $('Webhook').item.json.body.width || 1080, height: $('Webhook').item.json.body.height || 1080 }, num_images: 1, output_format: 'png', enable_safety_checker: true }) }}",
+                "options": {
+                    "timeout": 120000
+                }
+            },
+            "name": "Generate Image",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                400,
+                0
+            ],
+            "id": "784242e2-6715-4c04-b31b-1cbe95336384",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "YeRfJbo7scuR2NR1",
+                    "name": "fal.ai"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "tableId": "=generated_images",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldName": "project_id",
+                            "fieldValue": "={{ $('Webhook').item.json.body.projectId }}"
+                        },
+                        {
+                            "fieldName": "image_type",
+                            "fieldValue": "={{ $('Webhook').item.json.body.imageType || 'social_post' }}"
+                        },
+                        {
+                            "fieldName": "prompt",
+                            "fieldValue": "={{ $('Enhance Prompt').item.json.choices[0].message.content }}"
+                        },
+                        {
+                            "fieldName": "image_url",
+                            "fieldValue": "={{ $json.images[0].url }}"
+                        },
+                        {
+                            "fieldName": "width",
+                            "fieldValue": "={{ $('Webhook').item.json.body.width || 1080 }}"
+                        },
+                        {
+                            "fieldName": "height",
+                            "fieldValue": "={{ $('Webhook').item.json.body.height || 1080 }}"
+                        },
+                        {
+                            "fieldName": "platform",
+                            "fieldValue": "={{ $('Webhook').item.json.body.platform || 'instagram' }}"
+                        },
+                        {
+                            "fieldName": "status",
+                            "fieldValue": "ready"
+                        }
+                    ]
+                }
+            },
+            "name": "Save to Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                608,
+                0
+            ],
+            "id": "7d35d08f-37e6-4ef3-b096-a38be9402628",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "SwzcBWMsNjByTuiA",
+                    "name": "Supabase APISupabase APISupabase account 3"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: true, image: { url: $('Generate Image').item.json.images[0].url, width: $('Webhook').item.json.body.width || 1080, height: $('Webhook').item.json.body.height || 1080 } }) }}",
+                "options": {}
+            },
+            "name": "Respond",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                800,
+                0
+            ],
+            "id": "71a58aea-2332-4909-a1e7-c3a1ae87b5fa"
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Enhance Prompt",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Enhance Prompt": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Image",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Image": {
+            "main": [
+                [
+                    {
+                        "node": "Save to Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Save to Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Respond",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    }
+}
