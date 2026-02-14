@@ -1,0 +1,368 @@
+{
+    "name": "Generate Video",
+    "active": true,
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "generate-video",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "id": "vid-webhook-001",
+            "webhookId": "vid-wh-gen-video-001"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://openrouter.ai/api/v1/chat/completions",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer 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"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ messages: [{ role: 'system', content: 'You are a cinematic video prompt expert for AI video generation (Minimax Video). Create rich, detailed visual descriptions that will produce stunning short marketing videos. Focus on: camera movements (dolly, crane, tracking shots), cinematic lighting, product/brand placement, professional atmosphere, and emotional storytelling. The output should describe a single continuous 5-second shot. Output ONLY the enhanced prompt text, maximum 500 characters. No quotes, no formatting, no explanations.' }, { role: 'user', content: 'Create a video prompt for: ' + $json.body.prompt + '. Platform: ' + ($json.body.platform || 'instagram') + '. Brand: ' + ($json.body.brandName || 'product') }], model: 'anthropic/claude-3.5-sonnet' }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "name": "Enhance Prompt",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                220,
+                0
+            ],
+            "id": "vid-enhance-001"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://queue.fal.run/fal-ai/minimax-video",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ prompt: $json.choices[0].message.content, prompt_optimizer: true }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "name": "Submit to fal.ai",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                440,
+                0
+            ],
+            "id": "vid-submit-001",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "YeRfJbo7scuR2NR1",
+                    "name": "fal.ai"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extract request_id and URLs from queue submission response\nconst data = $input.item.json;\nconst requestId = data.request_id;\nconst statusUrl = data.status_url || `https://queue.fal.run/fal-ai/minimax-video/requests/${requestId}/status`;\nconst resultUrl = data.response_url || `https://queue.fal.run/fal-ai/minimax-video/requests/${requestId}`;\n\nreturn [{ json: { request_id: requestId, status_url: statusUrl, result_url: resultUrl } }];"
+            },
+            "name": "Extract Request ID",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                660,
+                0
+            ],
+            "id": "vid-extract-001"
+        },
+        {
+            "parameters": {
+                "amount": 10,
+                "unit": "seconds"
+            },
+            "name": "Wait 10s",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [
+                880,
+                0
+            ],
+            "id": "vid-wait-001"
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $('Extract Request ID').item.json.status_url }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {
+                    "timeout": 15000
+                }
+            },
+            "name": "Check Status",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1100,
+                0
+            ],
+            "id": "vid-status-001",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "YeRfJbo7scuR2NR1",
+                    "name": "fal.ai"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.status }}",
+                            "value2": "COMPLETED"
+                        }
+                    ]
+                }
+            },
+            "name": "Is Complete?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                1320,
+                0
+            ],
+            "id": "vid-if-001"
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $('Extract Request ID').item.json.result_url }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "name": "Get Result",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1540,
+                0
+            ],
+            "id": "vid-result-001",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "YeRfJbo7scuR2NR1",
+                    "name": "fal.ai"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "tableId": "=videos",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldName": "project_id",
+                            "fieldValue": "={{ $('Webhook').item.json.body.projectId }}"
+                        },
+                        {
+                            "fieldName": "platform",
+                            "fieldValue": "={{ $('Webhook').item.json.body.platform || 'instagram' }}"
+                        },
+                        {
+                            "fieldName": "title",
+                            "fieldValue": "={{ $('Webhook').item.json.body.title || 'AI Generated Video' }}"
+                        },
+                        {
+                            "fieldName": "script",
+                            "fieldValue": "={{ $('Enhance Prompt').item.json.choices[0].message.content }}"
+                        },
+                        {
+                            "fieldName": "video_url",
+                            "fieldValue": "={{ $json.video.url }}"
+                        },
+                        {
+                            "fieldName": "status",
+                            "fieldValue": "ready"
+                        },
+                        {
+                            "fieldName": "duration_seconds",
+                            "fieldValue": "5"
+                        }
+                    ]
+                }
+            },
+            "name": "Save to Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1760,
+                0
+            ],
+            "id": "vid-save-001",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "SwzcBWMsNjByTuiA",
+                    "name": "Supabase APISupabase APISupabase account 3"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: true, video: { url: $('Get Result').item.json.video.url, platform: $('Webhook').item.json.body.platform || 'instagram' } }) }}",
+                "options": {}
+            },
+            "name": "Respond",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1980,
+                0
+            ],
+            "id": "vid-respond-001"
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Enhance Prompt",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Enhance Prompt": {
+            "main": [
+                [
+                    {
+                        "node": "Submit to fal.ai",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Submit to fal.ai": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Request ID",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Request ID": {
+            "main": [
+                [
+                    {
+                        "node": "Wait 10s",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Wait 10s": {
+            "main": [
+                [
+                    {
+                        "node": "Check Status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Status": {
+            "main": [
+                [
+                    {
+                        "node": "Is Complete?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is Complete?": {
+            "main": [
+                [
+                    {
+                        "node": "Get Result",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Wait 10s",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Result": {
+            "main": [
+                [
+                    {
+                        "node": "Save to Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Save to Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Respond",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1",
+        "executionTimeout": 600
+    }
+}

@@ -404,13 +404,16 @@ function ProjectDetailPageInner({
         setGenStep("Video üretimi başlatılıyor...");
         setGenError("");
 
-        // Progress animation while API works
+        // Progress animation while fal.ai works (video gen takes 2-5 min)
         const steps = [
-            { progress: 15, label: "Senaryo yazılıyor..." },
-            { progress: 35, label: "AI ile içerik oluşturuluyor..." },
-            { progress: 55, label: "Ses üretiliyor..." },
-            { progress: 70, label: "AI Influencer render ediliyor..." },
-            { progress: 85, label: "Ekran görüntüleri ekleniyor..." },
+            { progress: 10, label: "Video prompt hazırlanıyor..." },
+            { progress: 25, label: "AI ile prompt güçlendiriliyor..." },
+            { progress: 40, label: "fal.ai'ya gönderiliyor..." },
+            { progress: 55, label: "Minimax Video render ediyor..." },
+            { progress: 65, label: "Video oluşturuluyor..." },
+            { progress: 75, label: "Render devam ediyor..." },
+            { progress: 85, label: "Son dokunuşlar yapılıyor..." },
+            { progress: 90, label: "Video kaydediliyor..." },
         ];
 
         let currentStep = 0;
@@ -420,19 +423,28 @@ function ProjectDetailPageInner({
                 setGenStep(steps[currentStep].label);
                 currentStep++;
             }
-        }, 4000);
+        }, 15000);
 
         try {
-            const response = await fetch("/api/workflows/generate-video", {
+            // Build video prompt from project data
+            const videoPrompt = `Create a ${platform} marketing video for "${project?.name || "product"}". ${project?.description || ""}. Value proposition: ${project?.value_proposition || "innovative solution"}`;
+
+            const response = await fetch(N8N_ENDPOINTS.generateVideo, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ projectId: id, platform }),
+                body: JSON.stringify({
+                    projectId: id,
+                    platform,
+                    prompt: videoPrompt,
+                    brandName: project?.name || "Brand",
+                    title: `${project?.name || "Product"} - ${platform} Video`,
+                }),
             });
 
             clearInterval(progressInterval);
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.error || "Video üretilemedi");
             }
 
