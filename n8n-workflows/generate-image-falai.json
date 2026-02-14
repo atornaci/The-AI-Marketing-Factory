@@ -56,7 +56,7 @@
         {
             "parameters": {
                 "method": "POST",
-                "url": "https://fal.run/fal-ai/flux-pro/v1.1",
+                "url": "https://fal.run/fal-ai/nano-banana-pro",
                 "authentication": "genericCredentialType",
                 "genericAuthType": "httpHeaderAuth",
                 "sendHeaders": true,
@@ -70,7 +70,7 @@
                 },
                 "sendBody": true,
                 "specifyBody": "json",
-                "jsonBody": "={{ JSON.stringify({ prompt: $json.choices[0].message.content, image_size: { width: $('Webhook').item.json.body.width || 1080, height: $('Webhook').item.json.body.height || 1080 }, num_images: 1, output_format: 'png', enable_safety_checker: true }) }}",
+                "jsonBody": "={{ JSON.stringify({ prompt: $json.choices[0].message.content, aspect_ratio: ($('Webhook').item.json.body.width || 1080) > ($('Webhook').item.json.body.height || 1080) ? '16:9' : ($('Webhook').item.json.body.width || 1080) === ($('Webhook').item.json.body.height || 1080) ? '1:1' : '9:16', resolution: '1K', num_images: 1, output_format: 'png', safety_tolerance: '2' }) }}",
                 "options": {
                     "timeout": 120000
                 }

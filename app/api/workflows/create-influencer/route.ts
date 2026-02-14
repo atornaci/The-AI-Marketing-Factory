@@ -170,12 +170,12 @@ Respond with ONLY valid JSON (no markdown formatting):
 
         const appearance = (profile.appearanceDescription || '').substring(0, 150)
         const dnaKeywords = visualDna ? `, ${visualDna}` : ''
-        const avatarPrompt = `Professional photorealistic portrait headshot of a ${genderWord} aged ${age}, ${appearance || 'stylish and professional'}, clean studio background, soft lighting, warm confident expression, high-end corporate headshot style, 8k uhd, sharp focus${dnaKeywords}`
+        const avatarPrompt = `Professional photorealistic portrait headshot of a ${genderWord} aged ${age}, ${appearance || 'stylish and professional'}, clean studio background, soft lighting, warm confident expression, high-end corporate headshot style, 8k uhd, sharp focus${dnaKeywords}. Avoid: lowres, bad anatomy, text overlap, distorted UI, cartoon, messy background, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs`
 
         let avatarUrl = ''
         try {
             if (FAL_KEY) {
-                const falResponse = await fetch('https://fal.run/fal-ai/flux-pro/v1.1', {
+                const falResponse = await fetch('https://fal.run/fal-ai/nano-banana-pro', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -183,11 +183,11 @@ Respond with ONLY valid JSON (no markdown formatting):
                     },
                     body: JSON.stringify({
                         prompt: avatarPrompt,
-                        negative_prompt: 'lowres, bad anatomy, text overlap, distorted UI, cartoon, messy background, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs',
-                        image_size: { width: 512, height: 512 },
+                        aspect_ratio: '1:1',
+                        resolution: '1K',
                         num_images: 1,
                         output_format: 'png',
-                        enable_safety_checker: true,
+                        safety_tolerance: '2',
                     }),
                 })
 

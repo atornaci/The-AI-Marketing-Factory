@@ -28,6 +28,26 @@ const UGC_AUTHENTICITY_KEYWORDS = [
     'trust builder', 'phone selfie', 'natural front-camera look',
 ] as const
 
+// Map pixel dimensions to Nano Banana Pro aspect_ratio enum
+function dimensionsToAspectRatio(w: number, h: number): string {
+    const ratio = w / h
+    if (Math.abs(ratio - 1) < 0.05) return '1:1'
+    if (ratio > 1) {
+        // Landscape
+        if (ratio >= 2.2) return '21:9'
+        if (ratio >= 1.7) return '16:9'
+        if (ratio >= 1.4) return '3:2'
+        if (ratio >= 1.25) return '4:3'
+        return '5:4'
+    }
+    // Portrait
+    if (ratio <= 0.48) return '9:16'
+    if (ratio <= 0.6) return '9:16'
+    if (ratio <= 0.7) return '2:3'
+    if (ratio <= 0.8) return '3:4'
+    return '4:5'
+}
+
 // Language-specific prompt instructions
 const LANGUAGE_PROMPTS: Record<Language, { name: string; instruction: string; adLang: string }> = {
     tr: { name: 'Turkish', instruction: 'Türkçe yaz. Doğal, günlük konuşma dili kullan.', adLang: 'Türkçe' },
@@ -527,7 +547,7 @@ Respond ONLY with valid JSON.`
 
     /**
      * Generate a unique AI influencer avatar/headshot using fal.ai
-     * Uses flux-pro/v1.1 model for high-quality portrait generation
+     * Uses nano-banana-pro model for high-quality portrait generation
      */
     async generateInfluencerAvatar(profile: InfluencerProfile, visualDna?: string): Promise<string> {
         try {
@@ -557,11 +577,11 @@ Respond ONLY with valid JSON.`
 
             const detailPart = features || appearance || style
             const dnaKeywords = visualDna ? `, ${visualDna}` : ''
-            const promptText = `photorealistic portrait headshot of a ${hair} ${gender} aged ${age}, ${detailPart}, ${bg} background, studio lighting, ${expr}, 8k uhd${dnaKeywords}`
+            const promptText = `photorealistic portrait headshot of a ${hair} ${gender} aged ${age}, ${detailPart}, ${bg} background, studio lighting, ${expr}, 8k uhd${dnaKeywords}. Avoid: ${NEGATIVE_PROMPT}`
 
             console.log(`[Influencer] Avatar prompt: ${promptText}`)
 
-            const response = await fetch('https://queue.fal.run/fal-ai/flux-pro/v1.1', {
+            const response = await fetch('https://queue.fal.run/fal-ai/nano-banana-pro', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Key ${falKey}`,
@@ -569,8 +589,8 @@ Respond ONLY with valid JSON.`
                 },
                 body: JSON.stringify({
                     prompt: promptText,
-                    negative_prompt: NEGATIVE_PROMPT,
-                    image_size: { width: 512, height: 512 },
+                    aspect_ratio: '1:1',
+                    resolution: '1K',
                     num_images: 1,
                     safety_tolerance: '2',
                 }),
@@ -969,9 +989,10 @@ ${screenshotContext}`
             const height = platform === 'linkedin' ? 576 : 910
 
             const dnaKeywords = visualDna ? `, ${visualDna}` : ', vibrant colors, clean design'
-            const promptText = `${orientation} video thumbnail, ${topic}, professional marketing${dnaKeywords}`
+            const aspectRatio = platform === 'linkedin' ? '16:9' : '9:16'
+            const promptText = `${orientation} video thumbnail, ${topic}, professional marketing${dnaKeywords}. Avoid: ${NEGATIVE_PROMPT}`
 
-            const response = await fetch('https://queue.fal.run/fal-ai/flux-pro/v1.1', {
+            const response = await fetch('https://queue.fal.run/fal-ai/nano-banana-pro', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Key ${falKey}`,
@@ -979,8 +1000,8 @@ ${screenshotContext}`
                 },
                 body: JSON.stringify({
                     prompt: promptText,
-                    negative_prompt: NEGATIVE_PROMPT,
-                    image_size: { width, height },
+                    aspect_ratio: aspectRatio,
+                    resolution: '1K',
                     num_images: 1,
                     safety_tolerance: '2',
                 }),
@@ -1419,7 +1440,7 @@ Return ONLY the prompt text, nothing else.`
     }
 
     /**
-     * Generate a marketing image using fal.ai (flux-pro/v1.1)
+     * Generate a marketing image using fal.ai (nano-banana-pro)
      * Supports: static_post, carousel_slide, thumbnail, story, banner, custom
      */
     async generateMarketingImage(params: {
@@ -1455,16 +1476,19 @@ Return ONLY the prompt text, nothing else.`
         }
 
         try {
-            const response = await fetch('https://queue.fal.run/fal-ai/flux-pro/v1.1', {
+            const aspectRatio = dimensionsToAspectRatio(width, height)
+            const fullPrompt = `${enhancedPrompt}. Avoid: ${NEGATIVE_PROMPT}`
+
+            const response = await fetch('https://queue.fal.run/fal-ai/nano-banana-pro', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Key ${falKey}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    prompt: enhancedPrompt,
-                    negative_prompt: NEGATIVE_PROMPT,
-                    image_size: { width, height },
+                    prompt: fullPrompt,
+                    aspect_ratio: aspectRatio,
+                    resolution: '1K',
                     num_images: 1,
                     safety_tolerance: '2',
                 }),
