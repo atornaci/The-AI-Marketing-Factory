@@ -1894,19 +1894,23 @@ function ProjectDetailPageInner({
                                                                     </Badge>
                                                                 )}
                                                                 <button
-                                                                    onClick={(e) => {
+                                                                    onClick={async (e) => {
                                                                         e.stopPropagation()
-                                                                        fetch(`${N8N_ENDPOINTS.deleteVideo}?id=${video.id}`, { method: 'DELETE' })
-                                                                            .then(res => {
-                                                                                if (res.ok) {
-                                                                                    setVideos(prev => prev.filter(v => v.id !== video.id))
-                                                                                } else {
-                                                                                    alert('Video silinemedi. Lütfen tekrar deneyin.')
-                                                                                }
-                                                                            })
-                                                                            .catch(() => {
-                                                                                alert('Video silme hatası. Lütfen tekrar deneyin.')
-                                                                            })
+                                                                        try {
+                                                                            const { error } = await supabase
+                                                                                .from('videos')
+                                                                                .delete()
+                                                                                .eq('id', video.id)
+                                                                            if (!error) {
+                                                                                setVideos(prev => prev.filter(v => v.id !== video.id))
+                                                                            } else {
+                                                                                console.error('Video delete error:', error)
+                                                                                alert('Video silinemedi. Lütfen tekrar deneyin.')
+                                                                            }
+                                                                        } catch (err) {
+                                                                            console.error('Video delete error:', err)
+                                                                            alert('Video silme hatası. Lütfen tekrar deneyin.')
+                                                                        }
                                                                     }}
                                                                     className="w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm flex items-center justify-center transition-opacity hover:bg-red-500/80"
                                                                     title="Videoyu Sil"
