@@ -152,9 +152,9 @@ const integrations = [
 ];
 
 const trustedBy = [
-  { name: "Abacus.AI", desc: "Akıllı İçerik Motoru" },
+  { name: "OpenRouter", desc: "Akıllı İçerik Motoru" },
   { name: "ElevenLabs", desc: "Doğal Ses Üretimi" },
-  { name: "OpenAI", desc: "GPT Teknolojisi" },
+  { name: "fal.ai", desc: "Görsel Üretimi" },
 ];
 
 /* ─── Section wrapper with useInView ─── */
@@ -194,8 +194,8 @@ export default function LandingPage() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-            ? "bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
-            : "bg-transparent"
+          ? "bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
+          : "bg-transparent"
           }`}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">

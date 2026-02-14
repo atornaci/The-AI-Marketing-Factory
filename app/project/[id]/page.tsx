@@ -48,6 +48,8 @@ import {
     Copy,
     Trophy,
     Megaphone,
+    Upload,
+    X,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -116,6 +118,7 @@ interface InfluencerData {
     name: string;
     personality?: string;
     backstory?: string;
+    appearance_description?: string;
     voice_id?: string;
     status: string;
     gender?: string;
@@ -153,7 +156,9 @@ interface AssetData {
     id: string;
     asset_type: string;
     file_path: string;
+    file_name?: string;
     original_filename?: string;
+    mime_type?: string;
 }
 
 /* ─── Animation variants ─── */
@@ -233,6 +238,22 @@ function ProjectDetailPageInner({
     const [influencerError, setInfluencerError] = useState("");
     const [selectedGender, setSelectedGender] = useState<"male" | "female">("female");
     const [selectedVideo, setSelectedVideo] = useState<VideoData | null>(null);
+
+    // Manual influencer creation state
+    const [creationMode, setCreationMode] = useState<"ai" | "manual">("ai");
+    const [isSavingManual, setIsSavingManual] = useState(false);
+    const [manualForm, setManualForm] = useState({
+        name: "",
+        gender: "female" as "male" | "female",
+        personality: "",
+        appearance_description: "",
+        backstory: "",
+    });
+
+    // Product upload state
+    const [isUploadingProduct, setIsUploadingProduct] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const productAssets = assets.filter((a) => a.asset_type === "custom");
 
     // Competitor analysis state
     const [isAnalyzingCompetitors, setIsAnalyzingCompetitors] = useState(false);
@@ -394,6 +415,95 @@ function ProjectDetailPageInner({
         }
     };
 
+    /* ─── Create Manual Influencer ─── */
+    const handleCreateManualInfluencer = async () => {
+        if (!manualForm.name.trim()) {
+            setInfluencerError("Influencer adı zorunludur");
+            return;
+        }
+        setIsSavingManual(true);
+        setInfluencerError("");
+        try {
+            const { data, error: insertErr } = await supabase
+                .from("ai_influencers")
+                .insert({
+                    project_id: id,
+                    name: manualForm.name.trim(),
+                    gender: manualForm.gender,
+                    personality: manualForm.personality.trim() || null,
+                    appearance_description: manualForm.appearance_description.trim() || null,
+                    backstory: manualForm.backstory.trim() || null,
+                    status: "ready",
+                })
+                .select()
+                .single();
+
+            if (insertErr) throw insertErr;
+            setInfluencer(data);
+            setManualForm({ name: "", gender: "female", personality: "", appearance_description: "", backstory: "" });
+            setCreationMode("ai");
+        } catch (err) {
+            const errMsg = err instanceof Error ? err.message : "Kaydetme hatası";
+            setInfluencerError(errMsg);
+        } finally {
+            setIsSavingManual(false);
+        }
+    };
+
+    /* ─── Product Upload ─── */
+    const handleProductUpload = async (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        setIsUploadingProduct(true);
+        setUploadProgress(0);
+        try {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const ext = file.name.split(".").pop();
+                const storagePath = `${id}/products/${Date.now()}-${file.name}`;
+
+                setUploadProgress(Math.round(((i + 0.5) / files.length) * 100));
+
+                // Upload to Supabase Storage
+                const { error: uploadErr } = await supabase.storage
+                    .from("project-assets")
+                    .upload(storagePath, file);
+                if (uploadErr) throw uploadErr;
+
+                // Save to assets table
+                const { error: insertErr } = await supabase.from("assets").insert({
+                    project_id: id,
+                    asset_type: "custom",
+                    file_name: file.name,
+                    file_path: storagePath,
+                    file_size: file.size,
+                    mime_type: file.type,
+                });
+                if (insertErr) throw insertErr;
+
+                setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+            }
+            await fetchData();
+        } catch (err) {
+            const errMsg = err instanceof Error ? err.message : "Yükleme hatası";
+            alert(`Ürün yükleme hatası: ${errMsg}`);
+        } finally {
+            setIsUploadingProduct(false);
+            setUploadProgress(0);
+        }
+    };
+
+    const handleDeleteProduct = async (asset: AssetData) => {
+        try {
+            // Delete from storage
+            await supabase.storage.from("project-assets").remove([asset.file_path]);
+            // Delete from table
+            await supabase.from("assets").delete().eq("id", asset.id);
+            await fetchData();
+        } catch (err) {
+            alert("Silme hatası oluştu");
+        }
+    };
+
     /* ─── Generate Video ─── */
     const handleGenerateVideo = async (
         platform: "instagram" | "tiktok" | "linkedin" | "youtube"
@@ -426,10 +536,27 @@ function ProjectDetailPageInner({
         }, 15000);
 
         try {
-            // Build video prompt from project data
-            const videoPrompt = `Create a ${platform} marketing video for "${project?.name || "product"}". ${project?.description || ""}. Value proposition: ${project?.value_proposition || "innovative solution"}`;
+            // Build video prompt from project data + influencer + products
+            let videoPrompt = `Create a ${platform} marketing video for "${project?.name || "product"}". ${project?.description || ""}. Value proposition: ${project?.value_proposition || "innovative solution"}`;
 
-            const response = await fetch(N8N_ENDPOINTS.generateVideo, {
+            // Add influencer context
+            if (influencer) {
+                videoPrompt += `\n\nInfluencer presenting: ${influencer.name}.`;
+                if (influencer.personality) videoPrompt += ` Personality: ${influencer.personality}.`;
+                if (influencer.backstory) videoPrompt += ` Background: ${influencer.backstory}.`;
+                if (influencer.appearance_description) videoPrompt += ` Appearance: ${influencer.appearance_description}.`;
+            }
+
+            // Add product image context
+            const productUrls = productAssets.map((a) => {
+                const { data } = supabase.storage.from("project-assets").getPublicUrl(a.file_path);
+                return data.publicUrl;
+            });
+            if (productUrls.length > 0) {
+                videoPrompt += `\n\nProduct images available: ${productUrls.length} product photo(s). Feature these products prominently in the video.`;
+            }
+
+            const response = await fetch("/api/workflows/generate-video", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -438,6 +565,11 @@ function ProjectDetailPageInner({
                     prompt: videoPrompt,
                     brandName: project?.name || "Brand",
                     title: `${project?.name || "Product"} - ${platform} Video`,
+                    influencerId: influencer?.id || null,
+                    influencerName: influencer?.name || null,
+                    influencerPersonality: influencer?.personality || null,
+                    influencerBackstory: influencer?.backstory || null,
+                    productImageUrls: productUrls,
                 }),
             });
 
@@ -1070,84 +1202,173 @@ function ProjectDetailPageInner({
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="p-8 rounded-2xl border border-dashed border-border/50 text-center h-full flex flex-col items-center justify-center">
-                                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mb-4 overflow-hidden">
-                                                <Image
-                                                    src={selectedGender === "male" ? "/default-influencer-male.png" : "/default-influencer-female.png"}
-                                                    alt="AI Influencer"
-                                                    width={80}
-                                                    height={80}
-                                                    className="w-full h-full object-cover opacity-40"
-                                                />
-                                            </div>
-                                            <h3 className="font-medium mb-1">
-                                                AI Influencer Henüz Yok
+                                        <div className="p-6 rounded-2xl border border-dashed border-border/50 text-center h-full flex flex-col items-center justify-center">
+                                            <h3 className="font-medium mb-3">
+                                                Influencer Oluştur
                                             </h3>
-                                            <p className="text-xs text-muted-foreground mb-4">
-                                                Cinsiyet seçin ve oluşturun
-                                            </p>
 
-                                            {/* Gender Selector */}
-                                            <div className="flex gap-2 mb-4 w-full">
+                                            {/* AI / Manuel Toggle */}
+                                            <div className="flex gap-1 p-1 rounded-lg bg-muted/50 mb-4 w-full">
                                                 <button
-                                                    onClick={() => setSelectedGender("female")}
-                                                    className={`flex-1 p-3 rounded-xl border text-center transition-all ${selectedGender === "female"
-                                                        ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
-                                                        : "border-border/50 hover:border-violet-300/50"
-                                                        }`}
+                                                    onClick={() => setCreationMode("ai")}
+                                                    className={`flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all ${creationMode === "ai" ? "bg-violet-500 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                                                 >
-                                                    <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
-                                                        <Image src="/default-influencer-female.png" alt="Kadın" width={40} height={40} className="w-full h-full object-cover" />
-                                                    </div>
-                                                    <span className="text-xs font-medium">Kadın</span>
+                                                    ✨ AI ile Oluştur
                                                 </button>
                                                 <button
-                                                    onClick={() => setSelectedGender("male")}
-                                                    className={`flex-1 p-3 rounded-xl border text-center transition-all ${selectedGender === "male"
-                                                        ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
-                                                        : "border-border/50 hover:border-violet-300/50"
-                                                        }`}
+                                                    onClick={() => setCreationMode("manual")}
+                                                    className={`flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all ${creationMode === "manual" ? "bg-violet-500 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                                                 >
-                                                    <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
-                                                        <Image src="/default-influencer-male.png" alt="Erkek" width={40} height={40} className="w-full h-full object-cover" />
-                                                    </div>
-                                                    <span className="text-xs font-medium">Erkek</span>
+                                                    ✏️ Manuel Oluştur
                                                 </button>
                                             </div>
 
-                                            <Button
-                                                size="sm"
-                                                onClick={handleCreateInfluencer}
-                                                disabled={isCreatingInfluencer}
-                                                className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 border-0 text-xs"
-                                            >
-                                                {isCreatingInfluencer ? (
-                                                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                                                ) : (
-                                                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                                                )}
-                                                {isCreatingInfluencer ? "Oluşturuluyor..." : "Influencer Oluştur"}
-                                            </Button>
-                                            <AnimatePresence>
-                                                {isCreatingInfluencer && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, height: 0 }}
-                                                        animate={{ opacity: 1, height: "auto" }}
-                                                        exit={{ opacity: 0, height: 0 }}
-                                                        className="mt-5 p-4 rounded-xl bg-muted/30 space-y-3 w-full text-left"
+                                            {creationMode === "ai" ? (
+                                                <>
+                                                    <p className="text-xs text-muted-foreground mb-3">
+                                                        Cinsiyet seçin, AI otomatik oluştursun
+                                                    </p>
+                                                    {/* Gender Selector */}
+                                                    <div className="flex gap-2 mb-4 w-full">
+                                                        <button
+                                                            onClick={() => setSelectedGender("female")}
+                                                            className={`flex-1 p-3 rounded-xl border text-center transition-all ${selectedGender === "female"
+                                                                ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
+                                                                : "border-border/50 hover:border-violet-300/50"
+                                                                }`}
+                                                        >
+                                                            <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
+                                                                <Image src="/default-influencer-female.png" alt="Kadın" width={40} height={40} className="w-full h-full object-cover" />
+                                                            </div>
+                                                            <span className="text-xs font-medium">Kadın</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSelectedGender("male")}
+                                                            className={`flex-1 p-3 rounded-xl border text-center transition-all ${selectedGender === "male"
+                                                                ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
+                                                                : "border-border/50 hover:border-violet-300/50"
+                                                                }`}
+                                                        >
+                                                            <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
+                                                                <Image src="/default-influencer-male.png" alt="Erkek" width={40} height={40} className="w-full h-full object-cover" />
+                                                            </div>
+                                                            <span className="text-xs font-medium">Erkek</span>
+                                                        </button>
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={handleCreateInfluencer}
+                                                        disabled={isCreatingInfluencer}
+                                                        className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 border-0 text-xs"
                                                     >
-                                                        <div className="flex items-center gap-2 text-sm">
-                                                            {influencerError ? (
-                                                                <AlertTriangle className="w-4 h-4 text-red-500" />
-                                                            ) : (
-                                                                <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
-                                                            )}
-                                                            <span>{influencerStep}</span>
+                                                        {isCreatingInfluencer ? (
+                                                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                                        ) : (
+                                                            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                                                        )}
+                                                        {isCreatingInfluencer ? "Oluşturuluyor..." : "AI Influencer Oluştur"}
+                                                    </Button>
+                                                    <AnimatePresence>
+                                                        {isCreatingInfluencer && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: "auto" }}
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                                className="mt-5 p-4 rounded-xl bg-muted/30 space-y-3 w-full text-left"
+                                                            >
+                                                                <div className="flex items-center gap-2 text-sm">
+                                                                    {influencerError ? (
+                                                                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                                                                    ) : (
+                                                                        <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
+                                                                    )}
+                                                                    <span>{influencerStep}</span>
+                                                                </div>
+                                                                <Progress value={influencerProgress} className="h-1.5" />
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </>
+                                            ) : (
+                                                <div className="w-full space-y-3 text-left">
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">İsim *</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Örn: Ayşe Yıldız"
+                                                            value={manualForm.name}
+                                                            onChange={(e) => setManualForm(p => ({ ...p, name: e.target.value }))}
+                                                            className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
+                                                        />
+                                                    </div>
+                                                    {/* Gender */}
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Cinsiyet</label>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => setManualForm(p => ({ ...p, gender: "female" }))}
+                                                                className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-all ${manualForm.gender === "female" ? "border-violet-400 bg-violet-500/10 text-violet-600" : "border-border/50"}`}
+                                                            >
+                                                                👩 Kadın
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setManualForm(p => ({ ...p, gender: "male" }))}
+                                                                className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-all ${manualForm.gender === "male" ? "border-violet-400 bg-violet-500/10 text-violet-600" : "border-border/50"}`}
+                                                            >
+                                                                👨 Erkek
+                                                            </button>
                                                         </div>
-                                                        <Progress value={influencerProgress} className="h-1.5" />
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Kişilik</label>
+                                                        <textarea
+                                                            placeholder="Enerjik, samimi, güven veren..."
+                                                            value={manualForm.personality}
+                                                            onChange={(e) => setManualForm(p => ({ ...p, personality: e.target.value }))}
+                                                            rows={2}
+                                                            className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Görünüş Tanımı</label>
+                                                        <textarea
+                                                            placeholder="30'lu yaşlarında, kahverengi saçlı..."
+                                                            value={manualForm.appearance_description}
+                                                            onChange={(e) => setManualForm(p => ({ ...p, appearance_description: e.target.value }))}
+                                                            rows={2}
+                                                            className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Hikaye / Arka Plan</label>
+                                                        <textarea
+                                                            placeholder="Teknoloji tutkunu bir girişimci..."
+                                                            value={manualForm.backstory}
+                                                            onChange={(e) => setManualForm(p => ({ ...p, backstory: e.target.value }))}
+                                                            rows={3}
+                                                            className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
+                                                        />
+                                                    </div>
+                                                    {influencerError && (
+                                                        <p className="text-xs text-red-500 flex items-center gap-1">
+                                                            <AlertTriangle className="w-3 h-3" /> {influencerError}
+                                                        </p>
+                                                    )}
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={handleCreateManualInfluencer}
+                                                        disabled={isSavingManual || !manualForm.name.trim()}
+                                                        className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 border-0 text-xs"
+                                                    >
+                                                        {isSavingManual ? (
+                                                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                                        ) : (
+                                                            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                                                        )}
+                                                        {isSavingManual ? "Kaydediliyor..." : "Influencer Kaydet"}
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </motion.div>
@@ -1187,60 +1408,157 @@ function ProjectDetailPageInner({
                                     {/* Influencer yok ise büyük oluşturma kartı */}
                                     {!influencer && !isCreatingInfluencer && (
                                         <div className="p-8 rounded-2xl border border-border/50 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
-                                            <h3 className="text-base font-semibold mb-2">AI Influencer Nedir?</h3>
+                                            <h3 className="text-base font-semibold mb-2">Influencer Oluştur</h3>
                                             <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                                                AI Influencer, projeniz için otomatik oluşturulan sanal bir sözcüdür.
-                                                Kişilik profili, ses klonlama ve görsel tasarım ile platformlara özel videolar üretir.
+                                                AI ile otomatik veya manuel olarak kendi influencer&apos;ınızı oluşturun.
                                             </p>
-                                            <div className="grid grid-cols-3 gap-3 mb-5">
-                                                {[
-                                                    { icon: "🧠", title: "Kişilik", desc: "AI ile benzersiz karakter" },
-                                                    { icon: "🎙️", title: "Ses", desc: "ElevenLabs ile klonlama" },
-                                                    { icon: "🎬", title: "Video", desc: "Otomatik içerik üretimi" },
-                                                ].map((item) => (
-                                                    <div key={item.title} className="p-3 rounded-xl bg-background/50 border border-border/50 text-center">
-                                                        <div className="text-xl mb-1">{item.icon}</div>
-                                                        <h4 className="text-xs font-medium">{item.title}</h4>
-                                                        <p className="text-[10px] text-muted-foreground">{item.desc}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            {/* Gender Selector */}
-                                            <p className="text-xs font-medium text-muted-foreground mb-3">Influencer Cinsiyeti Seçin</p>
-                                            <div className="flex gap-3 mb-5">
+
+                                            {/* AI / Manuel Toggle - Large */}
+                                            <div className="flex gap-1 p-1 rounded-xl bg-muted/50 mb-6">
                                                 <button
-                                                    onClick={() => setSelectedGender("female")}
-                                                    className={`flex-1 p-4 rounded-xl border text-center transition-all ${selectedGender === "female"
-                                                        ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
-                                                        : "border-border/50 hover:border-violet-300/50"
-                                                        }`}
+                                                    onClick={() => setCreationMode("ai")}
+                                                    className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${creationMode === "ai" ? "bg-violet-500 text-white shadow-md" : "text-muted-foreground hover:text-foreground"}`}
                                                 >
-                                                    <div className="w-12 h-12 rounded-full mx-auto mb-2 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
-                                                        <Image src="/default-influencer-female.png" alt="Kadın" width={48} height={48} className="w-full h-full object-cover" />
-                                                    </div>
-                                                    <span className="text-xs font-medium">Kadın</span>
+                                                    ✨ AI ile Otomatik Oluştur
                                                 </button>
                                                 <button
-                                                    onClick={() => setSelectedGender("male")}
-                                                    className={`flex-1 p-4 rounded-xl border text-center transition-all ${selectedGender === "male"
-                                                        ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
-                                                        : "border-border/50 hover:border-violet-300/50"
-                                                        }`}
+                                                    onClick={() => setCreationMode("manual")}
+                                                    className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${creationMode === "manual" ? "bg-violet-500 text-white shadow-md" : "text-muted-foreground hover:text-foreground"}`}
                                                 >
-                                                    <div className="w-12 h-12 rounded-full mx-auto mb-2 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
-                                                        <Image src="/default-influencer-male.png" alt="Erkek" width={48} height={48} className="w-full h-full object-cover" />
-                                                    </div>
-                                                    <span className="text-xs font-medium">Erkek</span>
+                                                    ✏️ Manuel Oluştur
                                                 </button>
                                             </div>
 
-                                            <Button
-                                                onClick={handleCreateInfluencer}
-                                                className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 border-0 shadow-lg shadow-violet-500/20"
-                                            >
-                                                <Sparkles className="w-4 h-4 mr-2" />
-                                                AI Influencer Oluştur
-                                            </Button>
+                                            {creationMode === "ai" ? (
+                                                <>
+                                                    <div className="grid grid-cols-3 gap-3 mb-5">
+                                                        {[
+                                                            { icon: "🧠", title: "Kişilik", desc: "AI ile benzersiz karakter" },
+                                                            { icon: "🎙️", title: "Ses", desc: "ElevenLabs ile klonlama" },
+                                                            { icon: "🎬", title: "Video", desc: "Otomatik içerik üretimi" },
+                                                        ].map((item) => (
+                                                            <div key={item.title} className="p-3 rounded-xl bg-background/50 border border-border/50 text-center">
+                                                                <div className="text-xl mb-1">{item.icon}</div>
+                                                                <h4 className="text-xs font-medium">{item.title}</h4>
+                                                                <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-xs font-medium text-muted-foreground mb-3">Influencer Cinsiyeti Seçin</p>
+                                                    <div className="flex gap-3 mb-5">
+                                                        <button
+                                                            onClick={() => setSelectedGender("female")}
+                                                            className={`flex-1 p-4 rounded-xl border text-center transition-all ${selectedGender === "female"
+                                                                ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
+                                                                : "border-border/50 hover:border-violet-300/50"
+                                                                }`}
+                                                        >
+                                                            <div className="w-12 h-12 rounded-full mx-auto mb-2 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
+                                                                <Image src="/default-influencer-female.png" alt="Kadın" width={48} height={48} className="w-full h-full object-cover" />
+                                                            </div>
+                                                            <span className="text-xs font-medium">Kadın</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSelectedGender("male")}
+                                                            className={`flex-1 p-4 rounded-xl border text-center transition-all ${selectedGender === "male"
+                                                                ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
+                                                                : "border-border/50 hover:border-violet-300/50"
+                                                                }`}
+                                                        >
+                                                            <div className="w-12 h-12 rounded-full mx-auto mb-2 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
+                                                                <Image src="/default-influencer-male.png" alt="Erkek" width={48} height={48} className="w-full h-full object-cover" />
+                                                            </div>
+                                                            <span className="text-xs font-medium">Erkek</span>
+                                                        </button>
+                                                    </div>
+                                                    <Button
+                                                        onClick={handleCreateInfluencer}
+                                                        className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 border-0 shadow-lg shadow-violet-500/20"
+                                                    >
+                                                        <Sparkles className="w-4 h-4 mr-2" />
+                                                        AI Influencer Oluştur
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">İsim *</label>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Örn: Ayşe Yıldız"
+                                                                value={manualForm.name}
+                                                                onChange={(e) => setManualForm(p => ({ ...p, name: e.target.value }))}
+                                                                className="w-full px-3 py-2.5 rounded-xl border border-border/50 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Cinsiyet</label>
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={() => setManualForm(p => ({ ...p, gender: "female" }))}
+                                                                    className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${manualForm.gender === "female" ? "border-violet-400 bg-violet-500/10 text-violet-600" : "border-border/50"}`}
+                                                                >
+                                                                    👩 Kadın
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setManualForm(p => ({ ...p, gender: "male" }))}
+                                                                    className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${manualForm.gender === "male" ? "border-violet-400 bg-violet-500/10 text-violet-600" : "border-border/50"}`}
+                                                                >
+                                                                    👨 Erkek
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Kişilik Özellikleri</label>
+                                                        <textarea
+                                                            placeholder="Enerjik, samimi, güven veren, profesyonel..."
+                                                            value={manualForm.personality}
+                                                            onChange={(e) => setManualForm(p => ({ ...p, personality: e.target.value }))}
+                                                            rows={2}
+                                                            className="w-full px-3 py-2.5 rounded-xl border border-border/50 bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Görünüş Tanımı</label>
+                                                        <textarea
+                                                            placeholder="30'lu yaşlarında, kahverengi saçlı, profesyonel giyimli..."
+                                                            value={manualForm.appearance_description}
+                                                            onChange={(e) => setManualForm(p => ({ ...p, appearance_description: e.target.value }))}
+                                                            rows={2}
+                                                            className="w-full px-3 py-2.5 rounded-xl border border-border/50 bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Hikaye / Arka Plan</label>
+                                                        <textarea
+                                                            placeholder="Teknoloji tutkunu bir girişimci, 5 yıllık sektör deneyimi..."
+                                                            value={manualForm.backstory}
+                                                            onChange={(e) => setManualForm(p => ({ ...p, backstory: e.target.value }))}
+                                                            rows={3}
+                                                            className="w-full px-3 py-2.5 rounded-xl border border-border/50 bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
+                                                        />
+                                                    </div>
+                                                    {influencerError && (
+                                                        <p className="text-sm text-red-500 flex items-center gap-1.5">
+                                                            <AlertTriangle className="w-4 h-4" /> {influencerError}
+                                                        </p>
+                                                    )}
+                                                    <Button
+                                                        onClick={handleCreateManualInfluencer}
+                                                        disabled={isSavingManual || !manualForm.name.trim()}
+                                                        className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 border-0 shadow-lg shadow-emerald-500/20"
+                                                    >
+                                                        {isSavingManual ? (
+                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                        ) : (
+                                                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                                                        )}
+                                                        {isSavingManual ? "Kaydediliyor..." : "Influencer Kaydet"}
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -1773,14 +2091,14 @@ function ProjectDetailPageInner({
                                                             </div>
                                                             <p className="text-sm font-medium text-violet-600 mb-1">Video Render Ediliyor...</p>
                                                             <p className="text-xs text-muted-foreground">
-                                                                Abacus AI video oluşturuyor. Bu işlem 1-3 dakika sürebilir.
+                                                                AI video oluşturuyor. Bu işlem 1-3 dakika sürebilir.
                                                             </p>
                                                         </div>
                                                     ) : (
                                                         <div className="rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-800/30 p-4">
                                                             <p className="text-xs text-blue-600 flex items-center gap-2">
                                                                 <Sparkles className="w-4 h-4" />
-                                                                Script ve ses üretimi tamamlandı. Video Abacus AI tarafından render edildikten sonra burada izleyebileceksiniz.
+                                                                Script ve ses üretimi tamamlandı. Video render edildikten sonra burada izleyebileceksiniz.
                                                             </p>
                                                         </div>
                                                     )}
@@ -1889,6 +2207,76 @@ function ProjectDetailPageInner({
 
                         {/* ═══ ASSETS TAB ═══ */}
                         <TabsContent value="assets" className="space-y-6">
+                            {/* ═══ ÜRÜN YÜKLEMESİ ═══ */}
+                            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                                <div className="p-6 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-teal-500/5">
+                                    <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                                        <Upload className="w-5 h-5 text-emerald-500" />
+                                        Ürün Görselleri
+                                    </h3>
+
+                                    {/* Upload Area */}
+                                    <label className="block mb-4 cursor-pointer">
+                                        <div className="p-6 rounded-xl border-2 border-dashed border-emerald-300/30 hover:border-emerald-400/50 bg-emerald-500/5 text-center transition-all hover:bg-emerald-500/10">
+                                            <Upload className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                                            <p className="text-sm font-medium">Ürün fotoğraflarını sürükleyin veya tıklayın</p>
+                                            <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP — Maks. 10MB</p>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            className="hidden"
+                                            onChange={(e) => handleProductUpload(e.target.files)}
+                                            disabled={isUploadingProduct}
+                                        />
+                                    </label>
+
+                                    {/* Upload Progress */}
+                                    {isUploadingProduct && (
+                                        <div className="mb-4">
+                                            <div className="flex items-center gap-2 text-sm mb-1">
+                                                <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                                                <span>Yükleniyor... %{uploadProgress}</span>
+                                            </div>
+                                            <Progress value={uploadProgress} className="h-1.5" />
+                                        </div>
+                                    )}
+
+                                    {/* Product Grid */}
+                                    {productAssets.length > 0 ? (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                            {productAssets.map((asset) => {
+                                                const { data } = supabase.storage.from("project-assets").getPublicUrl(asset.file_path);
+                                                return (
+                                                    <div key={asset.id} className="relative group rounded-xl overflow-hidden border border-border/50 bg-background">
+                                                        <img
+                                                            src={data.publicUrl}
+                                                            alt={asset.file_name || "Ürün"}
+                                                            className="w-full aspect-square object-cover"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                            <button
+                                                                onClick={() => handleDeleteProduct(asset)}
+                                                                className="p-2 rounded-full bg-red-500/80 text-white hover:bg-red-600 transition-colors"
+                                                                title="Sil"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                        <p className="text-[10px] text-muted-foreground truncate px-2 py-1">{asset.file_name || "Ürün"}</p>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground text-center py-2">
+                                            Henüz ürün görseli yüklenmedi. Yüklenen ürünler video üretiminde kullanılacak.
+                                        </p>
+                                    )}
+                                </div>
+                            </motion.div>
+
                             {/* ═══ AI GÖRSEL ÜRETİMİ (Custom Prompt) ═══ */}
                             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                                 <div className="p-6 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-purple-500/5">

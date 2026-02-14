@@ -218,6 +218,10 @@
                         {
                             "fieldName": "duration_seconds",
                             "fieldValue": "5"
+                        },
+                        {
+                            "fieldName": "influencer_id",
+                            "fieldValue": "={{ $('Webhook').item.json.body.influencerId || null }}"
                         }
                     ]
                 }

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateVideo } from '@/lib/workflows/autonomous-marketing'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 // Allow up to 5 minutes for video generation pipeline
 export const maxDuration = 300
 
+const N8N_BASE = process.env.NEXT_PUBLIC_N8N_WEBHOOK_BASE || 'https://n8n.srv1140504.hstgr.cloud'
+
 export async function POST(req: NextRequest) {
     try {
-        const { projectId, platform } = await req.json()
+        const body = await req.json()
+        const { projectId, platform, prompt, brandName, title, influencerId, influencerName, influencerPersonality, influencerBackstory, productImageUrls } = body
 
         if (!projectId || !platform) {
             return NextResponse.json(
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        // Get project data
+        // Get project data to verify ownership
         const { data: project, error: projectError } = await supabase
             .from('projects')
             .select('*')
@@ -47,29 +49,12 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        // Get influencer data
-        const { data: influencer } = await supabase
-            .from('ai_influencers')
-            .select('*')
-            .eq('project_id', projectId)
-            .eq('status', 'ready')
-            .single()
-
-        // Get project screenshots
-        const { data: assets } = await supabase
-            .from('assets')
-            .select('*')
-            .eq('project_id', projectId)
-            .eq('asset_type', 'screenshot')
-
-        const screenshotUrls = (assets || []).map(a => a.file_path)
-
-        // Create video record
+        // Create video record in the database first
         const { data: videoRecord, error: videoInsertError } = await supabase
             .from('videos')
             .insert({
                 project_id: projectId,
-                influencer_id: influencer?.id || null,
+                influencer_id: influencerId || null,
                 platform,
                 status: 'scripting',
             })
@@ -80,81 +65,55 @@ export async function POST(req: NextRequest) {
             throw new Error(`Database error: ${videoInsertError.message}`)
         }
 
-        // Run video generation workflow
-        // Update status to 'voicing' before starting
-        await supabase
-            .from('videos')
-            .update({ status: 'voicing' })
-            .eq('id', videoRecord.id)
+        // Proxy the request to n8n webhook (server-side, avoids CORS)
+        const n8nResponse = await fetch(`${N8N_BASE}/webhook/generate-video`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                projectId,
+                platform,
+                prompt: prompt || `Create a ${platform} marketing video for "${project.name}". ${project.description || ''}`,
+                brandName: brandName || project.name,
+                title: title || `${project.name} - ${platform} Video`,
+                videoId: videoRecord.id,
+                influencerId: influencerId || null,
+                influencerName: influencerName || null,
+                influencerPersonality: influencerPersonality || null,
+                influencerBackstory: influencerBackstory || null,
+                productImageUrls: productImageUrls || [],
+            }),
+        })
 
-        // Wrap the generateVideo call with a 4-minute timeout to prevent infinite hangs
-        const VIDEO_TIMEOUT_MS = 240_000 // 4 minutes
-        let result;
-        try {
-            result = await Promise.race([
-                generateVideo(
-                    {
-                        name: project.name,
-                        description: project.description || '',
-                        valueProposition: project.value_proposition || '',
-                        targetAudience: project.target_audience || { demographics: [], interests: [], painPoints: [] },
-                        competitors: project.competitors || [],
-                        brandTone: 'professional',
-                        keywords: [],
-                    },
-                    project.marketing_constitution || {
-                        brandVoice: 'Professional',
-                        contentPillars: [],
-                        messagingFramework: { hook: '', problem: '', solution: '', cta: '' },
-                        visualGuidelines: { colorPalette: [], mood: '', style: '' },
-                    },
-                    influencer?.visual_profile || {},
-                    influencer?.voice_id || '',
-                    screenshotUrls,
-                    platform,
-                    projectId
-                ),
-                new Promise<never>((_, reject) =>
-                    setTimeout(() => reject(new Error('Video generation timed out after 4 minutes')), VIDEO_TIMEOUT_MS)
-                ),
-            ])
-        } catch (timeoutError) {
-            console.error('Video generation timeout/error:', timeoutError)
-            // Mark as failed instead of leaving stuck
+        if (!n8nResponse.ok) {
+            const errorBody = await n8nResponse.text().catch(() => '')
+            // Mark video as failed
+            await supabase
+                .from('videos')
+                .update({ status: 'failed', metadata: { error: `n8n error: ${n8nResponse.status} ${errorBody}` } })
+                .eq('id', videoRecord.id)
+            throw new Error(`n8n webhook error: ${n8nResponse.status} ${errorBody}`)
+        }
+
+        const result = await n8nResponse.json().catch(() => ({}))
+
+        // Update video record with results from n8n
+        if (result.videoUrl || result.script || result.title) {
             await supabase
                 .from('videos')
                 .update({
-                    status: 'failed',
-                    metadata: { error: String(timeoutError) },
+                    title: result.title || title,
+                    script: result.script || '',
+                    video_url: result.videoUrl || '',
+                    thumbnail_url: result.thumbnailUrl || '',
+                    duration_seconds: result.duration || 60,
+                    status: 'ready',
+                    metadata: {
+                        hashtags: result.hashtags || [],
+                        hook: result.hook || '',
+                        cta: result.cta || '',
+                    },
                 })
                 .eq('id', videoRecord.id)
-            throw timeoutError
-        }
-
-        // Always set to 'ready' when pipeline completes — even without videoUrl,
-        // the script, audio, and metadata are still produced and useful
-        const finalStatus = 'ready'
-
-        // Update video record with results
-        const { error: updateError } = await supabase
-            .from('videos')
-            .update({
-                title: result.script.title,
-                script: result.script.fullScript,
-                video_url: result.videoUrl || '',
-                thumbnail_url: result.thumbnailUrl || '',
-                duration_seconds: result.script.estimatedDuration,
-                status: finalStatus,
-                metadata: {
-                    hashtags: result.script.hashtags,
-                    hook: result.script.hook,
-                    cta: result.script.cta,
-                },
-            })
-            .eq('id', videoRecord.id)
-
-        if (updateError) {
-            throw new Error(`Update error: ${updateError.message}`)
         }
 
         return NextResponse.json({
@@ -167,10 +126,9 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error('Video generation error:', error)
 
-        // Update video status to 'failed' so it doesn't stay stuck in 'İşleniyor'
+        // Update video status to 'failed' so it doesn't stay stuck
         try {
             const supabase = await createServerSupabaseClient()
-            // Find the most recent scripting/rendering video for this project and mark it failed
             const { projectId } = await req.clone().json().catch(() => ({ projectId: null }))
             if (projectId) {
                 await supabase

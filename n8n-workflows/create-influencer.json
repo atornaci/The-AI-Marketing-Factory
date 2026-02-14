@@ -1,0 +1,193 @@
+{
+    "name": "Create AI Influencer",
+    "active": true,
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "create-influencer",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "id": "inf-webhook-001",
+            "webhookId": "inf-wh-create-001"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://openrouter.ai/api/v1/chat/completions",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer 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"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ messages: [{ role: 'system', content: 'You are an AI character designer specializing in creating unique, memorable influencer personas for marketing brands. Every character you create must be completely different. Respond ONLY with valid JSON, no markdown formatting.' }, { role: 'user', content: 'Create a UNIQUE AI Influencer for the brand: ' + $json.body.brandName + '. Description: ' + ($json.body.brandDescription || '') + '. Gender: ' + ($json.body.gender || 'female') + '. Generation seed: ' + Date.now().toString(36) + Math.random().toString(36).slice(2,8) + '. Requirements: 1) Give a creative memorable UNIQUE first+last name (NEVER generic like Alex Nova, Ada Chen, etc). 2) Rich personality (2-3 sentences). 3) Compelling backstory (3-5 sentences). 4) Detailed appearance description for AI image generation. Respond as JSON: {\"name\": \"...\", \"personality\": \"...\", \"backstory\": \"...\", \"appearanceDescription\": \"...\", \"visualProfile\": {\"gender\": \"...\", \"ageRange\": \"25-35\", \"style\": \"...\", \"features\": \"...\"}}' }], model: 'anthropic/claude-3.5-haiku', temperature: 0.95, max_tokens: 1024 }) }}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "name": "Generate Profile",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                220,
+                0
+            ],
+            "id": "inf-profile-001"
+        },
+        {
+            "parameters": {
+                "jsCode": "// Parse the LLM response and build avatar URL\nconst body = $('Webhook').item.json.body;\nconst llmResponse = $input.item.json;\nconst content = llmResponse.choices?.[0]?.message?.content || '{}';\n\nlet profile;\ntry {\n    // Clean markdown code fences if present\n    const cleaned = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n    profile = JSON.parse(cleaned);\n} catch (e) {\n    profile = {\n        name: 'Luna ' + Date.now().toString(36).slice(-4),\n        personality: 'Charismatic, energetic, and authentic. Connects with audiences through genuine enthusiasm.',\n        backstory: 'A passionate digital creator who found their calling in connecting innovative brands with people.',\n        appearanceDescription: 'Professional and stylish appearance with warm expression',\n        visualProfile: { gender: body.gender || 'female', ageRange: '25-35', style: 'business casual', features: 'expressive eyes' }\n    };\n}\n\nconst vp = profile.visualProfile || {};\nconst gender = (body.gender || vp.gender || 'female') === 'male' ? 'man' : 'woman';\nconst age = vp.ageRange || '28';\nconst seed = Math.floor(Math.random() * 999999);\n\nconst hairStyles = ['blonde', 'brunette', 'black-haired', 'auburn', 'dark brown-haired', 'platinum blonde'];\nconst backgrounds = ['soft blue', 'warm beige', 'light gray', 'pastel green', 'gradient purple', 'teal'];\nconst expressions = ['warm smile', 'confident gaze', 'friendly expression', 'bright smile'];\n\nconst hair = hairStyles[Math.floor(Math.random() * hairStyles.length)];\nconst bg = backgrounds[Math.floor(Math.random() * backgrounds.length)];\nconst expr = expressions[Math.floor(Math.random() * expressions.length)];\n\nconst appearance = (profile.appearanceDescription || '').replace(/[^a-zA-Z0-9 ,.\\-]/g, '').substring(0, 100);\nconst promptText = `photorealistic portrait headshot of a ${hair} ${gender} aged ${age}, ${appearance || vp.style || 'professional'}, ${bg} background, studio lighting, ${expr}, 8k uhd`;\nconst encodedPrompt = encodeURIComponent(promptText);\nconst avatarUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&seed=${seed}&nologo=true&model=flux`;\n\nreturn [{\n    json: {\n        projectId: body.projectId,\n        gender: body.gender || 'female',\n        name: profile.name,\n        personality: profile.personality,\n        backstory: profile.backstory,\n        appearanceDescription: profile.appearanceDescription,\n        visualProfile: profile.visualProfile,\n        avatarUrl: avatarUrl\n    }\n}];"
+            },
+            "name": "Build Profile",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                440,
+                0
+            ],
+            "id": "inf-build-001"
+        },
+        {
+            "parameters": {
+                "tableId": "=ai_influencers",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldName": "project_id",
+                            "fieldValue": "={{ $json.projectId }}"
+                        },
+                        {
+                            "fieldName": "name",
+                            "fieldValue": "={{ $json.name }}"
+                        },
+                        {
+                            "fieldName": "gender",
+                            "fieldValue": "={{ $json.gender }}"
+                        },
+                        {
+                            "fieldName": "personality",
+                            "fieldValue": "={{ $json.personality }}"
+                        },
+                        {
+                            "fieldName": "backstory",
+                            "fieldValue": "={{ $json.backstory }}"
+                        },
+                        {
+                            "fieldName": "appearance_description",
+                            "fieldValue": "={{ $json.appearanceDescription }}"
+                        },
+                        {
+                            "fieldName": "visual_profile",
+                            "fieldValue": "={{ JSON.stringify($json.visualProfile) }}"
+                        },
+                        {
+                            "fieldName": "avatar_url",
+                            "fieldValue": "={{ $json.avatarUrl }}"
+                        },
+                        {
+                            "fieldName": "status",
+                            "fieldValue": "ready"
+                        }
+                    ]
+                }
+            },
+            "name": "Save to Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                660,
+                0
+            ],
+            "id": "inf-save-001",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "SwzcBWMsNjByTuiA",
+                    "name": "Supabase APISupabase APISupabase account 3"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: true, influencer: { name: $json.name, personality: $json.personality, backstory: $json.backstory, avatarUrl: $json.avatarUrl } }) }}",
+                "options": {}
+            },
+            "name": "Respond",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                880,
+                0
+            ],
+            "id": "inf-respond-001"
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Profile",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Profile": {
+            "main": [
+                [
+                    {
+                        "node": "Build Profile",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Build Profile": {
+            "main": [
+                [
+                    {
+                        "node": "Save to Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Save to Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "Respond",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1",
+        "executionTimeout": 120
+    }
+}

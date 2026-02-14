@@ -1,6 +1,6 @@
 // =========================================
 // API Connection Test Endpoint
-// Tests Abacus.AI and ElevenLabs connectivity
+// Tests OpenRouter, fal.ai, ElevenLabs, and Supabase connectivity
 // =========================================
 
 import { NextResponse } from 'next/server'
@@ -11,20 +11,20 @@ export async function GET() {
         checks: {},
     }
 
-    // Test 1: Abacus.AI Route LLM API
+    // Test 1: OpenRouter API
     try {
-        const abacusKey = process.env.ABACUS_AI_API_KEY
-        if (!abacusKey) {
-            results.checks = { ...results.checks as object, abacusAI: { status: 'error', message: 'ABACUS_AI_API_KEY not set' } }
+        const openRouterKey = process.env.OPENROUTER_API_KEY
+        if (!openRouterKey) {
+            results.checks = { ...results.checks as object, openRouter: { status: 'error', message: 'OPENROUTER_API_KEY not set' } }
         } else {
-            const response = await fetch('https://routellm.abacus.ai/v1/chat/completions', {
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${abacusKey}`,
+                    'Authorization': `Bearer ${openRouterKey}`,
                 },
                 body: JSON.stringify({
-                    model: 'route-llm',
+                    model: 'anthropic/claude-3.5-haiku',
                     messages: [
                         { role: 'system', content: 'Respond with exactly: OK' },
                         { role: 'user', content: 'Health check. Reply with just OK.' },
@@ -39,9 +39,9 @@ export async function GET() {
                 const reply = data.choices?.[0]?.message?.content || ''
                 results.checks = {
                     ...results.checks as object,
-                    abacusAI: {
+                    openRouter: {
                         status: 'connected',
-                        model: data.model || 'route-llm',
+                        model: data.model || 'anthropic/claude-3.5-haiku',
                         reply: reply.substring(0, 50),
                         usage: data.usage,
                     },
@@ -50,7 +50,7 @@ export async function GET() {
                 const errorText = await response.text().catch(() => '')
                 results.checks = {
                     ...results.checks as object,
-                    abacusAI: {
+                    openRouter: {
                         status: 'error',
                         httpStatus: response.status,
                         message: errorText.substring(0, 200),
@@ -59,10 +59,28 @@ export async function GET() {
             }
         }
     } catch (error) {
-        results.checks = { ...results.checks as object, abacusAI: { status: 'error', message: String(error) } }
+        results.checks = { ...results.checks as object, openRouter: { status: 'error', message: String(error) } }
     }
 
-    // Test 2: ElevenLabs API
+    // Test 2: fal.ai API
+    try {
+        const falKey = process.env.FAL_KEY
+        if (!falKey) {
+            results.checks = { ...results.checks as object, falAI: { status: 'error', message: 'FAL_KEY not set' } }
+        } else {
+            results.checks = {
+                ...results.checks as object,
+                falAI: {
+                    status: 'configured',
+                    message: 'FAL_KEY is set',
+                },
+            }
+        }
+    } catch (error) {
+        results.checks = { ...results.checks as object, falAI: { status: 'error', message: String(error) } }
+    }
+
+    // Test 3: ElevenLabs API
     try {
         const elevenKey = process.env.ELEVENLABS_API_KEY
         if (!elevenKey) {
@@ -100,7 +118,7 @@ export async function GET() {
         results.checks = { ...results.checks as object, elevenLabs: { status: 'error', message: String(error) } }
     }
 
-    // Test 3: Supabase
+    // Test 4: Supabase
     try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY

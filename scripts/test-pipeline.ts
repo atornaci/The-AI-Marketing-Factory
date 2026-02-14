@@ -8,9 +8,9 @@
 import { config } from 'dotenv'
 config({ path: '.env.local' })
 
-const ABACUS_API_BASE = 'https://routellm.abacus.ai/v1'
-const ABACUS_MODEL = 'route-llm'
-const ABACUS_KEY = process.env.ABACUS_AI_API_KEY || ''
+const API_BASE = 'https://openrouter.ai/api/v1'
+const DEFAULT_MODEL = 'anthropic/claude-3.5-haiku'
+const API_KEY = process.env.OPENROUTER_API_KEY || ''
 const ELEVENLABS_KEY = process.env.ELEVENLABS_API_KEY || ''
 
 // Test URL — using a well-known website
@@ -22,14 +22,14 @@ function log(emoji: string, msg: string) {
 }
 
 async function callLLM(prompt: string, systemPrompt: string): Promise<string> {
-    const response = await fetch(`${ABACUS_API_BASE}/chat/completions`, {
+    const response = await fetch(`${API_BASE}/chat/completions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${ABACUS_KEY}`,
+            'Authorization': `Bearer ${API_KEY}`,
         },
         body: JSON.stringify({
-            model: ABACUS_MODEL,
+            model: DEFAULT_MODEL,
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: prompt },

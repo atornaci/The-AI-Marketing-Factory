@@ -1,5 +1,5 @@
 // =========================================
-// Abacus.AI Service Client
+// AI Service Client (OpenRouter + fal.ai)
 // Handles project analysis, script generation,
 // AI influencer creation, and video generation
 // =========================================
@@ -7,15 +7,15 @@
 import type { Language } from '@/lib/i18n/translations'
 import type { HookVariation, Storyboard, StoryboardScene, ProblemSolutionPair } from '@/lib/types/storyboard'
 
-// Route LLM API — OpenAI-compatible endpoint (no deployment needed)
-const ABACUS_API_BASE = 'https://routellm.abacus.ai/v1'
-const ABACUS_MODEL = 'route-llm' // Auto-routes to best model (Sonnet, GPT, Gemini)
+// OpenRouter — OpenAI-compatible endpoint (multi-provider LLM router)
+const API_BASE = 'https://openrouter.ai/api/v1'
+const DEFAULT_MODEL = 'anthropic/claude-3.5-haiku' // Fast & cost-effective
 
 // Task-specific models for higher quality output
 const MODELS = {
-    default: 'route-llm',
-    analysis: 'gpt-5-mini',      // Better structured analysis & reasoning
-    creative: 'claude-sonnet-4',  // Better creative writing & storytelling
+    default: 'anthropic/claude-3.5-haiku',
+    analysis: 'openai/gpt-4o-mini',                   // Better structured analysis & reasoning
+    creative: 'anthropic/claude-sonnet-4-20250514',    // Better creative writing & storytelling
 } as const
 
 // Language-specific prompt instructions
@@ -75,15 +75,15 @@ interface InfluencerProfile {
     visualProfile: Record<string, unknown>
 }
 
-class AbacusAIService {
+class AIService {
     private apiKey: string
 
     constructor() {
-        this.apiKey = process.env.ABACUS_AI_API_KEY || ''
+        this.apiKey = process.env.OPENROUTER_API_KEY || ''
     }
 
     private async callLLM(prompt: string, systemPrompt?: string, preferredModel?: string, maxTokens?: number): Promise<string> {
-        const model = preferredModel || ABACUS_MODEL
+        const model = preferredModel || DEFAULT_MODEL
         const MAX_RETRIES = 3
         const TIMEOUT_MS = 90_000 // 90 seconds — below Cloudflare's 100s limit
 
@@ -93,12 +93,12 @@ class AbacusAIService {
                 const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
                 // On last retry, fallback to route-llm if using a specific model
-                const activeModel = (attempt === MAX_RETRIES && model !== ABACUS_MODEL) ? ABACUS_MODEL : model
+                const activeModel = (attempt === MAX_RETRIES && model !== DEFAULT_MODEL) ? DEFAULT_MODEL : model
                 if (activeModel !== model) {
-                    console.warn(`[LLM] Falling back to ${ABACUS_MODEL} after ${attempt - 1} failed attempts with ${model}`)
+                    console.warn(`[LLM] Falling back to ${DEFAULT_MODEL} after ${attempt - 1} failed attempts with ${model}`)
                 }
 
-                const response = await fetch(`${ABACUS_API_BASE}/chat/completions`, {
+                const response = await fetch(`${API_BASE}/chat/completions`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -128,11 +128,11 @@ class AbacusAIService {
                     const errorBody = await response.text().catch(() => '')
                     // Retry on 5xx / timeout errors
                     if (response.status >= 500 && attempt < MAX_RETRIES) {
-                        console.warn(`Abacus AI attempt ${attempt} failed (${response.status}), retrying in ${attempt * 2}s...`)
+                        console.warn(`OpenRouter attempt ${attempt} failed (${response.status}), retrying in ${attempt * 2}s...`)
                         await new Promise(r => setTimeout(r, attempt * 2000))
                         continue
                     }
-                    throw new Error(`Abacus AI API error: ${response.status} ${response.statusText} — ${errorBody}`)
+                    throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} — ${errorBody}`)
                 }
 
                 const data = await response.json()
@@ -142,7 +142,7 @@ class AbacusAIService {
                 const isTimeout = isAbortError || (error instanceof Error && error.message.includes('timeout'))
 
                 if ((isTimeout || (error instanceof Error && error.message.includes('fetch'))) && attempt < MAX_RETRIES) {
-                    console.warn(`Abacus AI attempt ${attempt} timed out, retrying in ${attempt * 3}s...`)
+                    console.warn(`OpenRouter attempt ${attempt} timed out, retrying in ${attempt * 3}s...`)
                     await new Promise(r => setTimeout(r, attempt * 3000))
                     continue
                 }
@@ -150,7 +150,7 @@ class AbacusAIService {
             }
         }
 
-        throw new Error('Abacus AI: All retry attempts exhausted')
+        throw new Error('OpenRouter: All retry attempts exhausted')
     }
 
     /**
@@ -510,52 +510,65 @@ Respond ONLY with valid JSON.`
     }
 
     /**
-     * Generate a unique AI influencer avatar/headshot using Pollinations.ai
-     * The URL itself serves as the image — no API key needed
-     * IMPORTANT: Prompt must be English-only and short (URL < 500 chars)
+     * Generate a unique AI influencer avatar/headshot using fal.ai
+     * Uses flux-pro/v1.1 model for high-quality portrait generation
      */
     async generateInfluencerAvatar(profile: InfluencerProfile): Promise<string> {
         try {
+            const falKey = process.env.FAL_KEY
+            if (!falKey) {
+                console.error('[Influencer] FAL_KEY not set')
+                return ''
+            }
+
             const vp = profile.visualProfile as Record<string, string> | undefined
             const gender = vp?.gender === 'male' ? 'man' : 'woman'
             const age = vp?.ageRange || '28'
-            const seed = Math.floor(Math.random() * 999999)
 
-            // Extract profile-specific features for visual variety
             const features = (vp?.features || '').replace(/[^a-zA-Z0-9 ,.\-]/g, '').substring(0, 80)
             const style = vp?.style || 'business casual'
             const appearance = (profile.appearanceDescription || '')
                 .replace(/[^a-zA-Z0-9 ,.\-]/g, '')
                 .substring(0, 100)
 
-            // Random variety pools — ensures different looks even with similar profiles
-            const hairStyles = ['blonde', 'brunette', 'black-haired', 'auburn', 'red-haired', 'dark brown-haired', 'light brown-haired', 'platinum blonde']
-            const backgrounds = ['soft blue', 'warm beige', 'light gray', 'pastel green', 'white', 'gradient purple', 'sunset orange', 'teal']
-            const expressions = ['warm smile', 'confident gaze', 'friendly expression', 'gentle smile', 'bright smile', 'professional look']
+            const hairStyles = ['blonde', 'brunette', 'black-haired', 'auburn', 'red-haired', 'dark brown-haired']
+            const backgrounds = ['soft blue', 'warm beige', 'light gray', 'pastel green', 'white', 'gradient purple']
+            const expressions = ['warm smile', 'confident gaze', 'friendly expression', 'gentle smile']
 
             const hair = hairStyles[Math.floor(Math.random() * hairStyles.length)]
             const bg = backgrounds[Math.floor(Math.random() * backgrounds.length)]
             const expr = expressions[Math.floor(Math.random() * expressions.length)]
 
-            // Build a specific, unique prompt using profile details + random variety
             const detailPart = features || appearance || style
             const promptText = `photorealistic portrait headshot of a ${hair} ${gender} aged ${age}, ${detailPart}, ${bg} background, studio lighting, ${expr}, 8k uhd`
 
-            const encodedPrompt = encodeURIComponent(promptText)
-            const avatarUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&seed=${seed}&nologo=true&model=flux`
-
             console.log(`[Influencer] Avatar prompt: ${promptText}`)
-            console.log(`[Influencer] Avatar URL length: ${avatarUrl.length}`)
 
-            // Validate the URL works (HEAD request)
-            const testResponse = await fetch(avatarUrl, { method: 'HEAD' })
-            if (testResponse.ok) {
-                console.log(`[Influencer] ✅ Avatar generated (seed: ${seed}, hair: ${hair}, bg: ${bg})`)
-                return avatarUrl
-            } else {
-                console.error(`[Influencer] Pollinations.ai returned ${testResponse.status}`)
+            const response = await fetch('https://queue.fal.run/fal-ai/flux-pro/v1.1', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Key ${falKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: promptText,
+                    image_size: { width: 512, height: 512 },
+                    num_images: 1,
+                    safety_tolerance: '2',
+                }),
+            })
+
+            if (!response.ok) {
+                console.error(`[Influencer] fal.ai returned ${response.status}: ${await response.text()}`)
                 return ''
             }
+
+            const data = await response.json()
+            const avatarUrl = data?.images?.[0]?.url || ''
+            if (avatarUrl) {
+                console.log(`[Influencer] ✅ Avatar generated via fal.ai`)
+            }
+            return avatarUrl
         } catch (error) {
             console.error(`[Influencer] Avatar generation error:`, error)
             return ''
@@ -563,8 +576,8 @@ Respond ONLY with valid JSON.`
     }
 
     /**
-     * Generate video with AI influencer via Abacus AI ChatLLM
-     * Uses ChatLLM's multimodal video generation (Kling AI / Hailuo / RunwayML)
+     * Generate video with AI influencer
+     * Uses LLM for script refinement + fal.ai for thumbnail
      */
     async generateVideo(params: {
         script: string
@@ -573,7 +586,7 @@ Respond ONLY with valid JSON.`
         screenshotUrls: string[]
         platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube'
     }): Promise<{ videoUrl: string; thumbnailUrl: string }> {
-        console.log(`[Video] Starting Abacus AI video generation...`)
+        console.log(`[Video] Starting video generation...`)
         console.log(`[Video] Script: ${params.script.length} chars, platform: ${params.platform}`)
         console.log(`[Video] Audio URL: ${params.audioUrl || 'none'}`)
         console.log(`[Video] Screenshots: ${params.screenshotUrls.length} images`)
@@ -656,7 +669,7 @@ The video should feel authentic and organic, like a real person sharing their ge
     }
 
     /**
-     * Call Abacus AI ChatLLM for video generation
+     * Call video generation via LLM
      */
     private async callChatLLMVideoGen(
         prompt: string,
@@ -670,23 +683,22 @@ The video should feel authentic and organic, like a real person sharing their ge
                 const controller = new AbortController()
                 const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
-                console.log(`[Video] ChatLLM attempt ${attempt}/${MAX_RETRIES}...`)
+                console.log(`[Video] LLM video attempt ${attempt}/${MAX_RETRIES}...`)
 
-                const response = await fetch('https://api.abacus.ai/api/v0/createChatLLMSendMessageResponse', {
+                const response = await fetch(`${API_BASE}/chat/completions`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.apiKey}`,
                     },
                     body: JSON.stringify({
-                        apiKey: this.apiKey,
-                        message: prompt,
-                        chatSession: null,
-                        isVideoGen: true,
-                        videoGenModel: 'KLING_AI',
-                        videoGenSettings: {
-                            aspectRatio: settings.aspectRatio,
-                            duration: Math.min(settings.maxDuration, 10), // Most models support max 10s clips
-                        },
+                        model: MODELS.creative,
+                        messages: [
+                            { role: 'system', content: 'You are a video production AI. Generate a detailed video production plan.' },
+                            { role: 'user', content: prompt },
+                        ],
+                        max_tokens: 1024,
+                        temperature: 0.7,
                     }),
                     signal: controller.signal,
                 })
@@ -695,7 +707,7 @@ The video should feel authentic and organic, like a real person sharing their ge
 
                 if (!response.ok) {
                     const errorBody = await response.text().catch(() => '')
-                    console.warn(`[Video] ChatLLM attempt ${attempt} failed: ${response.status} — ${errorBody}`)
+                    console.warn(`[Video] LLM attempt ${attempt} failed: ${response.status} — ${errorBody}`)
 
                     if (response.status >= 500 && attempt < MAX_RETRIES) {
                         await new Promise(r => setTimeout(r, attempt * 5000))
@@ -718,13 +730,13 @@ The video should feel authentic and organic, like a real person sharing their ge
                 const isAbortError = error instanceof Error && error.name === 'AbortError'
 
                 if (isAbortError && attempt < MAX_RETRIES) {
-                    console.warn(`[Video] ChatLLM attempt ${attempt} timed out, retrying...`)
+                    console.warn(`[Video] LLM attempt ${attempt} timed out, retrying...`)
                     await new Promise(r => setTimeout(r, attempt * 5000))
                     continue
                 }
 
                 if (attempt === MAX_RETRIES) {
-                    console.warn(`[Video] ChatLLM exhausted, trying RouteLLM fallback...`)
+                    console.warn(`[Video] LLM exhausted, trying fallback...`)
                     return await this.callRouteLLMVideoGen(prompt, settings)
                 }
             }
@@ -734,23 +746,23 @@ The video should feel authentic and organic, like a real person sharing their ge
     }
 
     /**
-     * Fallback: Try using RouteLLM API with video gen capabilities
+     * Fallback: Try using default model for video gen
      */
     private async callRouteLLMVideoGen(
         prompt: string,
         settings: { aspectRatio: string; maxDuration: number }
     ): Promise<{ videoUrl: string; thumbnailUrl: string }> {
         try {
-            console.log(`[Video] Trying RouteLLM video generation fallback...`)
+            console.log(`[Video] Trying fallback video generation...`)
 
-            const response = await fetch(`${ABACUS_API_BASE}/chat/completions`, {
+            const response = await fetch(`${API_BASE}/chat/completions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.apiKey}`,
                 },
                 body: JSON.stringify({
-                    model: 'video-gen',
+                    model: DEFAULT_MODEL,
                     messages: [
                         {
                             role: 'system',
@@ -773,7 +785,7 @@ The video should feel authentic and organic, like a real person sharing their ge
             })
 
             if (!response.ok) {
-                console.warn(`[Video] RouteLLM fallback failed: ${response.status}`)
+                console.warn(`[Video] Fallback failed: ${response.status}`)
                 return { videoUrl: '', thumbnailUrl: '' }
             }
 
@@ -781,13 +793,13 @@ The video should feel authentic and organic, like a real person sharing their ge
             const videoUrl = this.extractVideoUrl(data)
             return { videoUrl, thumbnailUrl: '' }
         } catch (error) {
-            console.warn(`[Video] RouteLLM fallback error:`, error)
+            console.warn(`[Video] Fallback error:`, error)
             return { videoUrl: '', thumbnailUrl: '' }
         }
     }
 
     /**
-     * Extract video URL from various Abacus AI response formats
+     * Extract video URL from various response formats
      */
     private extractVideoUrl(data: Record<string, unknown>): string {
         // Check common response locations
@@ -853,8 +865,7 @@ The video should feel authentic and organic, like a real person sharing their ge
     }
 
     /**
-     * Generate a video thumbnail using Pollinations.ai
-     * (RouteLLM /images/generations endpoint returns 404)
+     * Generate a video thumbnail using fal.ai
      */
     private async generateVideoThumbnail(
         script: string,
@@ -862,23 +873,39 @@ The video should feel authentic and organic, like a real person sharing their ge
         platform: string
     ): Promise<string> {
         try {
+            const falKey = process.env.FAL_KEY
+            if (!falKey) return ''
+
             const topic = script.substring(0, 60).replace(/[^a-zA-Z0-9 ]/g, '')
             const orientation = platform === 'linkedin' ? 'landscape' : 'portrait'
             const width = platform === 'linkedin' ? 1024 : 512
             const height = platform === 'linkedin' ? 576 : 910
-            const seed = Math.floor(Math.random() * 999999)
 
             const promptText = `${orientation} video thumbnail, ${topic}, professional marketing, vibrant colors, clean design`
-            const encodedPrompt = encodeURIComponent(promptText)
-            const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`
 
-            const testResponse = await fetch(url, { method: 'HEAD' })
-            if (testResponse.ok) {
-                console.log(`[Video] ✅ Thumbnail generated via Pollinations.ai`)
-                return url
+            const response = await fetch('https://queue.fal.run/fal-ai/flux-pro/v1.1', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Key ${falKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: promptText,
+                    image_size: { width, height },
+                    num_images: 1,
+                    safety_tolerance: '2',
+                }),
+            })
+
+            if (!response.ok) {
+                console.warn(`[Video] Thumbnail fal.ai error: ${response.status}`)
+                return ''
             }
-            console.warn(`[Video] Thumbnail validation failed: ${testResponse.status}`)
-            return ''
+
+            const data = await response.json()
+            const url = data?.images?.[0]?.url || ''
+            if (url) console.log(`[Video] ✅ Thumbnail generated via fal.ai`)
+            return url
         } catch (error) {
             console.warn(`[Video] Thumbnail error:`, error)
             return ''
@@ -1255,7 +1282,7 @@ Respond ONLY with valid JSON.`
         const systemPrompt = `You are a professional graphic designer creating marketing visuals.
 Generate a single, detailed image generation prompt in English based on the user's request.
 The prompt must be:
-- Under 200 characters (Pollinations.ai URL limit)
+- Under 500 characters
 - English only, no special characters
 - Professional marketing quality
 - Include the brand color scheme: ${colorStr}
@@ -1264,17 +1291,15 @@ Brand context: ${brandContext}
 Return ONLY the prompt text, nothing else.`
 
         try {
-            const enhanced = await this.callLLM(userPrompt, systemPrompt, 'creative', 200)
-            // Clean for URL usage
-            return enhanced.replace(/[^a-zA-Z0-9 ,.!?\-]/g, '').substring(0, 300)
+            const enhanced = await this.callLLM(userPrompt, systemPrompt, MODELS.creative, 300)
+            return enhanced.replace(/[^a-zA-Z0-9 ,.!?\-]/g, '').substring(0, 500)
         } catch {
-            // Fallback: use the original prompt cleaned
-            return userPrompt.replace(/[^a-zA-Z0-9 ,.!?\-]/g, '').substring(0, 200)
+            return userPrompt.replace(/[^a-zA-Z0-9 ,.!?\-]/g, '').substring(0, 300)
         }
     }
 
     /**
-     * Generate a marketing image using Pollinations.ai (free, no API key)
+     * Generate a marketing image using fal.ai (flux-pro/v1.1)
      * Supports: static_post, carousel_slide, thumbnail, story, banner, custom
      */
     async generateMarketingImage(params: {
@@ -1289,8 +1314,6 @@ Return ONLY the prompt text, nothing else.`
         // Get dimensions for this type/platform combo
         const typeDims = IMAGE_DIMENSIONS[imageType] || IMAGE_DIMENSIONS.custom
         const dims = typeDims[platform] || typeDims.instagram || { width: 1080, height: 1080 }
-
-        // Clamp to Pollinations max (2048)
         const width = Math.min(dims.width, 2048)
         const height = Math.min(dims.height, 2048)
 
@@ -1301,26 +1324,44 @@ Return ONLY the prompt text, nothing else.`
             prompt, brandContext, brandColors, imageType, platform
         )
 
-        const seed = Math.floor(Math.random() * 999999)
-        const encodedPrompt = encodeURIComponent(enhancedPrompt)
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`
-
         console.log(`[Image] Enhanced prompt: ${enhancedPrompt}`)
-        console.log(`[Image] URL length: ${imageUrl.length}`)
 
-        // Validate the URL works
-        try {
-            const testResponse = await fetch(imageUrl, { method: 'HEAD' })
-            if (testResponse.ok) {
-                console.log(`[Image] ✅ Image generated successfully (seed: ${seed})`)
-                return { imageUrl, width, height, enhancedPrompt }
-            }
-            console.warn(`[Image] Pollinations returned ${testResponse.status}`)
-        } catch (error) {
-            console.error(`[Image] Generation error:`, error)
+        const falKey = process.env.FAL_KEY
+        if (!falKey) {
+            console.error('[Image] FAL_KEY not set')
+            return { imageUrl: '', width, height, enhancedPrompt }
         }
 
-        return { imageUrl: '', width, height, enhancedPrompt }
+        try {
+            const response = await fetch('https://queue.fal.run/fal-ai/flux-pro/v1.1', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Key ${falKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: enhancedPrompt,
+                    image_size: { width, height },
+                    num_images: 1,
+                    safety_tolerance: '2',
+                }),
+            })
+
+            if (!response.ok) {
+                console.warn(`[Image] fal.ai returned ${response.status}: ${await response.text()}`)
+                return { imageUrl: '', width, height, enhancedPrompt }
+            }
+
+            const data = await response.json()
+            const imageUrl = data?.images?.[0]?.url || ''
+            if (imageUrl) {
+                console.log(`[Image] ✅ Image generated via fal.ai`)
+            }
+            return { imageUrl, width, height, enhancedPrompt }
+        } catch (error) {
+            console.error(`[Image] Generation error:`, error)
+            return { imageUrl: '', width, height, enhancedPrompt }
+        }
     }
 }
 
@@ -1418,7 +1459,7 @@ const IMAGE_DIMENSIONS: Record<string, Record<string, { width: number; height: n
     },
 }
 
-export const abacusAI = new AbacusAIService()
+export const abacusAI = new AIService()
 export type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile, CompetitorAnalysis, CompetitorEntry, AdCopyResult, AdCopyVariation, ImageGenParams, GeneratedImage }
 export { IMAGE_DIMENSIONS }
 

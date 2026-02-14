@@ -215,8 +215,8 @@ export async function generateVideo(
         }
     }
 
-    // Step 4: Generate video with AI influencer via Abacus AI
-    report('Rendering video with AI influencer (Abacus AI)...')
+    // Step 4: Generate video with AI influencer
+    report('Rendering video with AI influencer...')
     let videoUrl = ''
     let thumbnailUrl = ''
     try {
