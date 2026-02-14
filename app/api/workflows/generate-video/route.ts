@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { generateVideo } from '@/lib/workflows/autonomous-marketing'
+import type { ProjectAnalysis, MarketingConstitution } from '@/lib/services/abacus-ai'
 
 // Allow up to 5 minutes for video generation pipeline
 export const maxDuration = 300
-
-const N8N_BASE = process.env.NEXT_PUBLIC_N8N_WEBHOOK_BASE || 'https://n8n.srv1140504.hstgr.cloud'
 
 export async function POST(req: NextRequest) {
     try {
@@ -49,6 +49,35 @@ export async function POST(req: NextRequest) {
             )
         }
 
+        // Get influencer data if available
+        let influencerProfile: Record<string, unknown> = {}
+        let voiceId = ''
+        if (influencerId) {
+            const { data: influencer } = await supabase
+                .from('ai_influencers')
+                .select('*')
+                .eq('id', influencerId)
+                .single()
+            if (influencer) {
+                influencerProfile = {
+                    name: influencer.name,
+                    personality: influencer.personality,
+                    backstory: influencer.backstory,
+                    appearanceDescription: influencer.appearance_description,
+                    visualProfile: influencer.visual_profile,
+                    avatarUrl: influencer.avatar_url,
+                }
+                voiceId = influencer.voice_id || ''
+            }
+        } else if (influencerName) {
+            // Fallback: use inline influencer info from request body
+            influencerProfile = {
+                name: influencerName,
+                personality: influencerPersonality || '',
+                backstory: influencerBackstory || '',
+            }
+        }
+
         // Create video record in the database first
         const { data: videoRecord, error: videoInsertError } = await supabase
             .from('videos')
@@ -65,84 +94,117 @@ export async function POST(req: NextRequest) {
             throw new Error(`Database error: ${videoInsertError.message}`)
         }
 
-        // Proxy the request to n8n webhook (server-side, avoids CORS)
-        const n8nResponse = await fetch(`${N8N_BASE}/webhook/generate-video`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                projectId,
-                platform,
-                prompt: prompt || `Create a ${platform} marketing video for "${project.name}". ${project.description || ''}`,
-                brandName: brandName || project.name,
-                title: title || `${project.name} - ${platform} Video`,
-                videoId: videoRecord.id,
-                influencerId: influencerId || null,
-                influencerName: influencerName || null,
-                influencerPersonality: influencerPersonality || null,
-                influencerBackstory: influencerBackstory || null,
-                productImageUrls: productImageUrls || [],
-            }),
-        })
+        console.log(`[API] Starting direct video pipeline for video ${videoRecord.id}`)
 
-        if (!n8nResponse.ok) {
-            const errorBody = await n8nResponse.text().catch(() => '')
-            // Mark video as failed
-            await supabase
-                .from('videos')
-                .update({ status: 'failed', metadata: { error: `n8n error: ${n8nResponse.status} ${errorBody}` } })
-                .eq('id', videoRecord.id)
-            throw new Error(`n8n webhook error: ${n8nResponse.status} ${errorBody}`)
+        // Build analysis object from project data
+        const analysis: ProjectAnalysis = {
+            name: project.name || brandName || 'Brand',
+            description: project.description || '',
+            valueProposition: project.value_proposition || '',
+            targetAudience: project.target_audience || { demographics: [], interests: [], painPoints: [] },
+            competitors: project.competitors || [],
+            brandTone: project.brand_tone || 'professional',
+            keywords: project.keywords || [],
         }
 
-        const result = await n8nResponse.json().catch(() => ({}))
+        // Build constitution object from project data
+        const constitution: MarketingConstitution = {
+            brandVoice: project.brand_voice || project.tone_of_voice || analysis.brandTone || 'professional',
+            contentPillars: project.content_pillars || [],
+            messagingFramework: project.messaging_framework || {
+                hook: '',
+                problem: '',
+                solution: '',
+                cta: '',
+            },
+            visualGuidelines: project.visual_guidelines || {
+                colorPalette: [],
+                mood: '',
+                style: '',
+            },
+            brandPersona: project.brand_persona || `${analysis.name} is a ${project.industry || 'innovative'} brand`,
+            visualDna: project.visual_dna || '',
+        }
 
-        // Update video record with results from n8n
-        if (result.videoUrl || result.script || result.title) {
+        try {
+            // Update status to show we're in the script phase
+            await supabase
+                .from('videos')
+                .update({ status: 'scripting' })
+                .eq('id', videoRecord.id)
+
+            // Run the full video generation pipeline directly
+            const result = await generateVideo(
+                analysis,
+                constitution,
+                influencerProfile,
+                voiceId,
+                productImageUrls || [],
+                platform,
+                projectId,
+                async (step: string) => {
+                    console.log(`[API] Video progress: ${step}`)
+                    // Update status dynamically
+                    let status = 'scripting'
+                    if (step.includes('voice') || step.includes('narration') || step.includes('Audio')) status = 'voicing'
+                    if (step.includes('Render') || step.includes('video') || step.includes('Video')) status = 'rendering'
+                    if (step.includes('Upload')) status = 'rendering'
+
+                    await supabase
+                        .from('videos')
+                        .update({ status })
+                        .eq('id', videoRecord.id)
+                }
+            )
+
+            // Update video record with the results
             await supabase
                 .from('videos')
                 .update({
-                    title: result.title || title,
-                    script: result.script || '',
+                    title: result.script?.title || title || `${analysis.name} - ${platform} Video`,
+                    script: result.script?.fullScript || '',
                     video_url: result.videoUrl || '',
                     thumbnail_url: result.thumbnailUrl || '',
-                    duration_seconds: result.duration || 60,
-                    status: 'ready',
+                    duration_seconds: result.script?.estimatedDuration || 30,
+                    status: result.videoUrl ? 'ready' : 'script_ready',
                     metadata: {
-                        hashtags: result.hashtags || [],
-                        hook: result.hook || '',
-                        cta: result.cta || '',
+                        hashtags: result.script?.hashtags || [],
+                        hook: result.script?.hook || '',
+                        cta: result.script?.cta || '',
+                        storyboard: result.storyboard ? { sceneCount: result.storyboard.scenes?.length } : null,
                     },
                 })
                 .eq('id', videoRecord.id)
-        }
 
-        return NextResponse.json({
-            success: true,
-            video: {
-                id: videoRecord.id,
-                ...result,
-            },
-        })
+            console.log(`[API] ✅ Video pipeline complete for ${videoRecord.id}`)
+
+            return NextResponse.json({
+                success: true,
+                video: {
+                    id: videoRecord.id,
+                    title: result.script?.title || title,
+                    script: result.script?.fullScript || '',
+                    videoUrl: result.videoUrl || '',
+                    thumbnailUrl: result.thumbnailUrl || '',
+                    hashtags: result.script?.hashtags || [],
+                    hook: result.script?.hook || '',
+                    cta: result.script?.cta || '',
+                },
+            })
+        } catch (pipelineError) {
+            console.error('[API] Pipeline error:', pipelineError)
+            // Mark video as failed
+            await supabase
+                .from('videos')
+                .update({
+                    status: 'failed',
+                    metadata: { error: String(pipelineError) },
+                })
+                .eq('id', videoRecord.id)
+            throw pipelineError
+        }
     } catch (error) {
         console.error('Video generation error:', error)
-
-        // Update video status to 'failed' so it doesn't stay stuck
-        try {
-            const supabase = await createServerSupabaseClient()
-            const { projectId } = await req.clone().json().catch(() => ({ projectId: null }))
-            if (projectId) {
-                await supabase
-                    .from('videos')
-                    .update({
-                        status: 'failed',
-                        metadata: { error: String(error) },
-                    })
-                    .eq('project_id', projectId)
-                    .in('status', ['scripting', 'voicing', 'rendering'])
-            }
-        } catch (dbError) {
-            console.error('Failed to update video status:', dbError)
-        }
 
         return NextResponse.json(
             { error: 'Video generation failed', details: String(error) },
