@@ -703,7 +703,7 @@ function DashboardContent() {
                             </div>
 
                             {/* ─── Video Generation Section ─── */}
-                            <div className="relative overflow-hidden rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
+                            <div className="relative rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
                                 <div className="relative p-6 lg:p-8">
                                     <div className="flex items-center justify-between mb-6">
                                         <div className="flex items-center gap-3">
@@ -731,7 +731,7 @@ function DashboardContent() {
                                                 <ChevronDown className="w-3.5 h-3.5 ml-auto text-muted-foreground" />
                                             </button>
                                             {showPlatformMenu && (
-                                                <div className="absolute top-full left-0 mt-1 w-full bg-background border border-border rounded-xl shadow-lg z-10 py-1">
+                                                <div className="absolute top-full left-0 mt-1 w-full bg-background border border-border rounded-xl shadow-xl z-50 py-1">
                                                     {(Object.keys(PLATFORM_CONFIG) as Array<keyof typeof PLATFORM_CONFIG>).map(p => (
                                                         <button
                                                             key={p}
