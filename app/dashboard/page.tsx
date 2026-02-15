@@ -24,6 +24,7 @@ import {
     Users,
     Plus,
     Check,
+    Trash2,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
@@ -398,6 +399,28 @@ function DashboardContent() {
         setShowCreateForm(false);
     };
 
+    /* ─── Delete Influencer ─── */
+    const handleDeleteInfluencer = async (e: React.MouseEvent, inf: CreatedInfluencer) => {
+        e.stopPropagation(); // Don't trigger card click
+        if (!confirm(`Delete "${inf.name}"? This cannot be undone.`)) return;
+        try {
+            const res = await fetch('/api/influencers', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: inf.id }),
+            });
+            if (res.ok) {
+                setInfluencerLibrary(prev => prev.filter(i => i.id !== inf.id));
+                if (createdInfluencer?.id === inf.id) {
+                    setCreatedInfluencer(null);
+                    setGeneratedVideos([]);
+                }
+            }
+        } catch (err) {
+            console.error('Delete failed:', err);
+        }
+    };
+
     /* ─── Loading ─── */
     if (loading) {
         return (
@@ -538,6 +561,17 @@ function DashboardContent() {
                                             onClick={() => handleSelectInfluencer(inf)}
                                             className="group relative rounded-2xl border border-border/50 bg-card p-4 text-left hover:border-violet-300 hover:shadow-md transition-all"
                                         >
+                                            {/* Delete button */}
+                                            <div
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={(e) => handleDeleteInfluencer(e, inf)}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') handleDeleteInfluencer(e as unknown as React.MouseEvent, inf); }}
+                                                className="absolute top-2 right-2 z-10 w-6 h-6 rounded-lg bg-red-500/0 hover:bg-red-500/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                                                title="Delete influencer"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
+                                            </div>
                                             <div className="w-16 h-16 rounded-xl overflow-hidden border border-violet-200/30 mx-auto mb-3 shadow-sm">
                                                 {inf.avatarUrl ? (
                                                     <Image
@@ -558,7 +592,7 @@ function DashboardContent() {
                                             {inf.personality && (
                                                 <p className="text-[10px] text-muted-foreground text-center line-clamp-2 mt-1">{inf.personality.substring(0, 60)}...</p>
                                             )}
-                                            <div className="absolute inset-0 rounded-2xl ring-2 ring-violet-400/0 group-hover:ring-violet-400/50 transition-all" />
+                                            <div className="absolute inset-0 rounded-2xl ring-2 ring-violet-400/0 group-hover:ring-violet-400/50 transition-all pointer-events-none" />
                                         </button>
                                     ))}
                                 </div>
