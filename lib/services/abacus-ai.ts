@@ -893,12 +893,12 @@ ${screenshotContext}`
                 : 'fal-ai/kling-video/v2.6/pro/text-to-video'
 
             // Step 1: Submit the video generation request to fal.ai queue
-            console.log(`[Video] Submitting to fal.ai ${falModel} queue (V2.6 with native audio)...`)
+            console.log(`[Video] Submitting to fal.ai ${falModel} queue (V2.6, audio via ElevenLabs)...`)
             const requestBody: Record<string, unknown> = {
                 prompt: prompt.substring(0, 2500), // Kling supports longer prompts
                 duration: '10', // 10 seconds for marketing content
                 negative_prompt: negativePrompt || 'blur, distort, low quality, cartoon, 3d render, anime, extra fingers, CGI, camera zoom, dolly in, push in, extreme close-up',
-                generate_audio: true, // V2.6 native audio — generates speech + ambient sound
+                generate_audio: false, // Disabled — ElevenLabs TTS provides voiceover via ffmpeg merge
             }
             if (useImageToVideo) {
                 requestBody.start_image_url = avatarUrl  // V2.6 uses start_image_url instead of image_url

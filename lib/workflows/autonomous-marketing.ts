@@ -7,8 +7,11 @@
 import { abacusAI } from '@/lib/services/abacus-ai'
 import * as klingAI from '@/lib/services/kling-ai'
 import { captureWebsite, uploadScreenshot, scrapeWebsiteInfo, uploadMediaToStorage } from '@/lib/services/screenshot'
+import { processVideoWithAudio } from '@/lib/services/audio-utils'
 import type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile } from '@/lib/services/abacus-ai'
 import type { Storyboard } from '@/lib/types/storyboard'
+import type { Language } from '@/lib/i18n/translations'
+import type { Gender } from '@/lib/services/elevenlabs'
 
 export interface WorkflowStatus {
     id: string
@@ -261,26 +264,52 @@ export async function generateVideo(
         thumbnailUrl = falResult.thumbnailUrl
         console.log(`[Workflow] ✅ fal.ai Kling video: ${videoUrl || '(none)'}`)
 
-        // Upload to Supabase for permanent storage
+        // ── ElevenLabs TTS + ffmpeg Merge ──
+        // Generate voiceover with ElevenLabs and merge with video
         if (videoUrl) {
-            report('Uploading video to storage...')
+            report('🎙️ ElevenLabs: Generating voiceover & merging...')
             try {
-                const videoResponse = await fetch(videoUrl)
-                if (videoResponse.ok) {
-                    const videoBuffer = Buffer.from(await videoResponse.arrayBuffer())
-                    const uploadedUrl = await uploadMediaToStorage(
-                        videoBuffer,
-                        projectId,
-                        `video-${platform}-${Date.now()}.mp4`,
-                        'video/mp4'
-                    )
-                    if (uploadedUrl) {
-                        videoUrl = uploadedUrl
-                        console.log(`[Workflow] ✅ Video uploaded to Supabase: ${videoUrl}`)
+                // Determine language and gender from influencer profile
+                const projectLanguage = (influencerProfile?.language as Language) || 'tr'
+                const vp = influencerProfile?.visualProfile as Record<string, string> | undefined
+                const influencerGender: Gender = (vp?.gender === 'male' ? 'male' : 'female')
+
+                console.log(`[Workflow] ElevenLabs TTS: lang=${projectLanguage}, gender=${influencerGender}`)
+
+                const audioResult = await processVideoWithAudio({
+                    script: finalScript,
+                    videoUrl,
+                    language: projectLanguage,
+                    gender: influencerGender,
+                    projectId,
+                    platform,
+                    onProgress: report,
+                })
+
+                videoUrl = audioResult.finalVideoUrl
+                console.log(`[Workflow] ✅ Video + ElevenLabs audio merged: ${videoUrl}`)
+                console.log(`[Workflow]   Voice: ${audioResult.voiceName} (${audioResult.voiceId})`)
+            } catch (audioError) {
+                console.error('[Workflow] ⚠️ ElevenLabs merge failed, uploading silent video:', audioError)
+                // Fallback: upload the silent video without ElevenLabs audio
+                try {
+                    const videoResponse = await fetch(videoUrl)
+                    if (videoResponse.ok) {
+                        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer())
+                        const uploadedUrl = await uploadMediaToStorage(
+                            videoBuffer,
+                            projectId,
+                            `video-${platform}-${Date.now()}.mp4`,
+                            'video/mp4'
+                        )
+                        if (uploadedUrl) {
+                            videoUrl = uploadedUrl
+                            console.log(`[Workflow] ✅ Silent video uploaded to Supabase: ${videoUrl}`)
+                        }
                     }
+                } catch (uploadError) {
+                    console.error('[Workflow] ⚠️ Video upload failed, using fal.ai URL directly:', uploadError)
                 }
-            } catch (uploadError) {
-                console.error('[Workflow] ⚠️ Video upload failed, using fal.ai URL directly:', uploadError)
             }
         }
 

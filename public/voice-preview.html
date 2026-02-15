@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎙️ ElevenLabs Ses Kütüphanesi — Önizleme</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        .lang-section {
+            max-width: 900px;
+            margin: 0 auto 2rem;
+            background: #12121a;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid #1e1e2e;
+        }
+        .lang-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #1e1e2e;
+        }
+        .lang-flag { font-size: 2rem; }
+        .lang-name { font-size: 1.25rem; font-weight: 600; }
+        .voice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1rem;
+        }
+        .voice-card {
+            background: #1a1a28;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .voice-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
+        }
+        .voice-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .voice-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #fff;
+        }
+        .voice-gender {
+            font-size: 0.75rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .voice-gender.female {
+            background: rgba(236, 72, 153, 0.15);
+            color: #ec4899;
+        }
+        .voice-gender.male {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+        .voice-char {
+            color: #999;
+            font-size: 0.85rem;
+        }
+        .voice-id {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+            color: #555;
+        }
+        audio {
+            width: 100%;
+            height: 36px;
+            border-radius: 8px;
+            margin-top: 0.25rem;
+        }
+        audio::-webkit-media-controls-panel {
+            background: #252535;
+        }
+        .model-badge {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.8rem;
+            color: #667eea;
+        }
+        .settings-box {
+            max-width: 900px;
+            margin: 0 auto 2rem;
+            background: #12121a;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid #1e1e2e;
+        }
+        .settings-box h3 {
+            color: #667eea;
+            margin-bottom: 0.75rem;
+        }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+        }
+        .setting-item {
+            text-align: center;
+            background: #1a1a28;
+            padding: 0.75rem;
+            border-radius: 10px;
+        }
+        .setting-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .setting-label {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎙️ ElevenLabs Ses Kütüphanesi</h1>
+    <p class="subtitle">AI Marketing Factory — 5 Dil × 4 Ses = 20 Profesyonel Ses</p>
+    <p class="model-badge">Model: <strong>eleven_multilingual_v2</strong> — Otomatik dil algılama</p>
+
+    <div class="settings-box">
+        <h3>⚙️ Ses Ayarları (Doğallık Optimizasyonu)</h3>
+        <div class="settings-grid">
+            <div class="setting-item">
+                <div class="setting-value">0.45</div>
+                <div class="setting-label">Stability</div>
+            </div>
+            <div class="setting-item">
+                <div class="setting-value">0.80</div>
+                <div class="setting-label">Similarity Boost</div>
+            </div>
+            <div class="setting-item">
+                <div class="setting-value">0.25</div>
+                <div class="setting-label">Style</div>
+            </div>
+            <div class="setting-item">
+                <div class="setting-value">✓</div>
+                <div class="setting-label">Speaker Boost</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🇹🇷 Turkish -->
+    <div class="lang-section">
+        <div class="lang-header">
+            <span class="lang-flag">🇹🇷</span>
+            <span class="lang-name">Türkçe</span>
+        </div>
+        <div class="voice-grid">
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Sarah</span>
+                    <span class="voice-gender female">Kadın</span>
+                </div>
+                <span class="voice-char">Profesyonel — Olgun, güven verici</span>
+                <span class="voice-id">EXAVITQu4vr4xnSDxMaL</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/EXAVITQu4vr4xnSDxMaL/01a3e33c-6e99-4ee7-8543-ff2216a32186.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Jessica</span>
+                    <span class="voice-gender female">Kadın</span>
+                </div>
+                <span class="voice-char">Modern — Oyuncu, sıcak</span>
+                <span class="voice-id">cgSgspJ2msm6clMCkdW9</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/cgSgspJ2msm6clMCkdW9/56a97bf8-b69b-448f-846c-c3a11683d45a.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Liam</span>
+                    <span class="voice-gender male">Erkek</span>
+                </div>
+                <span class="voice-char">Dinamik — Enerjik, sosyal medya</span>
+                <span class="voice-id">TX3LPaxmHKxFdv7VOQHJ</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/TX3LPaxmHKxFdv7VOQHJ/172d9bf5-8094-4438-b06f-b382ead09a2f.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Daniel</span>
+                    <span class="voice-gender male">Erkek</span>
+                </div>
+                <span class="voice-char">Güçlü — Profesyonel yayıncı</span>
+                <span class="voice-id">onwK4e9ZLuTAKqWW03F9</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/onwK4e9ZLuTAKqWW03F9/f56723eb-7529-4617-bc87-5cf65658e538.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🇬🇧 English -->
+    <div class="lang-section">
+        <div class="lang-header">
+            <span class="lang-flag">🇬🇧</span>
+            <span class="lang-name">English</span>
+        </div>
+        <div class="voice-grid">
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Sarah</span>
+                    <span class="voice-gender female">Female</span>
+                </div>
+                <span class="voice-char">Professional — Mature, reassuring, confident</span>
+                <span class="voice-id">EXAVITQu4vr4xnSDxMaL</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/EXAVITQu4vr4xnSDxMaL/01a3e33c-6e99-4ee7-8543-ff2216a32186.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Matilda</span>
+                    <span class="voice-gender female">Female</span>
+                </div>
+                <span class="voice-char">Warm — Knowledgable, professional</span>
+                <span class="voice-id">XrExE9yKIg1WjnnlVkGX</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/XrExE9yKIg1WjnnlVkGX/b930e18d-6b4d-466e-bab2-0ae97c6d8535.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Eric</span>
+                    <span class="voice-gender male">Male</span>
+                </div>
+                <span class="voice-char">Trustworthy — Smooth, classy</span>
+                <span class="voice-id">cjVigY5qzO86Huf0OWal</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/cjVigY5qzO86Huf0OWal/d098fda0-6456-4030-b3d8-63aa048c9070.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Brian</span>
+                    <span class="voice-gender male">Male</span>
+                </div>
+                <span class="voice-char">Dynamic — Deep, resonant, comforting</span>
+                <span class="voice-id">nPczCjzI2devNBz1zQrb</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/nPczCjzI2devNBz1zQrb/2dd3e72c-4fd3-42f1-93ea-abc5d4e5aa1d.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🇪🇸 Spanish -->
+    <div class="lang-section">
+        <div class="lang-header">
+            <span class="lang-flag">🇪🇸</span>
+            <span class="lang-name">Español</span>
+        </div>
+        <div class="voice-grid">
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Matilda</span>
+                    <span class="voice-gender female">Mujer</span>
+                </div>
+                <span class="voice-char">Cálida — Profesional, informativa</span>
+                <span class="voice-id">XrExE9yKIg1WjnnlVkGX</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/XrExE9yKIg1WjnnlVkGX/20291a6d-1e7f-45e4-9d85-a764997a2fdb.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Jessica</span>
+                    <span class="voice-gender female">Mujer</span>
+                </div>
+                <span class="voice-char">Enérgica — Juguetona, brillante</span>
+                <span class="voice-id">cgSgspJ2msm6clMCkdW9</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/cgSgspJ2msm6clMCkdW9/56a97bf8-b69b-448f-846c-c3a11683d45a.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Eric</span>
+                    <span class="voice-gender male">Hombre</span>
+                </div>
+                <span class="voice-char">Elegante — Suave, confiable</span>
+                <span class="voice-id">cjVigY5qzO86Huf0OWal</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/cjVigY5qzO86Huf0OWal/4d56a844-3fc5-4048-b8d9-daff582c2746.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Will</span>
+                    <span class="voice-gender male">Hombre</span>
+                </div>
+                <span class="voice-char">Carismático — Relajado, optimista</span>
+                <span class="voice-id">bIHbv24MWmeRgasZH58o</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/bIHbv24MWmeRgasZH58o/9b17b1ba-98f6-4c6d-9da7-dc03a76bc50c.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🇩🇪 German -->
+    <div class="lang-section">
+        <div class="lang-header">
+            <span class="lang-flag">🇩🇪</span>
+            <span class="lang-name">Deutsch</span>
+        </div>
+        <div class="voice-grid">
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Lily</span>
+                    <span class="voice-gender female">Frau</span>
+                </div>
+                <span class="voice-char">Klar — Samtig, selbstbewusst</span>
+                <span class="voice-id">pFZP5JQG7iQjIQuC4Bku</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/pFZP5JQG7iQjIQuC4Bku/0c5c2b73-34b6-4d17-ae2f-f4e4cb7b0636.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Jessica</span>
+                    <span class="voice-gender female">Frau</span>
+                </div>
+                <span class="voice-char">Freundlich — Spielerisch, warm</span>
+                <span class="voice-id">cgSgspJ2msm6clMCkdW9</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/cgSgspJ2msm6clMCkdW9/eb773c99-fcf2-4f0c-ace5-84dc43880c34.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Brian</span>
+                    <span class="voice-gender male">Mann</span>
+                </div>
+                <span class="voice-char">Zuverlässig — Tief, beruhigend</span>
+                <span class="voice-id">nPczCjzI2devNBz1zQrb</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/nPczCjzI2devNBz1zQrb/0b33b286-75f0-404f-bcec-68a56e6b37e8.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Roger</span>
+                    <span class="voice-gender male">Mann</span>
+                </div>
+                <span class="voice-char">Natürlich — Entspannt, lässig</span>
+                <span class="voice-id">CwhRBWXzGAHq8TQ4Fs17</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/CwhRBWXzGAHq8TQ4Fs17/fa6a7658-18a9-4634-a96f-95dc3c47629d.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🇫🇷 French -->
+    <div class="lang-section">
+        <div class="lang-header">
+            <span class="lang-flag">🇫🇷</span>
+            <span class="lang-name">Français</span>
+        </div>
+        <div class="voice-grid">
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Alice</span>
+                    <span class="voice-gender female">Femme</span>
+                </div>
+                <span class="voice-char">Élégante — Claire, éducative</span>
+                <span class="voice-id">Xb7hH8MSUJpSbSDYk0k2</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/Xb7hH8MSUJpSbSDYk0k2/8078faa3-8ac4-4e55-b9ae-2d43a17fba42.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Matilda</span>
+                    <span class="voice-gender female">Femme</span>
+                </div>
+                <span class="voice-char">Douce — Professionnelle, chaleureuse</span>
+                <span class="voice-id">XrExE9yKIg1WjnnlVkGX</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/XrExE9yKIg1WjnnlVkGX/40f2148b-d09e-4f24-97b6-66aafef1b0bb.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">George</span>
+                    <span class="voice-gender male">Homme</span>
+                </div>
+                <span class="voice-char">Raffiné — Chaleureux, captivant</span>
+                <span class="voice-id">JBFqnCBsd6RMkjVDRZzb</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/JBFqnCBsd6RMkjVDRZzb/6096acce-e18f-4e95-a8e3-bb1c0a27624e.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+            <div class="voice-card">
+                <div class="voice-top">
+                    <span class="voice-name">Chris</span>
+                    <span class="voice-gender male">Homme</span>
+                </div>
+                <span class="voice-char">Naturel — Charmant, terre-à-terre</span>
+                <span class="voice-id">iP95p4xoKVk53GoZ742B</span>
+                <audio controls preload="none">
+                    <source src="https://storage.googleapis.com/eleven-public-prod/premade/voices/iP95p4xoKVk53GoZ742B/34ab53c0-7f77-4624-a26b-65b58394ea69.mp3" type="audio/mpeg">
+                </audio>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
