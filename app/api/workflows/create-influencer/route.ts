@@ -170,7 +170,7 @@ Respond with ONLY valid JSON (no markdown formatting):
 
         const appearance = (profile.appearanceDescription || '').substring(0, 150)
         const dnaKeywords = visualDna ? `, ${visualDna}` : ''
-        const avatarPrompt = `Professional photorealistic portrait headshot of a ${genderWord} aged ${age}, ${appearance || 'stylish and professional'}, clean studio background, soft lighting, warm confident expression, high-end corporate headshot style, 8k uhd, sharp focus${dnaKeywords}. Avoid: lowres, bad anatomy, text overlap, distorted UI, cartoon, messy background, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs`
+        const avatarPrompt = `Professional photorealistic medium shot portrait of a ${genderWord} aged ${age}, visible from waist up, ${appearance || 'stylish and professional'}, standing in a modern office environment with natural pose, arms relaxed at sides, clean studio background, soft cinematic lighting, warm confident expression looking at camera, professional business attire, 8k uhd, sharp focus, shot on 85mm lens${dnaKeywords}. Avoid: extreme close-up, tight headshot, cropped face, lowres, bad anatomy, text overlap, distorted UI, cartoon, messy background, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs`
 
         let avatarUrl = ''
         try {

@@ -791,12 +791,12 @@ Respond ONLY with valid JSON.`
         ]
 
         const cameraStyles = [
-            'handheld selfie style, slight natural movement, like a real phone video',
-            'stable tripod shot with subtle zoom-in during key moments',
-            'vlog-style with walking movement, dynamic and engaging',
-            'close-up face shot transitioning to medium shot, intimate and personal',
-            'over-the-shoulder angle showing phone screen, then back to face',
-            'steady medium shot with slow cinematic push-in for emphasis',
+            'handheld selfie style, slight natural movement, like a real phone video, medium shot framing',
+            'stable tripod shot, static camera, medium shot from chest up',
+            'vlog-style medium shot with person walking and talking naturally',
+            'steady medium shot, person standing and gesturing while speaking to camera',
+            'wide medium shot showing person in environment, natural body language',
+            'steady medium shot with person making subtle hand gestures for emphasis',
         ]
 
         const loc = pick(locations)
@@ -824,7 +824,7 @@ Respond ONLY with valid JSON.`
 
         const ugcStr = UGC_AUTHENTICITY_KEYWORDS.slice(0, 6).join(', ')
 
-        return `Cinematic close-up of a real person speaking to camera for ${settings.maxDuration} seconds. ${settings.aspectRatio} format.
+        return `Cinematic medium shot of a real person speaking to camera for ${settings.maxDuration} seconds. ${settings.aspectRatio} format. Framed from chest up, at a natural conversational distance.
 
 ${characterRef}
 
@@ -833,23 +833,27 @@ SETTING (THIS VIDEO):
 - Outfit: ${outfit}
 - Mood: ${mood}
 
-WHAT THE PERSON IS SAYING:
-${spokenScript}
+WHAT THE PERSON IS SAYING (the person speaks this aloud with natural lip movement):
+"${spokenScript}"
 
 CINEMATIC REALISM (CRITICAL):
 - Highly realistic, photorealistic human, NOT CGI, NOT 3D render, NOT cartoon, NOT anime
 - Natural skin texture, hyper-detailed pores, subtle facial micro-expressions
-- Soft cinematic rim lighting, shallow depth of field, shot on 35mm lens
-- 4K quality, 60fps, professional color grading
+- Soft cinematic rim lighting, shallow depth of field, shot on 85mm lens
+- 4K quality, professional color grading
 - Real physical location with natural light and real shadows
 
-MOVEMENT (MINIMAL — VERY IMPORTANT):
-- Slow dolly-in camera movement only
-- Gentle head tilt, natural eye blinks, subtle nodding
-- NO fast movements, NO hand gestures, NO body movement
-- The person mostly looks at camera with calm, natural expression
-- Occasional slow blink and slight smile — that's it
-- Think: a talking head video where only lips and eyes move naturally
+CAMERA (VERY IMPORTANT):
+- STATIC camera — absolutely NO zoom, NO dolly-in, NO push-in, NO camera movement toward face
+- Keep the same framing throughout the entire video
+- Medium shot distance: chest/shoulders and head visible, NOT extreme close-up
+
+PERSON MOVEMENT (NATURAL):
+- Person speaks with natural lip sync and facial expressions
+- Natural head movements, eye contact with camera, occasional head tilt
+- Subtle hand gestures allowed — the person can move their hands naturally
+- Person can shift weight, lean slightly, or walk slowly
+- Think: a real human talking in a social media video with natural body language
 
 NEGATIVE (AVOID AT ALL COSTS):
 cartoon, 3d render, anime, blurry, distorted mouth, extra fingers, low quality, glitch, video game, CGI, plastic skin, smooth skin, unnatural eyes, flat lighting, artificial look
@@ -881,23 +885,23 @@ ${screenshotContext}`
 
         try {
             // Choose model based on whether we have an avatar image
-            // Kling V2.1 Pro for image-to-video (10s, cinematic quality)
-            // Kling V2.1 Pro text-to-video fallback
+            // Kling V2.6 Pro for image-to-video (10s, cinematic quality, NATIVE AUDIO)
+            // Kling V2.6 Pro text-to-video fallback
             const useImageToVideo = !!avatarUrl
             const falModel = useImageToVideo
-                ? 'fal-ai/kling-video/v2.1/pro/image-to-video'
-                : 'fal-ai/kling-video/v2.1/pro/text-to-video'
+                ? 'fal-ai/kling-video/v2.6/pro/image-to-video'
+                : 'fal-ai/kling-video/v2.6/pro/text-to-video'
 
             // Step 1: Submit the video generation request to fal.ai queue
-            console.log(`[Video] Submitting to fal.ai ${falModel} queue...`)
+            console.log(`[Video] Submitting to fal.ai ${falModel} queue (V2.6 with native audio)...`)
             const requestBody: Record<string, unknown> = {
                 prompt: prompt.substring(0, 2500), // Kling supports longer prompts
                 duration: '10', // 10 seconds for marketing content
-                negative_prompt: negativePrompt || 'blur, distort, low quality, cartoon, 3d render, anime, extra fingers, CGI',
-                cfg_scale: 0.5,
+                negative_prompt: negativePrompt || 'blur, distort, low quality, cartoon, 3d render, anime, extra fingers, CGI, camera zoom, dolly in, push in, extreme close-up',
+                generate_audio: true, // V2.6 native audio — generates speech + ambient sound
             }
             if (useImageToVideo) {
-                requestBody.image_url = avatarUrl
+                requestBody.start_image_url = avatarUrl  // V2.6 uses start_image_url instead of image_url
                 console.log(`[Video] Using influencer avatar as reference frame: ${avatarUrl}`)
             }
 
