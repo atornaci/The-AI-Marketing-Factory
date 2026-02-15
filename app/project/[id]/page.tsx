@@ -2403,13 +2403,32 @@ function ProjectDetailPageInner({
                                                         withBrandOverlay,
                                                     }),
                                                 });
-                                                const data = await res.json();
+
+                                                if (!res.ok) {
+                                                    const errText = await res.text().catch(() => '');
+                                                    console.error('Image gen API error:', res.status, errText);
+                                                    alert(`Görsel üretme hatası (${res.status}). Lütfen tekrar deneyin.`);
+                                                    return;
+                                                }
+
+                                                const text = await res.text();
+                                                if (!text) {
+                                                    console.error('Image gen: empty response');
+                                                    alert('Görsel üretme yanıtı boş döndü. Lütfen tekrar deneyin.');
+                                                    return;
+                                                }
+
+                                                const data = JSON.parse(text);
                                                 if (data.success && data.image) {
                                                     setGeneratedImages(prev => [data.image, ...prev]);
                                                     setImagePrompt("");
+                                                } else {
+                                                    console.error('Image gen failed:', data);
+                                                    alert(data.error || 'Görsel üretilemedi. Lütfen tekrar deneyin.');
                                                 }
                                             } catch (err) {
                                                 console.error('Image gen error:', err);
+                                                alert('Görsel üretme hatası. Lütfen tekrar deneyin.');
                                             } finally {
                                                 setIsGeneratingImage(false);
                                             }
