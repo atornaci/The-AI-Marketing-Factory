@@ -299,7 +299,7 @@ function ProjectDetailPageInner({
                 .single();
 
             if (projectErr || !projectData) {
-                setError("Proje bulunamadı");
+                setError("Project not found");
                 return;
             }
             setProject(projectData);
@@ -354,7 +354,7 @@ function ProjectDetailPageInner({
 
         } catch (err) {
             console.error("Fetch error:", err);
-            setError("Veri yüklenirken hata oluştu");
+            setError("Error loading data");
         } finally {
             setLoading(false);
         }
@@ -393,15 +393,15 @@ function ProjectDetailPageInner({
     const handleCreateInfluencer = async () => {
         setIsCreatingInfluencer(true);
         setInfluencerProgress(0);
-        setInfluencerStep("AI Influencer oluşturuluyor...");
+        setInfluencerStep("Creating AI Influencer...");
         setInfluencerError("");
 
         const steps = [
-            { progress: 15, label: "Proje analizi yapılıyor..." },
-            { progress: 30, label: "Kişilik profili oluşturuluyor..." },
-            { progress: 50, label: "Görsel profil tasarlanıyor..." },
-            { progress: 70, label: "ElevenLabs ses profili klonlanıyor..." },
-            { progress: 90, label: "Veritabanına kaydediliyor..." },
+            { progress: 15, label: "Analyzing project..." },
+            { progress: 30, label: "Creating personality profile..." },
+            { progress: 50, label: "Designing visual profile..." },
+            { progress: 70, label: "Cloning ElevenLabs voice profile..." },
+            { progress: 90, label: "Saving to database..." },
         ];
 
         let currentStep = 0;
@@ -424,11 +424,11 @@ function ProjectDetailPageInner({
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Influencer oluşturulamadı");
+                throw new Error(errorData.error || "Failed to create influencer");
             }
 
             setInfluencerProgress(100);
-            setInfluencerStep("AI Influencer hazır! ✓");
+            setInfluencerStep("AI Influencer ready! ✓");
             await new Promise((resolve) => setTimeout(resolve, 1500));
 
             // Refresh data to show new influencer
@@ -436,9 +436,9 @@ function ProjectDetailPageInner({
         } catch (err) {
             clearInterval(progressInterval);
             const errMsg =
-                err instanceof Error ? err.message : "Bilinmeyen hata oluştu";
+                err instanceof Error ? err.message : "Unknown error occurred";
             setInfluencerError(errMsg);
-            setInfluencerStep(`Hata: ${errMsg}`);
+            setInfluencerStep(`Error: ${errMsg}`);
         } finally {
             setTimeout(() => {
                 setIsCreatingInfluencer(false);
@@ -451,7 +451,7 @@ function ProjectDetailPageInner({
     /* ─── Create Manual Influencer ─── */
     const handleCreateManualInfluencer = async () => {
         if (!manualForm.name.trim()) {
-            setInfluencerError("Influencer adı zorunludur");
+            setInfluencerError("Influencer name is required");
             return;
         }
         setIsSavingManual(true);
@@ -476,7 +476,7 @@ function ProjectDetailPageInner({
             setManualForm({ name: "", gender: "female", personality: "", appearance_description: "", backstory: "" });
             setCreationMode("ai");
         } catch (err) {
-            const errMsg = err instanceof Error ? err.message : "Kaydetme hatası";
+            const errMsg = err instanceof Error ? err.message : "Save error";
             setInfluencerError(errMsg);
         } finally {
             setIsSavingManual(false);
@@ -517,8 +517,8 @@ function ProjectDetailPageInner({
             }
             await fetchData();
         } catch (err) {
-            const errMsg = err instanceof Error ? err.message : "Yükleme hatası";
-            alert(`Ürün yükleme hatası: ${errMsg}`);
+            const errMsg = err instanceof Error ? err.message : "Upload error";
+            alert(`Product upload error: ${errMsg}`);
         } finally {
             setIsUploadingProduct(false);
             setUploadProgress(0);
@@ -533,7 +533,7 @@ function ProjectDetailPageInner({
             await supabase.from("assets").delete().eq("id", asset.id);
             await fetchData();
         } catch (err) {
-            alert("Silme hatası oluştu");
+            alert("Delete error occurred");
         }
     };
 
@@ -544,19 +544,19 @@ function ProjectDetailPageInner({
         setIsGenerating(true);
         setGeneratingPlatform(platform);
         setGenProgress(0);
-        setGenStep("Video üretimi başlatılıyor...");
+        setGenStep("Starting video generation...");
         setGenError("");
 
         // Progress animation while fal.ai works (video gen takes 2-5 min)
         const steps = [
-            { progress: 10, label: "Video prompt hazırlanıyor..." },
-            { progress: 25, label: "AI ile prompt güçlendiriliyor..." },
-            { progress: 40, label: "fal.ai'ya gönderiliyor..." },
-            { progress: 55, label: "Minimax Video render ediyor..." },
-            { progress: 65, label: "Video oluşturuluyor..." },
-            { progress: 75, label: "Render devam ediyor..." },
-            { progress: 85, label: "Son dokunuşlar yapılıyor..." },
-            { progress: 90, label: "Video kaydediliyor..." },
+            { progress: 10, label: "Preparing video prompt..." },
+            { progress: 25, label: "Enhancing prompt with AI..." },
+            { progress: 40, label: "Sending to fal.ai..." },
+            { progress: 55, label: "Minimax Video rendering..." },
+            { progress: 65, label: "Creating video..." },
+            { progress: 75, label: "Still rendering..." },
+            { progress: 85, label: "Final touches..." },
+            { progress: 90, label: "Saving video..." },
         ];
 
         let currentStep = 0;
@@ -611,11 +611,11 @@ function ProjectDetailPageInner({
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || "Video üretilemedi");
+                throw new Error(errorData.error || "Video generation failed");
             }
 
             setGenProgress(100);
-            setGenStep("Video tamamlandı! ✓");
+            setGenStep("Video complete! ✓");
             await new Promise((resolve) => setTimeout(resolve, 1500));
 
             // Refresh data to show new video
@@ -623,9 +623,9 @@ function ProjectDetailPageInner({
         } catch (err) {
             clearInterval(progressInterval);
             const errMsg =
-                err instanceof Error ? err.message : "Bilinmeyen hata oluştu";
+                err instanceof Error ? err.message : "Unknown error occurred";
             setGenError(errMsg);
-            setGenStep(`Hata: ${errMsg}`);
+            setGenStep(`Error: ${errMsg}`);
         } finally {
             setTimeout(() => {
                 setIsGenerating(false);
@@ -653,7 +653,7 @@ function ProjectDetailPageInner({
             case "ready":
                 return {
                     color: "bg-emerald-50 text-emerald-600 border-emerald-200",
-                    text: "Hazır",
+                    text: "Ready",
                 };
             case "rendering":
             case "scripting":
@@ -661,17 +661,17 @@ function ProjectDetailPageInner({
             case "voiceover":
                 return {
                     color: "bg-violet-50 text-violet-600 border-violet-200",
-                    text: "İşleniyor",
+                    text: "Processing",
                 };
             case "draft":
                 return {
                     color: "bg-amber-50 text-amber-600 border-amber-200",
-                    text: "Taslak",
+                    text: "Draft",
                 };
             case "failed":
                 return {
                     color: "bg-red-50 text-red-600 border-red-200",
-                    text: "Hata",
+                    text: "Error",
                 };
             default:
                 return { color: "", text: status };
@@ -681,12 +681,12 @@ function ProjectDetailPageInner({
     const timeAgo = (dateStr: string) => {
         const diff = Date.now() - new Date(dateStr).getTime();
         const mins = Math.floor(diff / 60000);
-        if (mins < 1) return "Az önce";
-        if (mins < 60) return `${mins} dk önce`;
+        if (mins < 1) return "Just now";
+        if (mins < 60) return `${mins}m ago`;
         const hours = Math.floor(mins / 60);
-        if (hours < 24) return `${hours} saat önce`;
+        if (hours < 24) return `${hours}h ago`;
         const days = Math.floor(hours / 24);
-        return `${days} gün önce`;
+        return `${days}d ago`;
     };
 
     const constitution = project?.marketing_constitution;
@@ -703,7 +703,7 @@ function ProjectDetailPageInner({
                     className="text-center space-y-3"
                 >
                     <Loader2 className="w-8 h-8 animate-spin text-violet-500 mx-auto" />
-                    <p className="text-sm text-muted-foreground">Proje yükleniyor...</p>
+                    <p className="text-sm text-muted-foreground">Loading project...</p>
                 </motion.div>
             </div>
         );
@@ -714,11 +714,11 @@ function ProjectDetailPageInner({
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center space-y-4">
                     <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
-                    <p className="text-muted-foreground">{error || "Proje bulunamadı"}</p>
+                    <p className="text-muted-foreground">{error || "Project not found"}</p>
                     <Link href="/dashboard">
                         <Button variant="outline" className="rounded-xl">
                             <ArrowLeft className="w-4 h-4 mr-2" />
-                            Dashboard&apos;a Dön
+                            Back to Dashboard
                         </Button>
                     </Link>
                 </div>
@@ -790,7 +790,7 @@ function ProjectDetailPageInner({
                             }}
                         >
                             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                            Yeniden Analiz
+                            Re-analyze
                         </Button>
                         <Button
                             size="sm"
@@ -800,7 +800,7 @@ function ProjectDetailPageInner({
                             className="rounded-xl h-9 bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/20 text-xs font-medium"
                         >
                             <Video className="w-3.5 h-3.5 mr-1.5" />
-                            Video Üret
+                            Generate Video
                         </Button>
                     </div>
                 </div>
@@ -833,7 +833,7 @@ function ProjectDetailPageInner({
                                     className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm"
                                 >
                                     <Video className="w-4 h-4 mr-1.5" />
-                                    Videolar
+                                    Videos
                                     {videos.length > 0 && (
                                         <span className="ml-1.5 text-[10px] bg-violet-500/10 text-violet-600 px-1.5 py-0.5 rounded-full">
                                             {videos.length}
@@ -845,7 +845,7 @@ function ProjectDetailPageInner({
                                     className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm"
                                 >
                                     <Settings className="w-4 h-4 mr-1.5" />
-                                    Ayarlar
+                                    Settings
                                 </TabsTrigger>
 
                             </TabsList>
@@ -881,7 +881,7 @@ function ProjectDetailPageInner({
                                                 <div className="absolute bottom-4 right-4">
                                                     <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 rounded-lg">
                                                         <CheckCircle2 className="w-3 h-3 mr-1" />
-                                                        {influencer.status === "ready" ? "Aktif" : influencer.status}
+                                                        {influencer.status === "ready" ? "Active" : influencer.status}
                                                     </Badge>
                                                 </div>
                                             </div>
@@ -890,12 +890,12 @@ function ProjectDetailPageInner({
                                                     {influencer.name}
                                                 </h3>
                                                 <p className="text-xs text-muted-foreground mb-3">
-                                                    {project.name} için AI Influencer
+                                                    AI Influencer for {project.name}
                                                 </p>
                                                 {influencer.voice_id && (
                                                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                                                         <Mic className="w-3.5 h-3.5 text-violet-500" />
-                                                        Ses Profili Aktif
+                                                        Voice Profile Active
                                                     </div>
                                                 )}
                                                 <Button
@@ -905,13 +905,13 @@ function ProjectDetailPageInner({
                                                     onClick={async () => {
                                                         try {
                                                             setIsCreatingInfluencer(true);
-                                                            setInfluencerStep("Mevcut influencer siliniyor...");
+                                                            setInfluencerStep("Deleting current influencer...");
 
                                                             // Use Next.js API route (direct Supabase) instead of n8n webhook
                                                             const res = await fetch(`/api/influencer/${influencer.id}`, { method: 'DELETE' });
                                                             if (!res.ok) {
                                                                 const errData = await res.json().catch(() => ({}));
-                                                                throw new Error(errData.error || 'Silme işlemi başarısız');
+                                                                throw new Error(errData.error || 'Delete operation failed');
                                                             }
 
                                                             // Clear influencer so the creation form (with gender selection) appears
@@ -922,19 +922,19 @@ function ProjectDetailPageInner({
                                                             setInfluencerError("");
                                                         } catch (err) {
                                                             console.error('Influencer deletion failed:', err);
-                                                            const errMsg = err instanceof Error ? err.message : 'Bilinmeyen hata';
+                                                            const errMsg = err instanceof Error ? err.message : 'Unknown error';
                                                             setInfluencerError(errMsg);
-                                                            setInfluencerStep(`Hata: ${errMsg}`);
+                                                            setInfluencerStep(`Error: ${errMsg}`);
                                                             setIsCreatingInfluencer(false);
-                                                            alert(`Influencer silme hatası: ${errMsg}`);
+                                                            alert(`Influencer delete error: ${errMsg}`);
                                                         }
                                                     }}
                                                     className="w-full rounded-lg text-xs border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-800 dark:text-orange-400 dark:hover:bg-orange-950/30"
                                                 >
                                                     {isCreatingInfluencer ? (
-                                                        <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Siliniyor...</>
+                                                        <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Deleting...</>
                                                     ) : (
-                                                        <><RefreshCw className="w-3 h-3 mr-1.5" /> Yeniden Oluştur</>
+                                                        <><RefreshCw className="w-3 h-3 mr-1.5" /> Recreate</>
                                                     )}
                                                 </Button>
                                             </div>
@@ -944,9 +944,9 @@ function ProjectDetailPageInner({
                                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mb-4">
                                                 <Bot className="w-8 h-8 text-violet-500" />
                                             </div>
-                                            <h3 className="font-medium mb-2">Henüz Influencer Yok</h3>
+                                            <h3 className="font-medium mb-2">No Influencer Yet</h3>
                                             <p className="text-xs text-muted-foreground">
-                                                Sağdaki formu kullanarak AI influencer oluşturun
+                                                Use the form on the right to create an AI influencer
                                             </p>
                                         </div>
                                     )}
@@ -967,8 +967,8 @@ function ProjectDetailPageInner({
                                                     <Loader2 className="w-6 h-6 animate-spin text-violet-500" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-base font-semibold">AI Influencer Oluşturuluyor</h3>
-                                                    <p className="text-xs text-muted-foreground">Bu işlem 15-30 saniye sürebilir</p>
+                                                    <h3 className="text-base font-semibold">Creating AI Influencer</h3>
+                                                    <p className="text-xs text-muted-foreground">This may take 15-30 seconds</p>
                                                 </div>
                                             </div>
                                             <div className="space-y-3">
@@ -978,19 +978,19 @@ function ProjectDetailPageInner({
                                                     ) : (
                                                         <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
                                                     )}
-                                                    <span>{influencerStep || "Başlatılıyor..."}</span>
+                                                    <span>{influencerStep || "Starting..."}</span>
                                                 </div>
                                                 <Progress value={influencerProgress} className="h-2" />
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Influencer yok ise büyük oluşturma kartı */}
+                                    {/* Show creation card if no influencer */}
                                     {!influencer && !isCreatingInfluencer && (
                                         <div className="p-8 rounded-2xl border border-border/50 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
-                                            <h3 className="text-base font-semibold mb-2">Influencer Oluştur</h3>
+                                            <h3 className="text-base font-semibold mb-2">Create Influencer</h3>
                                             <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                                                AI ile otomatik veya manuel olarak kendi influencer&apos;ınızı oluşturun.
+                                                Create your own influencer automatically with AI or manually.
                                             </p>
 
                                             {/* AI / Manuel Toggle - Large */}
@@ -999,13 +999,13 @@ function ProjectDetailPageInner({
                                                     onClick={() => setCreationMode("ai")}
                                                     className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${creationMode === "ai" ? "bg-violet-500 text-white shadow-md" : "text-muted-foreground hover:text-foreground"}`}
                                                 >
-                                                    ✨ AI ile Otomatik Oluştur
+                                                    ✨ Auto-Create with AI
                                                 </button>
                                                 <button
                                                     onClick={() => setCreationMode("manual")}
                                                     className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${creationMode === "manual" ? "bg-violet-500 text-white shadow-md" : "text-muted-foreground hover:text-foreground"}`}
                                                 >
-                                                    ✏️ Manuel Oluştur
+                                                    ✏️ Create Manually
                                                 </button>
                                             </div>
 
@@ -1013,9 +1013,9 @@ function ProjectDetailPageInner({
                                                 <>
                                                     <div className="grid grid-cols-3 gap-3 mb-5">
                                                         {[
-                                                            { icon: "🧠", title: "Kişilik", desc: "AI ile benzersiz karakter" },
-                                                            { icon: "🎙️", title: "Ses", desc: "ElevenLabs ile klonlama" },
-                                                            { icon: "🎬", title: "Video", desc: "Otomatik içerik üretimi" },
+                                                            { icon: "🧠", title: "Personality", desc: "Unique character with AI" },
+                                                            { icon: "🎙️", title: "Voice", desc: "ElevenLabs cloning" },
+                                                            { icon: "🎬", title: "Video", desc: "Automatic content creation" },
                                                         ].map((item) => (
                                                             <div key={item.title} className="p-3 rounded-xl bg-background/50 border border-border/50 text-center">
                                                                 <div className="text-xl mb-1">{item.icon}</div>
@@ -1024,7 +1024,7 @@ function ProjectDetailPageInner({
                                                             </div>
                                                         ))}
                                                     </div>
-                                                    <p className="text-xs font-medium text-muted-foreground mb-3">Influencer Cinsiyeti Seçin</p>
+                                                    <p className="text-xs font-medium text-muted-foreground mb-3">Select Influencer Gender</p>
                                                     <div className="flex gap-3 mb-5">
                                                         <button
                                                             onClick={() => setSelectedGender("female")}
@@ -1034,9 +1034,9 @@ function ProjectDetailPageInner({
                                                                 }`}
                                                         >
                                                             <div className="w-12 h-12 rounded-full mx-auto mb-2 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
-                                                                <Image src="/default-influencer-female.png" alt="Kadın" width={48} height={48} className="w-full h-full object-cover" />
+                                                                <Image src="/default-influencer-female.png" alt="Female" width={48} height={48} className="w-full h-full object-cover" />
                                                             </div>
-                                                            <span className="text-xs font-medium">Kadın</span>
+                                                            <span className="text-xs font-medium">Female</span>
                                                         </button>
                                                         <button
                                                             onClick={() => setSelectedGender("male")}
@@ -1046,9 +1046,9 @@ function ProjectDetailPageInner({
                                                                 }`}
                                                         >
                                                             <div className="w-12 h-12 rounded-full mx-auto mb-2 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
-                                                                <Image src="/default-influencer-male.png" alt="Erkek" width={48} height={48} className="w-full h-full object-cover" />
+                                                                <Image src="/default-influencer-male.png" alt="Male" width={48} height={48} className="w-full h-full object-cover" />
                                                             </div>
-                                                            <span className="text-xs font-medium">Erkek</span>
+                                                            <span className="text-xs font-medium">Male</span>
                                                         </button>
                                                     </div>
                                                     <Button
@@ -1056,44 +1056,44 @@ function ProjectDetailPageInner({
                                                         className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 border-0 shadow-lg shadow-violet-500/20"
                                                     >
                                                         <Sparkles className="w-4 h-4 mr-2" />
-                                                        AI Influencer Oluştur
+                                                        Create AI Influencer
                                                     </Button>
                                                 </>
                                             ) : (
                                                 <div className="space-y-4">
                                                     <div className="grid grid-cols-2 gap-4">
                                                         <div>
-                                                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">İsim *</label>
+                                                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Name *</label>
                                                             <input
                                                                 type="text"
-                                                                placeholder="Örn: Ayşe Yıldız"
+                                                                placeholder="E.g.: Sarah Mitchell"
                                                                 value={manualForm.name}
                                                                 onChange={(e) => setManualForm(p => ({ ...p, name: e.target.value }))}
                                                                 className="w-full px-3 py-2.5 rounded-xl border border-border/50 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
                                                             />
                                                         </div>
                                                         <div>
-                                                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Cinsiyet</label>
+                                                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Gender</label>
                                                             <div className="flex gap-2">
                                                                 <button
                                                                     onClick={() => setManualForm(p => ({ ...p, gender: "female" }))}
                                                                     className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${manualForm.gender === "female" ? "border-violet-400 bg-violet-500/10 text-violet-600" : "border-border/50"}`}
                                                                 >
-                                                                    👩 Kadın
+                                                                    👩 Female
                                                                 </button>
                                                                 <button
                                                                     onClick={() => setManualForm(p => ({ ...p, gender: "male" }))}
                                                                     className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all ${manualForm.gender === "male" ? "border-violet-400 bg-violet-500/10 text-violet-600" : "border-border/50"}`}
                                                                 >
-                                                                    👨 Erkek
+                                                                    👨 Male
                                                                 </button>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Kişilik Özellikleri</label>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Personality Traits</label>
                                                         <textarea
-                                                            placeholder="Enerjik, samimi, güven veren, profesyonel..."
+                                                            placeholder="Energetic, friendly, trustworthy, professional..."
                                                             value={manualForm.personality}
                                                             onChange={(e) => setManualForm(p => ({ ...p, personality: e.target.value }))}
                                                             rows={2}
@@ -1101,9 +1101,9 @@ function ProjectDetailPageInner({
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Görünüş Tanımı</label>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Appearance Description</label>
                                                         <textarea
-                                                            placeholder="30'lu yaşlarında, kahverengi saçlı, profesyonel giyimli..."
+                                                            placeholder="In their 30s, brown hair, professional attire..."
                                                             value={manualForm.appearance_description}
                                                             onChange={(e) => setManualForm(p => ({ ...p, appearance_description: e.target.value }))}
                                                             rows={2}
@@ -1111,9 +1111,9 @@ function ProjectDetailPageInner({
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Hikaye / Arka Plan</label>
+                                                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Backstory / Background</label>
                                                         <textarea
-                                                            placeholder="Teknoloji tutkunu bir girişimci, 5 yıllık sektör deneyimi..."
+                                                            placeholder="A passionate tech entrepreneur with 5 years of industry experience..."
                                                             value={manualForm.backstory}
                                                             onChange={(e) => setManualForm(p => ({ ...p, backstory: e.target.value }))}
                                                             rows={3}
@@ -1135,7 +1135,7 @@ function ProjectDetailPageInner({
                                                         ) : (
                                                             <CheckCircle2 className="w-4 h-4 mr-2" />
                                                         )}
-                                                        {isSavingManual ? "Kaydediliyor..." : "Influencer Kaydet"}
+                                                        {isSavingManual ? "Saving..." : "Save Influencer"}
                                                     </Button>
                                                 </div>
                                             )}
@@ -1146,7 +1146,7 @@ function ProjectDetailPageInner({
                                     {influencer?.backstory && (
                                         <div className="p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
                                             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                                <span>📖</span> Hikayesi
+                                                <span>📖</span> Backstory
                                             </h3>
                                             <p className="text-sm text-muted-foreground leading-relaxed italic">
                                                 &ldquo;{influencer.backstory}&rdquo;
@@ -1158,7 +1158,7 @@ function ProjectDetailPageInner({
                                     {influencer?.personality && (
                                         <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
                                             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                                <span>🧠</span> Kişilik Profili
+                                                <span>🧠</span> Personality Profile
                                             </h3>
                                             <p className="text-sm text-muted-foreground leading-relaxed">
                                                 {influencer.personality}
@@ -1172,10 +1172,10 @@ function ProjectDetailPageInner({
                                         className="p-6 rounded-2xl border border-border/50 bg-background/50"
                                     >
                                         <h3 className="text-sm font-semibold mb-1">
-                                            Hızlı Video Üret
+                                            Quick Video Generation
                                         </h3>
                                         <p className="text-xs text-muted-foreground mb-5">
-                                            Platform seçin ve AI videoyu otomatik oluştursun
+                                            Select a platform and let AI create your video automatically
                                         </p>
 
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1261,7 +1261,7 @@ function ProjectDetailPageInner({
                                 <div className="flex items-center justify-between mb-5">
                                     <h3 className="text-base font-semibold flex items-center gap-2">
                                         <Megaphone className="w-5 h-5 text-emerald-500" />
-                                        Reklam Metinleri (A/B Varyasyonları)
+                                        Ad Copy (A/B Variations)
                                     </h3>
                                     <Button
                                         size="sm"
@@ -1288,9 +1288,9 @@ function ProjectDetailPageInner({
                                         className="rounded-lg text-xs"
                                     >
                                         {isGeneratingAdCopy ? (
-                                            <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Üretiliyor...</>
+                                            <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Generating...</>
                                         ) : (
-                                            <><Wand2 className="w-3 h-3 mr-1.5" /> {project.ad_copies ? 'Yeniden Üret' : 'Metinleri Üret'}</>
+                                            <><Wand2 className="w-3 h-3 mr-1.5" /> {project.ad_copies ? 'Regenerate' : 'Generate Copy'}</>
                                         )}
                                     </Button>
                                 </div>
@@ -1328,9 +1328,9 @@ function ProjectDetailPageInner({
                                                         }}
                                                     >
                                                         {copiedAdId === ad.id ? (
-                                                            <><CheckCircle2 className="w-3 h-3 mr-1 text-emerald-500" /> Kopyalandı</>
+                                                            <><CheckCircle2 className="w-3 h-3 mr-1 text-emerald-500" /> Copied</>
                                                         ) : (
-                                                            <><Copy className="w-3 h-3 mr-1" /> Kopyala</>
+                                                            <><Copy className="w-3 h-3 mr-1" /> Copy</>
                                                         )}
                                                     </Button>
                                                 </div>
@@ -1339,7 +1339,7 @@ function ProjectDetailPageInner({
                                     </div>
                                 ) : (
                                     <p className="text-sm text-muted-foreground">
-                                        {isGeneratingAdCopy ? 'Reklam metinleri üretiliyor, lütfen bekleyin...' : 'Henüz reklam metni üretilmedi. "Metinleri Üret" butonuna tıklayın.'}
+                                        {isGeneratingAdCopy ? 'Generating ad copy, please wait...' : 'No ad copy generated yet. Click "Generate Copy" to start.'}
                                     </p>
                                 )}
                             </div>
@@ -1359,9 +1359,9 @@ function ProjectDetailPageInner({
                                             <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
                                                 <Video className="w-8 h-8 text-violet-500" />
                                             </div>
-                                            <h3 className="font-bold mb-2">Henüz Video Yok</h3>
+                                            <h3 className="font-bold mb-2">No Videos Yet</h3>
                                             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                                                Platform seçin ve AI ilk videonuzu otomatik oluştursun
+                                                Select a platform and let AI create your first video automatically
                                             </p>
                                         </div>
 
@@ -1468,7 +1468,7 @@ function ProjectDetailPageInner({
                                                                     <div className="relative z-10 flex flex-col items-center gap-2">
                                                                         <Loader2 className="w-8 h-8 animate-spin text-white/80" />
                                                                         <span className="text-xs text-white/60">
-                                                                            İşleniyor...
+                                                                            Processing...
                                                                         </span>
                                                                     </div>
                                                                 )}
@@ -1498,15 +1498,15 @@ function ProjectDetailPageInner({
                                                                                     setVideos(prev => prev.filter(v => v.id !== video.id))
                                                                                 } else {
                                                                                     console.error('Video delete error:', error)
-                                                                                    alert('Video silinemedi. Lütfen tekrar deneyin.')
+                                                                                    alert('Could not delete video. Please try again.')
                                                                                 }
                                                                             } catch (err) {
                                                                                 console.error('Video delete error:', err)
-                                                                                alert('Video silme hatası. Lütfen tekrar deneyin.')
+                                                                                alert('Video delete error. Please try again.')
                                                                             }
                                                                         }}
                                                                         className="w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm flex items-center justify-center transition-opacity hover:bg-red-500/80"
-                                                                        title="Videoyu Sil"
+                                                                        title="Delete Video"
                                                                     >
                                                                         <Trash2 className="w-3.5 h-3.5 text-white" />
                                                                     </button>
@@ -1514,7 +1514,7 @@ function ProjectDetailPageInner({
                                                             </div>
                                                             <div className="p-4">
                                                                 <h3 className="font-medium text-sm mb-2">
-                                                                    {video.title || `${video.platform} videosu`}
+                                                                    {video.title || `${video.platform} video`}
                                                                 </h3>
                                                                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                                                                     <span className="capitalize">
@@ -1540,7 +1540,7 @@ function ProjectDetailPageInner({
                                                                             }}
                                                                         >
                                                                             <Download className="w-3 h-3 mr-1" />
-                                                                            Videoyu İndir
+                                                                            Download Video
                                                                         </Button>
                                                                     </div>
                                                                 )}
@@ -1561,10 +1561,10 @@ function ProjectDetailPageInner({
                                                             <Wand2 className="w-5 h-5 text-muted-foreground/60" />
                                                         </div>
                                                         <h3 className="font-medium text-sm text-muted-foreground">
-                                                            Yeni Video Üret
+                                                            Generate New Video
                                                         </h3>
                                                         <p className="text-xs text-muted-foreground/50 mt-1">
-                                                            AI ile otomatik oluştur
+                                                            Auto-create with AI
                                                         </p>
                                                     </div>
                                                 </div>
@@ -1577,7 +1577,7 @@ function ProjectDetailPageInner({
                                                 <DialogHeader>
                                                     <DialogTitle className="flex items-center gap-2">
                                                         <Video className="w-5 h-5 text-violet-500" />
-                                                        {selectedVideo?.title || 'Video Detayı'}
+                                                        {selectedVideo?.title || 'Video Details'}
                                                     </DialogTitle>
                                                 </DialogHeader>
                                                 {selectedVideo && (
@@ -1593,7 +1593,7 @@ function ProjectDetailPageInner({
                                                                 </Badge>
                                                             )}
                                                             <Badge variant="outline" className="border-green-200 text-green-600 bg-green-50">
-                                                                ✅ Hazır
+                                                                ✅ Ready
                                                             </Badge>
                                                         </div>
 
@@ -1621,7 +1621,7 @@ function ProjectDetailPageInner({
                                                                             navigator.clipboard.writeText(selectedVideo.script || '');
                                                                         }}
                                                                     >
-                                                                        📋 Kopyala
+                                                                        📋 Copy
                                                                     </Button>
                                                                 </div>
                                                                 <div className="rounded-xl bg-muted/30 border border-border/50 p-4">
@@ -1644,7 +1644,7 @@ function ProjectDetailPageInner({
                                                         {selectedVideo.metadata?.hashtags && selectedVideo.metadata.hashtags.length > 0 && (
                                                             <div>
                                                                 <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                                                    # Hashtag{"'"}ler
+                                                                    # Hashtags
                                                                 </h4>
                                                                 <div className="flex flex-wrap gap-2">
                                                                     {selectedVideo.metadata.hashtags.map((tag: string, i: number) => (
@@ -1666,7 +1666,7 @@ function ProjectDetailPageInner({
                                                                         navigator.clipboard.writeText(tags);
                                                                     }}
                                                                 >
-                                                                    📋 Hashtag{"'"}leri Kopyala
+                                                                    📋 Copy Hashtags
                                                                 </Button>
                                                             </div>
                                                         )}
@@ -1689,16 +1689,16 @@ function ProjectDetailPageInner({
                                                                         <Video className="w-6 h-6 text-violet-500 animate-pulse" />
                                                                     </div>
                                                                 </div>
-                                                                <p className="text-sm font-medium text-violet-600 mb-1">Video Render Ediliyor...</p>
+                                                                <p className="text-sm font-medium text-violet-600 mb-1">Video Rendering...</p>
                                                                 <p className="text-xs text-muted-foreground">
-                                                                    AI video oluşturuyor. Bu işlem 1-3 dakika sürebilir.
+                                                                    AI is creating the video. This may take 1-3 minutes.
                                                                 </p>
                                                             </div>
                                                         ) : (
                                                             <div className="rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-800/30 p-4">
                                                                 <p className="text-xs text-blue-600 flex items-center gap-2">
                                                                     <Sparkles className="w-4 h-4" />
-                                                                    Script ve ses üretimi tamamlandı. Video render edildikten sonra burada izleyebileceksiniz.
+                                                                    Script and voiceover generation complete. You can watch the video here once rendering is done.
                                                                 </p>
                                                             </div>
                                                         )}
@@ -1720,7 +1720,7 @@ function ProjectDetailPageInner({
                                         className="mt-8 space-y-6"
                                     >
                                         <h3 className="text-lg font-bold flex items-center gap-2">
-                                            <span className="text-2xl">🎬</span> Storyboard & Hook'lar
+                                            <span className="text-2xl">🎬</span> Storyboard & Hooks
                                         </h3>
                                         {videos.filter(v => v.storyboard).map((video) => (
                                             <div key={`sb-${video.id}`} className="space-y-4">
@@ -1728,7 +1728,7 @@ function ProjectDetailPageInner({
                                                 {video.storyboard?.hookVariations && video.storyboard.hookVariations.length > 0 && (
                                                     <div className="rounded-xl border border-border/50 bg-card/50 p-4">
                                                         <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                                            <span>🪝</span> Hook Varyasyonları
+                                                            <span>🪝</span> Hook Variations
                                                         </h4>
                                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                                             {video.storyboard.hookVariations.map((hook) => (
@@ -1748,7 +1748,7 @@ function ProjectDetailPageInner({
                                                                     </div>
                                                                     <p className="font-medium">&ldquo;{hook.text}&rdquo;</p>
                                                                     {hook.id === video.storyboard?.selectedHook && (
-                                                                        <span className="text-xs text-violet-400 mt-1 block">✓ Seçili Hook</span>
+                                                                        <span className="text-xs text-violet-400 mt-1 block">✓ Selected Hook</span>
                                                                     )}
                                                                 </div>
                                                             ))}
@@ -1760,7 +1760,7 @@ function ProjectDetailPageInner({
                                                 {video.storyboard?.scenes && video.storyboard.scenes.length > 0 && (
                                                     <div className="rounded-xl border border-border/50 bg-card/50 p-4">
                                                         <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                                            <span>🎞️</span> Sahne Planı ({video.storyboard.totalDuration}s)
+                                                            <span>🎞️</span> Scene Plan ({video.storyboard.totalDuration}s)
                                                         </h4>
                                                         <div className="space-y-3">
                                                             {video.storyboard.scenes.map((scene) => (
@@ -1787,7 +1787,7 @@ function ProjectDetailPageInner({
                                                 {video.storyboard?.problemSolutionMap && video.storyboard.problemSolutionMap.length > 0 && (
                                                     <div className="rounded-xl border border-border/50 bg-card/50 p-4">
                                                         <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                                            <span>🎯</span> Problem → Çözüm Eşlemesi
+                                                            <span>🎯</span> Problem → Solution Mapping
                                                         </h4>
                                                         <div className="space-y-2">
                                                             {video.storyboard.problemSolutionMap.map((item, i) => (
@@ -1816,17 +1816,17 @@ function ProjectDetailPageInner({
                                 <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
                                     <div className="flex items-center gap-2 text-sm font-semibold mb-2">
                                         <Download className="w-4 h-4 text-violet-500" />
-                                        Videoları Nasıl Yayınlarım?
+                                        How to Publish Videos?
                                     </div>
                                     <p className="text-xs text-muted-foreground mb-5">
-                                        AI ile ürettiğiniz videoları indirip sosyal medya hesaplarınızdan kolayca paylaşabilirsiniz.
+                                        Download your AI-generated videos and easily share them on your social media accounts.
                                     </p>
 
                                     <div className="space-y-4">
                                         {[
-                                            { step: '1', title: 'Videoyu İndirin', desc: 'Videolar sekmesindeki İndir butonuna tıklayarak MP4 dosyasını telefonunuza veya bilgisayarınıza kaydedin.', icon: '📥' },
-                                            { step: '2', title: 'Bilgileri Kopyalayın', desc: 'Video detaylarına tıklayarak başlık, açıklama, hashtag ve script bilgilerini kopyalayın.', icon: '📋' },
-                                            { step: '3', title: 'Paylaşın', desc: 'Videoyu Instagram Reels, TikTok, YouTube Shorts veya X üzerinden paylaşırken kopyaladığınız bilgileri yapıştırın.', icon: '🚀' },
+                                            { step: '1', title: 'Download the Video', desc: 'Click the Download button in the Videos tab to save the MP4 file to your phone or computer.', icon: '📥' },
+                                            { step: '2', title: 'Copy the Details', desc: 'Click on video details to copy the title, description, hashtags, and script.', icon: '📋' },
+                                            { step: '3', title: 'Share', desc: 'Paste the copied details when sharing the video on Instagram Reels, TikTok, YouTube Shorts, or X.', icon: '🚀' },
                                         ].map(({ step, title, desc, icon }) => (
                                             <div key={step} className="flex gap-4 items-start">
                                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-200/30 dark:border-violet-800/30 flex items-center justify-center text-lg flex-shrink-0">
@@ -1845,14 +1845,14 @@ function ProjectDetailPageInner({
                                 <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
                                     <div className="flex items-center gap-2 text-sm font-semibold mb-4">
                                         <Share2 className="w-4 h-4 text-violet-500" />
-                                        Platform İpuçları
+                                        Platform Tips
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {[
-                                            { platform: 'Instagram Reels', tip: "Dikey 9:16 format, 60 saniyeye kadar, hashtag'leri açıklamaya ekleyin", color: 'from-purple-500 to-pink-500', emoji: '📸' },
-                                            { platform: 'TikTok', tip: 'Dikey 9:16 format, 60 saniyeye kadar, trending sesleri kullanın', color: 'from-gray-800 to-gray-900', emoji: '🎵' },
-                                            { platform: 'YouTube Shorts', tip: 'Dikey 9:16 format, 60 saniyeye kadar, #Shorts ekleyin', color: 'from-red-600 to-red-700', emoji: '▶️' },
-                                            { platform: 'X (Twitter)', tip: "2 dk 20 sn'ye kadar, açıklamayı tweet olarak yazın", color: 'from-sky-500 to-sky-600', emoji: '𝕏' },
+                                            { platform: 'Instagram Reels', tip: 'Vertical 9:16 format, up to 60 seconds, add hashtags to the description', color: 'from-purple-500 to-pink-500', emoji: '📸' },
+                                            { platform: 'TikTok', tip: 'Vertical 9:16 format, up to 60 seconds, use trending sounds', color: 'from-gray-800 to-gray-900', emoji: '🎵' },
+                                            { platform: 'YouTube Shorts', tip: 'Vertical 9:16 format, up to 60 seconds, add #Shorts', color: 'from-red-600 to-red-700', emoji: '▶️' },
+                                            { platform: 'X (Twitter)', tip: 'Up to 2 min 20 sec, write description as tweet', color: 'from-sky-500 to-sky-600', emoji: '𝕏' },
                                         ].map(({ platform, tip, emoji }) => (
                                             <div key={platform} className="p-3 rounded-xl bg-muted/30 border border-border/30">
                                                 <div className="flex items-center gap-2 mb-1">
