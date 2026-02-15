@@ -53,8 +53,8 @@ const NATURAL_VOICE_SETTINGS: VoiceSettings = {
 export const VOICE_LIBRARY: Record<Language, VoiceEntry[]> = {
     // 🇹🇷 Turkish — Custom Turkish voices (user-selected)
     tr: [
-        { voiceId: '8eSMFxjAUgbRqmAkLPBt', name: 'Türk Kadın 1', character: 'Doğal', gender: 'female' },
         { voiceId: 'jbJMQWv1eS4YjQ6PCcn6', name: 'Türk Kadın 2', character: 'Modern', gender: 'female' },
+        { voiceId: '8eSMFxjAUgbRqmAkLPBt', name: 'Türk Kadın 1', character: 'Doğal', gender: 'female' },
         { voiceId: 'c8cLMUvGlREhTqM1J5zV', name: 'Türk Erkek 1', character: 'Doğal', gender: 'male' },
         { voiceId: 'Vv1QW9Yx3WB2mLKFmyZG', name: 'Türk Erkek 2', character: 'Güçlü', gender: 'male' },
     ],
