@@ -962,17 +962,26 @@ function ProjectDetailPageInner({
                                                 onClick={async () => {
                                                     setIsAnalyzingCompetitors(true);
                                                     try {
+                                                        const pid = project?.id || id;
+                                                        console.log('[CompetitorAnalysis] Starting with projectId:', pid);
                                                         const res = await fetch('/api/workflows/competitor-analysis', {
                                                             method: 'POST',
                                                             headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ projectId: project.id }),
+                                                            body: JSON.stringify({ projectId: pid }),
                                                         });
+                                                        if (!res.ok) {
+                                                            const errText = await res.text().catch(() => '');
+                                                            console.error('Competitor analysis API error:', res.status, errText);
+                                                            alert(`Rakip analizi hatası (${res.status}). Lütfen tekrar deneyin.`);
+                                                            return;
+                                                        }
                                                         const data = await res.json();
                                                         if (data.success) {
                                                             setProject(prev => prev ? { ...prev, competitor_analysis: data.data } : prev);
                                                         }
                                                     } catch (e) {
                                                         console.error('Competitor analysis failed:', e);
+                                                        alert('Rakip analizi başarısız oldu. Lütfen tekrar deneyin.');
                                                     } finally {
                                                         setIsAnalyzingCompetitors(false);
                                                     }
