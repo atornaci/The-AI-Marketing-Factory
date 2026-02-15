@@ -4,9 +4,12 @@ import { abacusAI } from '@/lib/services/abacus-ai'
 
 export async function POST(req: NextRequest) {
     try {
-        const { projectId } = await req.json()
+        const body = await req.json()
+        console.log('[CompetitorAnalysis API] Received body:', JSON.stringify(body))
+        const { projectId } = body
 
         if (!projectId) {
+            console.log('[CompetitorAnalysis API] projectId is missing/falsy:', projectId)
             return NextResponse.json({ error: 'Project ID is required' }, { status: 400 })
         }
 
