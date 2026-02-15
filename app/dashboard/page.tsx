@@ -511,522 +511,540 @@ function DashboardContent() {
                         </div>
                     </motion.div>
 
-                    {/* ═══ Influencer Library ═══ */}
-                    {!createdInfluencer && !showCreateForm && (
-                        <motion.div variants={itemVariants} className="mb-8">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-violet-500" />
-                                    <h2 className="text-lg font-bold tracking-tight">My Influencers</h2>
-                                    {influencerLibrary.length > 0 && (
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 font-medium">
-                                            {influencerLibrary.length}
-                                        </span>
-                                    )}
-                                </div>
-                                <Button
-                                    onClick={() => setShowCreateForm(true)}
-                                    size="sm"
-                                    className="text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 hover:opacity-90 border-0 shadow-md"
-                                >
-                                    <Plus className="w-3.5 h-3.5 mr-1" />
-                                    Create New
-                                </Button>
-                            </div>
-
-                            {loadingLibrary ? (
-                                <div className="text-center py-12">
-                                    <Loader2 className="w-6 h-6 animate-spin text-violet-400 mx-auto mb-2" />
-                                    <p className="text-xs text-muted-foreground">Loading your influencers...</p>
-                                </div>
-                            ) : influencerLibrary.length === 0 ? (
-                                <div className="text-center py-12 rounded-2xl border border-dashed border-violet-200/50 bg-violet-500/[0.02]">
-                                    <Bot className="w-10 h-10 text-violet-300 mx-auto mb-3" />
-                                    <p className="text-sm font-medium mb-1">No influencers yet</p>
-                                    <p className="text-xs text-muted-foreground mb-4">Create your first AI influencer to get started</p>
+                    <AnimatePresence mode="wait">
+                        {/* ═══ Influencer Library ═══ */}
+                        {!createdInfluencer && !showCreateForm && (
+                            <motion.div
+                                key="influencer-library"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                className="mb-8"
+                            >
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Users className="w-5 h-5 text-violet-500" />
+                                        <h2 className="text-lg font-bold tracking-tight">My Influencers</h2>
+                                        {influencerLibrary.length > 0 && (
+                                            <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 font-medium">
+                                                {influencerLibrary.length}
+                                            </span>
+                                        )}
+                                    </div>
                                     <Button
                                         onClick={() => setShowCreateForm(true)}
                                         size="sm"
-                                        className="text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 hover:opacity-90 border-0"
+                                        className="text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 hover:opacity-90 border-0 shadow-md"
                                     >
                                         <Plus className="w-3.5 h-3.5 mr-1" />
-                                        Create Influencer
+                                        Create New
                                     </Button>
                                 </div>
-                            ) : (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                                    {influencerLibrary.map((inf) => (
-                                        <div
-                                            key={inf.id}
-                                            className="group relative rounded-2xl border border-border/50 bg-card p-4 text-left hover:border-violet-300 hover:shadow-md transition-all cursor-pointer"
-                                            onClick={() => handleSelectInfluencer(inf)}
+
+                                {loadingLibrary ? (
+                                    <div className="text-center py-12">
+                                        <Loader2 className="w-6 h-6 animate-spin text-violet-400 mx-auto mb-2" />
+                                        <p className="text-xs text-muted-foreground">Loading your influencers...</p>
+                                    </div>
+                                ) : influencerLibrary.length === 0 ? (
+                                    <div className="text-center py-12 rounded-2xl border border-dashed border-violet-200/50 bg-violet-500/[0.02]">
+                                        <Bot className="w-10 h-10 text-violet-300 mx-auto mb-3" />
+                                        <p className="text-sm font-medium mb-1">No influencers yet</p>
+                                        <p className="text-xs text-muted-foreground mb-4">Create your first AI influencer to get started</p>
+                                        <Button
+                                            onClick={() => setShowCreateForm(true)}
+                                            size="sm"
+                                            className="text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 hover:opacity-90 border-0"
                                         >
-                                            {/* Delete button — separate from card click */}
-                                            <button
-                                                type="button"
-                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteInfluencer(e, inf); }}
-                                                className="absolute top-2 right-2 z-20 w-7 h-7 rounded-lg bg-background/80 hover:bg-red-50 border border-transparent hover:border-red-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                                                title="Delete influencer"
+                                            <Plus className="w-3.5 h-3.5 mr-1" />
+                                            Create Influencer
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        {influencerLibrary.map((inf) => (
+                                            <div
+                                                key={inf.id}
+                                                className="group relative rounded-2xl border border-border/50 bg-card p-4 text-left hover:border-violet-300 hover:shadow-md transition-all cursor-pointer"
+                                                onClick={() => handleSelectInfluencer(inf)}
                                             >
-                                                <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
-                                            </button>
-                                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-violet-200/30 mx-auto mb-3 shadow-sm">
-                                                {inf.avatarUrl ? (
-                                                    <Image
-                                                        src={inf.avatarUrl}
-                                                        alt={inf.name}
-                                                        width={64}
-                                                        height={64}
-                                                        className="w-full h-full object-cover"
-                                                        unoptimized
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
-                                                        <Bot className="w-6 h-6 text-violet-400" />
+                                                {/* Delete button — separate from card click */}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteInfluencer(e, inf); }}
+                                                    className="absolute top-2 right-2 z-20 w-7 h-7 rounded-lg bg-background/80 hover:bg-red-50 border border-transparent hover:border-red-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                                                    title="Delete influencer"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
+                                                </button>
+                                                <div className="w-16 h-16 rounded-xl overflow-hidden border border-violet-200/30 mx-auto mb-3 shadow-sm">
+                                                    {inf.avatarUrl ? (
+                                                        <Image
+                                                            src={inf.avatarUrl}
+                                                            alt={inf.name}
+                                                            width={64}
+                                                            height={64}
+                                                            className="w-full h-full object-cover"
+                                                            unoptimized
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
+                                                            <Bot className="w-6 h-6 text-violet-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm font-semibold text-center truncate">{inf.name}</p>
+                                                {inf.personality && (
+                                                    <p className="text-[10px] text-muted-foreground text-center line-clamp-2 mt-1">{inf.personality.substring(0, 60)}...</p>
+                                                )}
+                                                <div className="absolute inset-0 rounded-2xl ring-2 ring-violet-400/0 group-hover:ring-violet-400/50 transition-all pointer-events-none" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {/* ═══ STEP 1: Create Influencer Form ═══ */}
+                        {!createdInfluencer && (showCreateForm || influencerLibrary.length === 0) && (
+                            <motion.div
+                                key="create-form"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                className="mb-10"
+                            >
+                                <div className="relative overflow-hidden rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+                                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+                                    <div className="relative p-6 lg:p-8">
+                                        {/* Header */}
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                                                <Clapperboard className="w-5 h-5 text-white" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-lg font-bold tracking-tight">Create Influencer</h2>
+                                                <p className="text-xs text-muted-foreground">Pick a gender, choose an industry — AI writes the script for you!</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Row 1: Gender + Selectors */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
+                                            {/* Gender Selector */}
+                                            <div>
+                                                <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                    <UserRound className="w-3.5 h-3.5" />
+                                                    Gender
+                                                </label>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => setQuickGender("female")}
+                                                        disabled={isQuickCreating}
+                                                        className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "female"
+                                                            ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
+                                                            : "border-border/50 hover:border-violet-300/50 bg-background/50"
+                                                            }`}
+                                                    >
+                                                        <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
+                                                            <Image src="/default-influencer-female.png" alt="Female" width={32} height={32} className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <span className="text-[10px] font-medium">Female</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setQuickGender("male")}
+                                                        disabled={isQuickCreating}
+                                                        className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "male"
+                                                            ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
+                                                            : "border-border/50 hover:border-violet-300/50 bg-background/50"
+                                                            }`}
+                                                    >
+                                                        <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
+                                                            <Image src="/default-influencer-male.png" alt="Male" width={32} height={32} className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <span className="text-[10px] font-medium">Male</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Industry */}
+                                            <div>
+                                                <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                    <Building2 className="w-3.5 h-3.5" />
+                                                    Industry <span className="text-red-400">*</span>
+                                                </label>
+                                                <select
+                                                    value={quickSector}
+                                                    onChange={(e) => setQuickSector(e.target.value)}
+                                                    disabled={isQuickCreating}
+                                                    className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
+                                                >
+                                                    <option value="">Select industry...</option>
+                                                    {SECTOR_OPTIONS.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Environment */}
+                                            <div>
+                                                <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                    <MapPin className="w-3.5 h-3.5" />
+                                                    Setting <span className="text-muted-foreground/40 text-[10px]">(optional)</span>
+                                                </label>
+                                                <select
+                                                    value={quickEnvironment}
+                                                    onChange={(e) => setQuickEnvironment(e.target.value)}
+                                                    disabled={isQuickCreating}
+                                                    className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
+                                                >
+                                                    <option value="">Auto</option>
+                                                    {ENVIRONMENT_OPTIONS.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {/* Energy */}
+                                            <div>
+                                                <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                    <Flame className="w-3.5 h-3.5" />
+                                                    Energy <span className="text-muted-foreground/40 text-[10px]">(optional)</span>
+                                                </label>
+                                                <select
+                                                    value={quickEnergy}
+                                                    onChange={(e) => setQuickEnergy(e.target.value)}
+                                                    disabled={isQuickCreating}
+                                                    className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
+                                                >
+                                                    <option value="">Auto</option>
+                                                    {ENERGY_OPTIONS.map(opt => (
+                                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Row 2: Script + Generate Button */}
+                                        <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mt-4">
+                                            {/* Script Input */}
+                                            <div className="flex-1 min-w-0">
+                                                <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                    <MessageSquareText className="w-3.5 h-3.5" />
+                                                    Custom script <span className="text-muted-foreground/40 text-[10px]">(optional — AI writes it if left empty)</span>
+                                                </label>
+                                                <textarea
+                                                    placeholder="Leave empty for AI-generated script, or write your own: e.g. 'Hey! Let me tell you about this amazing app...'"
+                                                    value={quickScript}
+                                                    onChange={(e) => setQuickScript(e.target.value)}
+                                                    disabled={isQuickCreating}
+                                                    rows={3}
+                                                    className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all"
+                                                />
+                                            </div>
+
+                                            {/* Generate Button */}
+                                            <div className="shrink-0 flex items-end">
+                                                <Button
+                                                    onClick={handleQuickVideo}
+                                                    disabled={!quickSector || isQuickCreating}
+                                                    className="h-[72px] px-8 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex items-center gap-2 w-full lg:w-auto"
+                                                >
+                                                    {isQuickCreating ? (
+                                                        <>
+                                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                                            <span>Creating...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Sparkles className="w-5 h-5" />
+                                                            <span>Create</span>
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Progress */}
+                                        <AnimatePresence>
+                                            {isQuickCreating && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: "auto" }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    className="mt-5 space-y-2"
+                                                >
+                                                    <Progress value={quickProgress} className="h-1.5" />
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                        <Loader2 className="w-3 h-3 animate-spin text-violet-500" />
+                                                        {quickStep}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* ═══ STEP 2: Influencer Card + Video Generation ═══ */}
+                        {createdInfluencer && (
+                            <motion.div
+                                key="influencer-card"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                className="space-y-6"
+                            >
+                                {/* Influencer Card */}
+                                <div className="relative overflow-hidden rounded-2xl border border-emerald-200/50 bg-gradient-to-br from-emerald-500/[0.04] via-teal-500/[0.02] to-transparent shadow-sm">
+                                    <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+                                    <div className="relative p-6 lg:p-8">
+                                        <div className="flex flex-col sm:flex-row gap-6">
+                                            {/* Avatar */}
+                                            <div className="shrink-0">
+                                                <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-emerald-300/50 shadow-lg mx-auto sm:mx-0">
+                                                    {createdInfluencer.avatarUrl ? (
+                                                        <Image
+                                                            src={createdInfluencer.avatarUrl}
+                                                            alt={createdInfluencer.name}
+                                                            width={144}
+                                                            height={144}
+                                                            className="w-full h-full object-cover"
+                                                            unoptimized
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
+                                                            <Bot className="w-12 h-12 text-emerald-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-200/50">
+                                                                ✓ Influencer Ready
+                                                            </span>
+                                                        </div>
+                                                        <h3 className="text-xl font-bold tracking-tight">{createdInfluencer.name}</h3>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Link href={`/project/${createdInfluencer.projectId}`}>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="text-xs rounded-lg border-violet-200/50 text-violet-600 hover:bg-violet-50 hover:text-violet-700"
+                                                            >
+                                                                <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                                                                Project Details
+                                                            </Button>
+                                                        </Link>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => { setCreatedInfluencer(null); setGeneratedVideos([]); setGenError(""); setShowCreateForm(false); }}
+                                                            className="text-xs text-muted-foreground hover:text-violet-600 rounded-lg"
+                                                        >
+                                                            <Users className="w-3.5 h-3.5 mr-1" />
+                                                            Change
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={handleReset}
+                                                            className="text-xs text-muted-foreground hover:text-violet-600 rounded-lg"
+                                                        >
+                                                            <Plus className="w-3.5 h-3.5 mr-1" />
+                                                            New
+                                                        </Button>
+                                                    </div>
+                                                </div>
+
+                                                {createdInfluencer.personality && (
+                                                    <p className="text-sm text-muted-foreground mb-2">
+                                                        <span className="font-medium text-foreground">Personality:</span> {createdInfluencer.personality}
+                                                    </p>
+                                                )}
+                                                {createdInfluencer.backstory && (
+                                                    <p className="text-sm text-muted-foreground line-clamp-2">
+                                                        <span className="font-medium text-foreground">Backstory:</span> {createdInfluencer.backstory}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ─── Video Generation Section ─── */}
+                                <div className="relative rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
+                                    <div className="relative p-6 lg:p-8">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                                                    <Video className="w-5 h-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold tracking-tight">Generate Video</h3>
+                                                    <p className="text-xs text-muted-foreground">Pick a platform and create your video</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Platform + Generate */}
+                                        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+                                            {/* Platform Selector */}
+                                            <div className="relative">
+                                                <label className="text-xs font-medium text-muted-foreground mb-2 block">Platform</label>
+                                                <button
+                                                    onClick={() => setShowPlatformMenu(!showPlatformMenu)}
+                                                    className="flex items-center gap-2 h-11 px-4 rounded-xl border border-border/50 bg-background/50 text-sm hover:border-violet-300 transition-all w-full sm:w-auto min-w-[160px]"
+                                                >
+                                                    <span>{PLATFORM_CONFIG[selectedPlatform].icon}</span>
+                                                    <span className="font-medium">{PLATFORM_CONFIG[selectedPlatform].label}</span>
+                                                    <ChevronDown className="w-3.5 h-3.5 ml-auto text-muted-foreground" />
+                                                </button>
+                                                {showPlatformMenu && (
+                                                    <div className="absolute top-full left-0 mt-1 w-full bg-background border border-border rounded-xl shadow-xl z-50 py-1">
+                                                        {(Object.keys(PLATFORM_CONFIG) as Array<keyof typeof PLATFORM_CONFIG>).map(p => (
+                                                            <button
+                                                                key={p}
+                                                                onClick={() => { setSelectedPlatform(p); setShowPlatformMenu(false); }}
+                                                                className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-violet-50 transition-colors ${selectedPlatform === p ? 'bg-violet-50 text-violet-600 font-medium' : ''}`}
+                                                            >
+                                                                <span>{PLATFORM_CONFIG[p].icon}</span>
+                                                                {PLATFORM_CONFIG[p].label}
+                                                            </button>
+                                                        ))}
                                                     </div>
                                                 )}
                                             </div>
-                                            <p className="text-sm font-semibold text-center truncate">{inf.name}</p>
-                                            {inf.personality && (
-                                                <p className="text-[10px] text-muted-foreground text-center line-clamp-2 mt-1">{inf.personality.substring(0, 60)}...</p>
-                                            )}
-                                            <div className="absolute inset-0 rounded-2xl ring-2 ring-violet-400/0 group-hover:ring-violet-400/50 transition-all pointer-events-none" />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
 
-                    {/* ═══ STEP 1: Create Influencer Form ═══ */}
-                    {!createdInfluencer && (showCreateForm || influencerLibrary.length === 0) && (
-                        <motion.div variants={itemVariants} className="mb-10">
-                            <div className="relative overflow-hidden rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-
-                                <div className="relative p-6 lg:p-8">
-                                    {/* Header */}
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                                            <Clapperboard className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-lg font-bold tracking-tight">Create Influencer</h2>
-                                            <p className="text-xs text-muted-foreground">Pick a gender, choose an industry — AI writes the script for you!</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Row 1: Gender + Selectors */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
-                                        {/* Gender Selector */}
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                                <UserRound className="w-3.5 h-3.5" />
-                                                Gender
-                                            </label>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => setQuickGender("female")}
-                                                    disabled={isQuickCreating}
-                                                    className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "female"
-                                                        ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
-                                                        : "border-border/50 hover:border-violet-300/50 bg-background/50"
-                                                        }`}
-                                                >
-                                                    <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
-                                                        <Image src="/default-influencer-female.png" alt="Female" width={32} height={32} className="w-full h-full object-cover" />
-                                                    </div>
-                                                    <span className="text-[10px] font-medium">Female</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => setQuickGender("male")}
-                                                    disabled={isQuickCreating}
-                                                    className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "male"
-                                                        ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
-                                                        : "border-border/50 hover:border-violet-300/50 bg-background/50"
-                                                        }`}
-                                                >
-                                                    <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
-                                                        <Image src="/default-influencer-male.png" alt="Male" width={32} height={32} className="w-full h-full object-cover" />
-                                                    </div>
-                                                    <span className="text-[10px] font-medium">Male</span>
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Industry */}
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                                <Building2 className="w-3.5 h-3.5" />
-                                                Industry <span className="text-red-400">*</span>
-                                            </label>
-                                            <select
-                                                value={quickSector}
-                                                onChange={(e) => setQuickSector(e.target.value)}
-                                                disabled={isQuickCreating}
-                                                className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
-                                            >
-                                                <option value="">Select industry...</option>
-                                                {SECTOR_OPTIONS.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Environment */}
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                                <MapPin className="w-3.5 h-3.5" />
-                                                Setting <span className="text-muted-foreground/40 text-[10px]">(optional)</span>
-                                            </label>
-                                            <select
-                                                value={quickEnvironment}
-                                                onChange={(e) => setQuickEnvironment(e.target.value)}
-                                                disabled={isQuickCreating}
-                                                className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
-                                            >
-                                                <option value="">Auto</option>
-                                                {ENVIRONMENT_OPTIONS.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Energy */}
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                                <Flame className="w-3.5 h-3.5" />
-                                                Energy <span className="text-muted-foreground/40 text-[10px]">(optional)</span>
-                                            </label>
-                                            <select
-                                                value={quickEnergy}
-                                                onChange={(e) => setQuickEnergy(e.target.value)}
-                                                disabled={isQuickCreating}
-                                                className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
-                                            >
-                                                <option value="">Auto</option>
-                                                {ENERGY_OPTIONS.map(opt => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    {/* Row 2: Script + Generate Button */}
-                                    <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mt-4">
-                                        {/* Script Input */}
-                                        <div className="flex-1 min-w-0">
-                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                                <MessageSquareText className="w-3.5 h-3.5" />
-                                                Custom script <span className="text-muted-foreground/40 text-[10px]">(optional — AI writes it if left empty)</span>
-                                            </label>
-                                            <textarea
-                                                placeholder="Leave empty for AI-generated script, or write your own: e.g. 'Hey! Let me tell you about this amazing app...'"
-                                                value={quickScript}
-                                                onChange={(e) => setQuickScript(e.target.value)}
-                                                disabled={isQuickCreating}
-                                                rows={3}
-                                                className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all"
-                                            />
-                                        </div>
-
-                                        {/* Generate Button */}
-                                        <div className="shrink-0 flex items-end">
+                                            {/* Generate Button */}
                                             <Button
-                                                onClick={handleQuickVideo}
-                                                disabled={!quickSector || isQuickCreating}
-                                                className="h-[72px] px-8 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex items-center gap-2 w-full lg:w-auto"
+                                                onClick={handleGenerateVideo}
+                                                disabled={isGeneratingVideo}
+                                                className={`h-11 px-6 rounded-xl bg-gradient-to-r ${PLATFORM_CONFIG[selectedPlatform].color} hover:opacity-90 border-0 shadow-lg text-sm font-semibold flex items-center gap-2`}
                                             >
-                                                {isQuickCreating ? (
+                                                {isGeneratingVideo ? (
                                                     <>
-                                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                                        <span>Creating...</span>
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        Generating...
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Sparkles className="w-5 h-5" />
-                                                        <span>Create</span>
+                                                        <Play className="w-4 h-4" />
+                                                        Generate Video
                                                     </>
                                                 )}
                                             </Button>
                                         </div>
-                                    </div>
 
-                                    {/* Progress */}
-                                    <AnimatePresence>
-                                        {isQuickCreating && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: "auto" }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                className="mt-5 space-y-2"
-                                            >
-                                                <Progress value={quickProgress} className="h-1.5" />
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    <Loader2 className="w-3 h-3 animate-spin text-violet-500" />
-                                                    {quickStep}
-                                                </div>
-                                            </motion.div>
+                                        {/* Video Generation Progress */}
+                                        <AnimatePresence>
+                                            {isGeneratingVideo && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: "auto" }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    className="mt-5 space-y-2"
+                                                >
+                                                    <Progress value={genProgress} className="h-1.5" />
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                        <Loader2 className="w-3 h-3 animate-spin text-violet-500" />
+                                                        {genStep}
+                                                    </div>
+                                                    <p className="text-[11px] text-muted-foreground/50">
+                                                        Video generation may take 2-5 minutes
+                                                    </p>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+
+                                        {/* Error */}
+                                        {genError && !isGeneratingVideo && (
+                                            <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200/50 text-sm text-red-600">
+                                                ⚠️ {genError}
+                                            </div>
                                         )}
-                                    </AnimatePresence>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {/* ═══ STEP 2: Influencer Card + Video Generation ═══ */}
-                    {createdInfluencer && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                            className="space-y-6"
-                        >
-                            {/* Influencer Card */}
-                            <div className="relative overflow-hidden rounded-2xl border border-emerald-200/50 bg-gradient-to-br from-emerald-500/[0.04] via-teal-500/[0.02] to-transparent shadow-sm">
-                                <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-
-                                <div className="relative p-6 lg:p-8">
-                                    <div className="flex flex-col sm:flex-row gap-6">
-                                        {/* Avatar */}
-                                        <div className="shrink-0">
-                                            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-emerald-300/50 shadow-lg mx-auto sm:mx-0">
-                                                {createdInfluencer.avatarUrl ? (
-                                                    <Image
-                                                        src={createdInfluencer.avatarUrl}
-                                                        alt={createdInfluencer.name}
-                                                        width={144}
-                                                        height={144}
-                                                        className="w-full h-full object-cover"
-                                                        unoptimized
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
-                                                        <Bot className="w-12 h-12 text-emerald-400" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Info */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-200/50">
-                                                            ✓ Influencer Ready
-                                                        </span>
-                                                    </div>
-                                                    <h3 className="text-xl font-bold tracking-tight">{createdInfluencer.name}</h3>
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <Link href={`/project/${createdInfluencer.projectId}`}>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="text-xs rounded-lg border-violet-200/50 text-violet-600 hover:bg-violet-50 hover:text-violet-700"
-                                                        >
-                                                            <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                                                            Project Details
-                                                        </Button>
-                                                    </Link>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => { setCreatedInfluencer(null); setGeneratedVideos([]); setGenError(""); setShowCreateForm(false); }}
-                                                        className="text-xs text-muted-foreground hover:text-violet-600 rounded-lg"
-                                                    >
-                                                        <Users className="w-3.5 h-3.5 mr-1" />
-                                                        Change
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={handleReset}
-                                                        className="text-xs text-muted-foreground hover:text-violet-600 rounded-lg"
-                                                    >
-                                                        <Plus className="w-3.5 h-3.5 mr-1" />
-                                                        New
-                                                    </Button>
-                                                </div>
-                                            </div>
-
-                                            {createdInfluencer.personality && (
-                                                <p className="text-sm text-muted-foreground mb-2">
-                                                    <span className="font-medium text-foreground">Personality:</span> {createdInfluencer.personality}
-                                                </p>
-                                            )}
-                                            {createdInfluencer.backstory && (
-                                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                                    <span className="font-medium text-foreground">Backstory:</span> {createdInfluencer.backstory}
-                                                </p>
-                                            )}
-                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* ─── Video Generation Section ─── */}
-                            <div className="relative rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
-                                <div className="relative p-6 lg:p-8">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                                                <Video className="w-5 h-5 text-white" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-bold tracking-tight">Generate Video</h3>
-                                                <p className="text-xs text-muted-foreground">Pick a platform and create your video</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Platform + Generate */}
-                                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-                                        {/* Platform Selector */}
-                                        <div className="relative">
-                                            <label className="text-xs font-medium text-muted-foreground mb-2 block">Platform</label>
-                                            <button
-                                                onClick={() => setShowPlatformMenu(!showPlatformMenu)}
-                                                className="flex items-center gap-2 h-11 px-4 rounded-xl border border-border/50 bg-background/50 text-sm hover:border-violet-300 transition-all w-full sm:w-auto min-w-[160px]"
-                                            >
-                                                <span>{PLATFORM_CONFIG[selectedPlatform].icon}</span>
-                                                <span className="font-medium">{PLATFORM_CONFIG[selectedPlatform].label}</span>
-                                                <ChevronDown className="w-3.5 h-3.5 ml-auto text-muted-foreground" />
-                                            </button>
-                                            {showPlatformMenu && (
-                                                <div className="absolute top-full left-0 mt-1 w-full bg-background border border-border rounded-xl shadow-xl z-50 py-1">
-                                                    {(Object.keys(PLATFORM_CONFIG) as Array<keyof typeof PLATFORM_CONFIG>).map(p => (
-                                                        <button
-                                                            key={p}
-                                                            onClick={() => { setSelectedPlatform(p); setShowPlatformMenu(false); }}
-                                                            className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-violet-50 transition-colors ${selectedPlatform === p ? 'bg-violet-50 text-violet-600 font-medium' : ''}`}
-                                                        >
-                                                            <span>{PLATFORM_CONFIG[p].icon}</span>
-                                                            {PLATFORM_CONFIG[p].label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Generate Button */}
-                                        <Button
-                                            onClick={handleGenerateVideo}
-                                            disabled={isGeneratingVideo}
-                                            className={`h-11 px-6 rounded-xl bg-gradient-to-r ${PLATFORM_CONFIG[selectedPlatform].color} hover:opacity-90 border-0 shadow-lg text-sm font-semibold flex items-center gap-2`}
-                                        >
-                                            {isGeneratingVideo ? (
-                                                <>
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                    Generating...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Play className="w-4 h-4" />
-                                                    Generate Video
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-
-                                    {/* Video Generation Progress */}
-                                    <AnimatePresence>
-                                        {isGeneratingVideo && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: "auto" }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                className="mt-5 space-y-2"
-                                            >
-                                                <Progress value={genProgress} className="h-1.5" />
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    <Loader2 className="w-3 h-3 animate-spin text-violet-500" />
-                                                    {genStep}
-                                                </div>
-                                                <p className="text-[11px] text-muted-foreground/50">
-                                                    Video generation may take 2-5 minutes
-                                                </p>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-
-                                    {/* Error */}
-                                    {genError && !isGeneratingVideo && (
-                                        <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200/50 text-sm text-red-600">
-                                            ⚠️ {genError}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* ─── Generated Videos ─── */}
-                            {generatedVideos.length > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                >
-                                    <h3 className="text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
-                                        <Video className="w-5 h-5 text-violet-500" />
-                                        Generated Videos ({generatedVideos.length})
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {generatedVideos.map((video) => (
-                                            <div
-                                                key={video.id}
-                                                className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden hover:border-violet-300/50 hover:shadow-md transition-all"
-                                            >
-                                                {/* Video Player */}
-                                                {video.videoUrl ? (
-                                                    <div className="aspect-[9/16] max-h-[400px] bg-black relative">
-                                                        <video
-                                                            src={video.videoUrl}
-                                                            controls
-                                                            className="w-full h-full object-contain"
-                                                            poster={video.thumbnailUrl || undefined}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="aspect-video bg-muted/50 flex items-center justify-center">
-                                                        <div className="text-center">
-                                                            <Loader2 className="w-8 h-8 animate-spin text-violet-400 mx-auto mb-2" />
-                                                            <p className="text-xs text-muted-foreground">Preparing video...</p>
+                                {/* ─── Generated Videos ─── */}
+                                {generatedVideos.length > 0 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                    >
+                                        <h3 className="text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
+                                            <Video className="w-5 h-5 text-violet-500" />
+                                            Generated Videos ({generatedVideos.length})
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {generatedVideos.map((video) => (
+                                                <div
+                                                    key={video.id}
+                                                    className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden hover:border-violet-300/50 hover:shadow-md transition-all"
+                                                >
+                                                    {/* Video Player */}
+                                                    {video.videoUrl ? (
+                                                        <div className="aspect-[9/16] max-h-[400px] bg-black relative">
+                                                            <video
+                                                                src={video.videoUrl}
+                                                                controls
+                                                                className="w-full h-full object-contain"
+                                                                poster={video.thumbnailUrl || undefined}
+                                                            />
                                                         </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Video Info */}
-                                                <div className="p-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-lg">{PLATFORM_CONFIG[video.platform as keyof typeof PLATFORM_CONFIG]?.icon || '🎬'}</span>
-                                                            <div>
-                                                                <p className="text-sm font-medium">{video.title || 'Video'}</p>
-                                                                <p className="text-xs text-muted-foreground capitalize">{video.platform}</p>
+                                                    ) : (
+                                                        <div className="aspect-video bg-muted/50 flex items-center justify-center">
+                                                            <div className="text-center">
+                                                                <Loader2 className="w-8 h-8 animate-spin text-violet-400 mx-auto mb-2" />
+                                                                <p className="text-xs text-muted-foreground">Preparing video...</p>
                                                             </div>
                                                         </div>
-                                                        {video.videoUrl && (
-                                                            <a
-                                                                href={video.videoUrl}
-                                                                download
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-600 text-xs font-medium hover:bg-violet-500/20 transition-colors"
-                                                            >
-                                                                <Download className="w-3 h-3" />
-                                                                Download
-                                                            </a>
-                                                        )}
+                                                    )}
+
+                                                    {/* Video Info */}
+                                                    <div className="p-4">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-lg">{PLATFORM_CONFIG[video.platform as keyof typeof PLATFORM_CONFIG]?.icon || '🎬'}</span>
+                                                                <div>
+                                                                    <p className="text-sm font-medium">{video.title || 'Video'}</p>
+                                                                    <p className="text-xs text-muted-foreground capitalize">{video.platform}</p>
+                                                                </div>
+                                                            </div>
+                                                            {video.videoUrl && (
+                                                                <a
+                                                                    href={video.videoUrl}
+                                                                    download
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-600 text-xs font-medium hover:bg-violet-500/20 transition-colors"
+                                                                >
+                                                                    <Download className="w-3 h-3" />
+                                                                    Download
+                                                                </a>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </motion.div>
-                    )}
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </motion.div>
             </main>
         </div>
