@@ -142,17 +142,19 @@ The AI influencer should be a virtual character that:
 - Has a rich backstory explaining who they are
 - Embodies the brand values
 - Has a distinct personality matching the archetype
+- IMPORTANT: Read the project description carefully. If it mentions a specific LOCATION or SETTING (e.g. café, gym, park, kitchen, studio, beach, restaurant, etc.), use that as the sceneEnvironment. If no specific location is mentioned, choose a setting that fits the project topic.
 
 Respond with ONLY valid JSON (no markdown formatting):
 {
   "name": "A creative, memorable influencer name",
   "personality": "Detailed personality traits (2-3 sentences)",
   "backstory": "A compelling backstory (3-5 sentences)",
-  "appearanceDescription": "Detailed visual description for AI image generation",
+  "appearanceDescription": "Detailed visual description for AI image generation including clothing, hair, expression",
+  "sceneEnvironment": "The physical setting/location where the influencer is (e.g. 'cozy café with warm lighting', 'modern gym with equipment', 'sunny park bench', 'sleek home kitchen'). Must match the project description context.",
   "visualProfile": {
     "gender": "${selectedGender}",
     "ageRange": "25-35",
-    "style": "business casual/casual/formal",
+    "style": "casual/sporty/business casual/formal — pick what fits the scene",
     "features": "Key visual features"
   }
 }`
@@ -213,8 +215,9 @@ Respond with ONLY valid JSON (no markdown formatting):
         const visualDna = (constitution?.visualDna as string) || ''
 
         const appearance = (profile.appearanceDescription || '').substring(0, 150)
+        const scene = (profile.sceneEnvironment || 'modern office environment').substring(0, 100)
         const dnaKeywords = visualDna ? `, ${visualDna}` : ''
-        const avatarPrompt = `Professional photorealistic medium shot portrait of a ${genderWord} aged ${age}, visible from waist up, ${appearance || 'stylish and professional'}, standing in a modern office environment with natural pose, arms relaxed at sides, clean studio background, soft cinematic lighting, warm confident expression looking at camera, professional business attire, 8k uhd, sharp focus, shot on 85mm lens${dnaKeywords}. Avoid: extreme close-up, tight headshot, cropped face, lowres, bad anatomy, text overlap, distorted UI, cartoon, messy background, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs`
+        const avatarPrompt = `Professional photorealistic medium shot portrait of a ${genderWord} aged ${age}, visible from waist up, ${appearance || 'stylish and professional'}, sitting or standing naturally in ${scene}, relaxed natural pose, soft cinematic lighting, warm confident expression looking at camera, 8k uhd, sharp focus, shot on 85mm lens${dnaKeywords}. Avoid: extreme close-up, tight headshot, cropped face, lowres, bad anatomy, text overlap, distorted UI, cartoon, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs`
 
         let avatarUrl = ''
         try {
