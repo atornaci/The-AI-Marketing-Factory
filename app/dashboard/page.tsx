@@ -39,6 +39,7 @@ import {
     BarChart3,
     Layers,
     ChevronRight,
+    Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -101,6 +102,7 @@ function DashboardContent() {
     const [loading, setLoading] = useState(true);
     const [userEmail, setUserEmail] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
+    const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
 
     const timeAgo = (dateStr: string) => {
         const diff = Date.now() - new Date(dateStr).getTime();
@@ -284,6 +286,27 @@ function DashboardContent() {
         router.refresh();
     };
 
+    const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm('Bu projeyi silmek istediğinize emin misiniz? Tüm videolar, influencer ve görseller de silinecek.')) return;
+        setDeletingProjectId(projectId);
+        try {
+            // Cascade delete: videos, influencers, generated_images, then project
+            await supabase.from('videos').delete().eq('project_id', projectId);
+            await supabase.from('ai_influencers').delete().eq('project_id', projectId);
+            await supabase.from('generated_images').delete().eq('project_id', projectId);
+            const { error } = await supabase.from('projects').delete().eq('id', projectId);
+            if (error) throw error;
+            setProjects(prev => prev.filter(p => p.id !== projectId));
+        } catch (err) {
+            console.error('Delete error:', err);
+            alert('Proje silinemedi. Lütfen tekrar deneyin.');
+        } finally {
+            setDeletingProjectId(null);
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case "completed":
@@ -348,13 +371,13 @@ function DashboardContent() {
         <div className="min-h-screen bg-background">
             {/* Subtle background */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute inset-0 grid-bg opacity-30" />
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-violet-500/[0.03] rounded-full blur-[120px]" />
-                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-500/[0.03] rounded-full blur-[100px]" />
+                <div className="absolute inset-0 grid-bg opacity-40" />
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-violet-500/[0.05] rounded-full blur-[120px]" />
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-500/[0.05] rounded-full blur-[100px]" />
             </div>
 
             {/* ═══ Header ═══ */}
-            <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/80 border-b border-border/50">
+            <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/90 border-b border-border">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     {/* Left: Logo */}
                     <Link href="/" className="flex items-center gap-2.5">
@@ -375,7 +398,7 @@ function DashboardContent() {
                                 placeholder="Proje ara..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9 w-56 h-9 rounded-xl border-border/50 bg-background/50 text-sm focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20"
+                                className="pl-9 w-56 h-9 rounded-xl border-border bg-background text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30"
                             />
                         </div>
 
@@ -407,7 +430,7 @@ function DashboardContent() {
                                             placeholder="https://example.com"
                                             value={newProjectUrl}
                                             onChange={(e) => setNewProjectUrl(e.target.value)}
-                                            className="pl-10 h-12 rounded-xl border-border/50 bg-background/50 focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20"
+                                            className="pl-10 h-12 rounded-xl border-border bg-background focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30"
                                             disabled={isCreating}
                                         />
                                     </div>
@@ -495,7 +518,7 @@ function DashboardContent() {
                                     Projelerini yönet ve yeni içerikler üret
                                 </p>
                             </div>
-                            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-background/50 text-xs">
+                            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-background text-xs">
                                 <Zap className="w-3 h-3 text-violet-500" />
                                 <span className="text-muted-foreground">
                                     AI Otonom Motor Aktif
@@ -509,7 +532,7 @@ function DashboardContent() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                         {stats.map((stat) => (
                             <motion.div key={stat.label} variants={itemVariants}>
-                                <div className="p-5 rounded-2xl border border-border/50 bg-background/50 hover:border-border transition-colors group">
+                                <div className="p-5 rounded-2xl border border-border bg-card hover:border-violet-300/50 hover:shadow-md transition-all group">
                                     <div className="flex items-start justify-between mb-4">
                                         <div
                                             className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.iconColor}`}
@@ -567,7 +590,7 @@ function DashboardContent() {
                                     custom={index}
                                 >
                                     <Link href={`/project/${project.id}`}>
-                                        <div className="group p-5 rounded-2xl border border-border/50 bg-background/50 hover:border-violet-300/50 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-300 cursor-pointer h-full">
+                                        <div className={`group p-5 rounded-2xl border border-border bg-card hover:border-violet-300 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 cursor-pointer h-full ${deletingProjectId === project.id ? 'opacity-50 pointer-events-none' : ''}`}>
                                             {/* Header */}
                                             <div className="flex items-start justify-between mb-4">
                                                 <div className="flex items-center gap-3">
@@ -609,23 +632,26 @@ function DashboardContent() {
                                             </div>
 
                                             {/* Footer */}
-                                            <div className="flex items-center justify-between pt-3 border-t border-border/30">
-                                                <div className="flex -space-x-1.5">
-                                                    {["I", "T", "L"].map((letter) => (
-                                                        <div
-                                                            key={letter}
-                                                            className="w-5 h-5 rounded-full bg-muted/80 flex items-center justify-center text-[9px] font-medium border-2 border-background"
-                                                        >
-                                                            {letter}
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                            <div className="flex items-center justify-between pt-3 border-t border-border/50">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground/50">
+                                                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                                                         <Clock className="w-3 h-3" />
                                                         {project.lastActivity}
                                                     </span>
-                                                    <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-violet-500 group-hover:translate-x-0.5 transition-all" />
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={(e) => handleDeleteProject(project.id, e)}
+                                                        className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                                        title="Projeyi Sil"
+                                                    >
+                                                        {deletingProjectId === project.id ? (
+                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                        ) : (
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        )}
+                                                    </button>
+                                                    <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-violet-500 group-hover:translate-x-0.5 transition-all" />
                                                 </div>
                                             </div>
                                         </div>
@@ -640,7 +666,7 @@ function DashboardContent() {
                                     onOpenChange={setCreateDialogOpen}
                                 >
                                     <DialogTrigger asChild>
-                                        <div className="group p-5 rounded-2xl border border-dashed border-border/50 hover:border-violet-300/50 transition-all duration-300 cursor-pointer h-full flex flex-col items-center justify-center min-h-[200px] text-center">
+                                        <div className="group p-5 rounded-2xl border border-dashed border-border hover:border-violet-300 transition-all duration-300 cursor-pointer h-full flex flex-col items-center justify-center min-h-[200px] text-center">
                                             <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mb-4 group-hover:bg-violet-500/10 transition-colors">
                                                 <Plus className="w-5 h-5 text-muted-foreground/60 group-hover:text-violet-500 transition-colors" />
                                             </div>
