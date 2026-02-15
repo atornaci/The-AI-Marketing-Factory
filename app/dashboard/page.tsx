@@ -3,75 +3,48 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 import {
     Sparkles,
-    Plus,
-    Globe,
-    Video,
-    Bot,
-    ArrowRight,
-    ExternalLink,
-    Clock,
-    TrendingUp,
-    Eye,
     Loader2,
-    Search,
     LogOut,
     Zap,
-    BarChart3,
-    Layers,
-    ChevronRight,
-    Trash2,
-    Clapperboard,
-    MessageSquareText,
     UserRound,
     Building2,
     MapPin,
     Flame,
+    MessageSquareText,
+    Clapperboard,
+    Video,
+    Download,
+    Play,
+    RefreshCw,
+    Bot,
+    ChevronDown,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 /* ─── Types ─── */
-interface ProjectItem {
+interface CreatedInfluencer {
     id: string;
     name: string;
-    url: string;
-    status: "pending" | "analyzing" | "completed" | "failed";
-    videoCount: number;
-    influencer?: string;
-    lastActivity: string;
-    favicon?: string;
+    personality?: string;
+    backstory?: string;
+    avatarUrl?: string;
+    projectId: string;
 }
 
-interface StatItem {
-    label: string;
-    value: string;
-    icon: React.ComponentType<{ className?: string }>;
-    change: string;
-    gradient: string;
-    iconColor: string;
+interface GeneratedVideo {
+    id: string;
+    title?: string;
+    videoUrl?: string;
+    thumbnailUrl?: string;
+    platform: string;
+    script?: string;
 }
 
 /* ─── Animation variants ─── */
@@ -94,22 +67,11 @@ const itemVariants = {
 
 /* ─── Dashboard ─── */
 function DashboardContent() {
-    const searchParams = useSearchParams();
     const router = useRouter();
-    const initialUrl = searchParams.get("url") || "";
     const supabase = createClient();
 
-    const [projects, setProjects] = useState<ProjectItem[]>([]);
-    const [stats, setStats] = useState<StatItem[]>([]);
-    const [newProjectUrl, setNewProjectUrl] = useState(initialUrl);
-    const [isCreating, setIsCreating] = useState(false);
-    const [createDialogOpen, setCreateDialogOpen] = useState(!!initialUrl);
-    const [analysisProgress, setAnalysisProgress] = useState(0);
-    const [analysisStep, setAnalysisStep] = useState("");
     const [loading, setLoading] = useState(true);
     const [userEmail, setUserEmail] = useState("");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
 
     /* ─── Quick Video State ─── */
     const [quickGender, setQuickGender] = useState<"female" | "male">("female");
@@ -120,6 +82,18 @@ function DashboardContent() {
     const [isQuickCreating, setIsQuickCreating] = useState(false);
     const [quickStep, setQuickStep] = useState("");
     const [quickProgress, setQuickProgress] = useState(0);
+
+    /* ─── Influencer Result State ─── */
+    const [createdInfluencer, setCreatedInfluencer] = useState<CreatedInfluencer | null>(null);
+
+    /* ─── Video Generation State ─── */
+    const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+    const [genProgress, setGenProgress] = useState(0);
+    const [genStep, setGenStep] = useState("");
+    const [genError, setGenError] = useState("");
+    const [generatedVideos, setGeneratedVideos] = useState<GeneratedVideo[]>([]);
+    const [selectedPlatform, setSelectedPlatform] = useState<"tiktok" | "instagram" | "youtube">("tiktok");
+    const [showPlatformMenu, setShowPlatformMenu] = useState(false);
 
     const SECTOR_OPTIONS = [
         { value: 'fitness', label: '💪 Fitness & Spor' },
@@ -159,183 +133,40 @@ function DashboardContent() {
         { value: 'motivasyonel', label: '💪 Motivasyonel' },
     ];
 
-    const timeAgo = (dateStr: string) => {
-        const diff = Date.now() - new Date(dateStr).getTime();
-        const mins = Math.floor(diff / 60000);
-        if (mins < 1) return "Az önce";
-        if (mins < 60) return `${mins} dk önce`;
-        const hours = Math.floor(mins / 60);
-        if (hours < 24) return `${hours} saat önce`;
-        const days = Math.floor(hours / 24);
-        return `${days} gün önce`;
+    const PLATFORM_CONFIG = {
+        tiktok: { label: 'TikTok', icon: '🎵', color: 'from-pink-500 to-red-500' },
+        instagram: { label: 'Instagram', icon: '📸', color: 'from-purple-500 to-pink-500' },
+        youtube: { label: 'YouTube', icon: '▶️', color: 'from-red-500 to-red-600' },
     };
 
-    const fetchData = useCallback(async () => {
+    /* ─── Auth Check ─── */
+    const fetchUser = useCallback(async () => {
         try {
             setLoading(true);
-            const {
-                data: { user },
-            } = await supabase.auth.getUser();
+            const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 router.push("/auth");
                 return;
             }
             setUserEmail(user.email || "");
-
-            const { data: projectsData } = await supabase
-                .from("projects")
-                .select("*")
-                .eq("user_id", user.id)
-                .order("created_at", { ascending: false });
-
-            // videos and ai_influencers don't have user_id — filter by project_id
-            const projectIds = (projectsData || []).map((p: { id: string }) => p.id);
-
-            const { data: videosData } = projectIds.length > 0
-                ? await supabase
-                    .from("videos")
-                    .select("project_id")
-                    .in("project_id", projectIds)
-                : { data: [] as { project_id: string }[] };
-
-            const { data: influencersData } = projectIds.length > 0
-                ? await supabase
-                    .from("ai_influencers")
-                    .select("id, name, project_id")
-                    .in("project_id", projectIds)
-                : { data: [] as { id: string; name: string; project_id: string }[] };
-
-            const videoCounts: Record<string, number> = {};
-            videosData?.forEach((v) => {
-                videoCounts[v.project_id] = (videoCounts[v.project_id] || 0) + 1;
-            });
-
-            const influencerMap: Record<string, string> = {};
-            influencersData?.forEach((i) => {
-                if (i.project_id) influencerMap[i.project_id] = i.name;
-            });
-
-            const mappedProjects: ProjectItem[] = (projectsData || []).map((p) => ({
-                id: p.id,
-                name: p.name || new URL(p.url).hostname,
-                url: p.url,
-                status: p.analysis_status || "completed",
-                videoCount: videoCounts[p.id] || 0,
-                influencer: influencerMap[p.id],
-                lastActivity: timeAgo(p.updated_at || p.created_at),
-                favicon: "🌐",
-            }));
-
-            setProjects(mappedProjects);
-
-            const totalProjects = mappedProjects.length;
-            const totalVideos = videosData?.length || 0;
-            const totalInfluencers = influencersData?.length || 0;
-
-            setStats([
-                {
-                    label: "Toplam Proje",
-                    value: String(totalProjects),
-                    icon: Layers,
-                    change: totalProjects > 0 ? `${totalProjects} aktif` : "Yeni",
-                    gradient: "from-blue-500 to-cyan-500",
-                    iconColor: "text-blue-500 bg-blue-500/10",
-                },
-                {
-                    label: "Üretilen Video",
-                    value: String(totalVideos),
-                    icon: Video,
-                    change: totalVideos > 0 ? `${totalVideos} üretildi` : "—",
-                    gradient: "from-violet-500 to-purple-500",
-                    iconColor: "text-violet-500 bg-violet-500/10",
-                },
-                {
-                    label: "AI Influencer",
-                    value: String(totalInfluencers),
-                    icon: Bot,
-                    change: totalInfluencers > 0 ? "Aktif" : "—",
-                    gradient: "from-pink-500 to-rose-500",
-                    iconColor: "text-pink-500 bg-pink-500/10",
-                },
-                {
-                    label: "Toplam İzlenme",
-                    value: "—",
-                    icon: BarChart3,
-                    change: "Yakında",
-                    gradient: "from-orange-500 to-amber-500",
-                    iconColor: "text-orange-500 bg-orange-500/10",
-                },
-            ]);
         } catch (err) {
-            console.error("Dashboard data fetch error:", err);
+            console.error("Auth error:", err);
         } finally {
             setLoading(false);
         }
     }, [supabase, router]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        fetchUser();
+    }, [fetchUser]);
 
-    const handleCreateProject = async () => {
-        if (!newProjectUrl) return;
-        setIsCreating(true);
-        setAnalysisProgress(0);
-
-        const steps = [
-            { progress: 10, label: "URL doğrulanıyor..." },
-            { progress: 25, label: "Web sitesi taranıyor..." },
-            { progress: 45, label: "AI ile proje analizi yapılıyor..." },
-            { progress: 65, label: "Pazarlama Anayasası oluşturuluyor..." },
-            { progress: 80, label: "Veritabanına kaydediliyor..." },
-        ];
-
-        let currentStep = 0;
-        const progressInterval = setInterval(() => {
-            if (currentStep < steps.length) {
-                setAnalysisProgress(steps[currentStep].progress);
-                setAnalysisStep(steps[currentStep].label);
-                currentStep++;
-            }
-        }, 3000);
-
-        try {
-            const url = newProjectUrl.startsWith("http")
-                ? newProjectUrl
-                : `https://${newProjectUrl}`;
-
-            const response = await fetch("/api/workflows/onboard", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url }),
-            });
-
-            clearInterval(progressInterval);
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Proje oluşturulamadı");
-            }
-
-            setAnalysisProgress(100);
-            setAnalysisStep("Tamamlandı! ✓");
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            await fetchData();
-            setCreateDialogOpen(false);
-            setNewProjectUrl("");
-        } catch (err) {
-            clearInterval(progressInterval);
-            setAnalysisStep(
-                `Hata: ${err instanceof Error ? err.message : "Bilinmeyen hata"}`
-            );
-        } finally {
-            setIsCreating(false);
-            setAnalysisProgress(0);
-        }
+    /* ─── Sign Out ─── */
+    const handleSignOut = async () => {
+        await supabase.auth.signOut();
+        router.push("/auth");
     };
 
-    /* ─── Quick Video Handler ─── */
+    /* ─── Quick Video Handler — Creates Influencer Inline ─── */
     const handleQuickVideo = async () => {
         if (!quickScript.trim() || !quickSector) return;
         setIsQuickCreating(true);
@@ -343,7 +174,6 @@ function DashboardContent() {
         setQuickStep("Proje oluşturuluyor...");
 
         try {
-            // Build rich project description from structured fields
             const sectorLabel = SECTOR_OPTIONS.find(s => s.value === quickSector)?.label?.replace(/^\S+\s/, '') || quickSector;
             const envLabel = quickEnvironment ? (ENVIRONMENT_OPTIONS.find(e => e.value === quickEnvironment)?.label?.replace(/^\S+\s/, '') || quickEnvironment) : '';
             const energyLabel = quickEnergy ? (ENERGY_OPTIONS.find(e => e.value === quickEnergy)?.label?.replace(/^\S+\s/, '') || quickEnergy) : '';
@@ -371,7 +201,7 @@ function DashboardContent() {
             setQuickProgress(30);
             setQuickStep("AI Influencer oluşturuluyor...");
 
-            // Step 2: Create influencer via n8n
+            // Step 2: Create influencer
             const infRes = await fetch('/api/workflows/create-influencer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -389,14 +219,22 @@ function DashboardContent() {
                 const err = await infRes.json();
                 throw new Error(err.error || 'Influencer oluşturulamadı');
             }
-            setQuickProgress(70);
-            setQuickStep("Tamamlandı! Yönlendiriliyor...");
+            const { influencer } = await infRes.json();
+            setQuickProgress(90);
+            setQuickStep("Influencer hazır! ✓");
 
-            await new Promise((r) => setTimeout(r, 800));
+            // Save influencer to state (no redirect!)
+            setCreatedInfluencer({
+                id: influencer.id,
+                name: influencer.name,
+                personality: influencer.personality,
+                backstory: influencer.backstory,
+                avatarUrl: influencer.avatarUrl,
+                projectId: project.id,
+            });
+
+            await new Promise((r) => setTimeout(r, 600));
             setQuickProgress(100);
-
-            // Redirect to project page with script as query param
-            router.push(`/project/${project.id}?script=${encodeURIComponent(quickScript)}&env=${encodeURIComponent(quickEnvironment)}&energy=${encodeURIComponent(quickEnergy)}`);
         } catch (err) {
             setQuickStep(`Hata: ${err instanceof Error ? err.message : 'Bilinmeyen hata'}`);
         } finally {
@@ -404,72 +242,106 @@ function DashboardContent() {
                 setIsQuickCreating(false);
                 setQuickProgress(0);
                 setQuickStep('');
-            }, 3000);
+            }, 2000);
         }
     };
 
-    const handleSignOut = async () => {
-        await supabase.auth.signOut();
-        router.push("/auth");
-        router.refresh();
-    };
+    /* ─── Generate Video ─── */
+    const handleGenerateVideo = async () => {
+        if (!createdInfluencer) return;
+        setIsGeneratingVideo(true);
+        setGenProgress(0);
+        setGenStep("Video üretimi başlatılıyor...");
+        setGenError("");
 
-    const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!confirm('Bu projeyi silmek istediğinize emin misiniz? Tüm videolar ve influencer de silinecek.')) return;
-        setDeletingProjectId(projectId);
+        const steps = [
+            { progress: 10, label: "Video prompt hazırlanıyor..." },
+            { progress: 25, label: "AI ile prompt güçlendiriliyor..." },
+            { progress: 40, label: "fal.ai'ya gönderiliyor..." },
+            { progress: 55, label: "Video render ediliyor..." },
+            { progress: 65, label: "Render devam ediyor..." },
+            { progress: 75, label: "Neredeyse hazır..." },
+            { progress: 85, label: "Son dokunuşlar..." },
+            { progress: 90, label: "Video kaydediliyor..." },
+        ];
+
+        let currentStep = 0;
+        const progressInterval = setInterval(() => {
+            if (currentStep < steps.length) {
+                setGenProgress(steps[currentStep].progress);
+                setGenStep(steps[currentStep].label);
+                currentStep++;
+            }
+        }, 15000);
+
         try {
-            // Cascade delete: videos, influencers, generated_images, then project
-            await supabase.from('videos').delete().eq('project_id', projectId);
-            await supabase.from('ai_influencers').delete().eq('project_id', projectId);
-            await supabase.from('generated_images').delete().eq('project_id', projectId);
-            const { error } = await supabase.from('projects').delete().eq('id', projectId);
-            if (error) throw error;
-            setProjects(prev => prev.filter(p => p.id !== projectId));
+            const sectorLabel = SECTOR_OPTIONS.find(s => s.value === quickSector)?.label?.replace(/^\S+\s/, '') || quickSector;
+            const videoPrompt = `Create a ${selectedPlatform} marketing video for "${sectorLabel}". ${quickScript}`;
+
+            const response = await fetch("/api/workflows/generate-video", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    projectId: createdInfluencer.projectId,
+                    platform: selectedPlatform,
+                    prompt: videoPrompt,
+                    brandName: sectorLabel,
+                    title: `${sectorLabel} - ${selectedPlatform} Video`,
+                    influencerId: createdInfluencer.id,
+                    influencerName: createdInfluencer.name,
+                    influencerPersonality: createdInfluencer.personality || null,
+                    influencerBackstory: createdInfluencer.backstory || null,
+                    productImageUrls: [],
+                    language: 'tr',
+                }),
+            });
+
+            clearInterval(progressInterval);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || "Video üretilemedi");
+            }
+
+            const { video } = await response.json();
+
+            setGenProgress(100);
+            setGenStep("Video tamamlandı! ✓");
+
+            setGeneratedVideos(prev => [{
+                id: video.id,
+                title: video.title,
+                videoUrl: video.videoUrl,
+                thumbnailUrl: video.thumbnailUrl,
+                platform: selectedPlatform,
+                script: video.script,
+            }, ...prev]);
+
         } catch (err) {
-            console.error('Delete error:', err);
-            alert('Proje silinemedi. Lütfen tekrar deneyin.');
+            clearInterval(progressInterval);
+            const errMsg = err instanceof Error ? err.message : "Bilinmeyen hata";
+            setGenError(errMsg);
+            setGenStep(`Hata: ${errMsg}`);
         } finally {
-            setDeletingProjectId(null);
+            setTimeout(() => {
+                setIsGeneratingVideo(false);
+                setGenProgress(0);
+                setGenStep("");
+            }, 2000);
         }
     };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "completed":
-                return "bg-emerald-50 text-emerald-600 border-emerald-200";
-            case "analyzing":
-                return "bg-violet-50 text-violet-600 border-violet-200";
-            case "pending":
-                return "bg-amber-50 text-amber-600 border-amber-200";
-            case "failed":
-                return "bg-red-50 text-red-600 border-red-200";
-            default:
-                return "";
-        }
+    /* ─── Reset / New Influencer ─── */
+    const handleReset = () => {
+        setCreatedInfluencer(null);
+        setGeneratedVideos([]);
+        setQuickScript("");
+        setQuickSector("");
+        setQuickEnvironment("");
+        setQuickEnergy("");
+        setQuickGender("female");
+        setGenError("");
     };
-
-    const getStatusText = (status: string) => {
-        switch (status) {
-            case "completed":
-                return "Tamamlandı";
-            case "analyzing":
-                return "Analiz Ediliyor";
-            case "pending":
-                return "Bekliyor";
-            case "failed":
-                return "Hata";
-            default:
-                return status;
-        }
-    };
-
-    const filteredProjects = projects.filter(
-        (p) =>
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.url.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     /* ─── Loading ─── */
     if (loading) {
@@ -485,9 +357,6 @@ function DashboardContent() {
                     </div>
                     <div>
                         <p className="text-sm font-medium">Yükleniyor...</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Dashboard hazırlanıyor
-                        </p>
                     </div>
                 </motion.div>
             </div>
@@ -506,7 +375,7 @@ function DashboardContent() {
 
             {/* ═══ Header ═══ */}
             <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/90 border-b border-border">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
                     {/* Left: Logo */}
                     <Link href="/" className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
@@ -517,103 +386,20 @@ function DashboardContent() {
                         </span>
                     </Link>
 
-                    {/* Right: Actions */}
+                    {/* Right: User + Logout */}
                     <div className="flex items-center gap-3">
-                        {/* Search */}
-                        <div className="relative hidden md:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
-                            <Input
-                                placeholder="Proje ara..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9 w-56 h-9 rounded-xl border-border bg-background text-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30"
-                            />
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-background text-xs">
+                            <Zap className="w-3 h-3 text-violet-500" />
+                            <span className="text-muted-foreground">AI Motor Aktif</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         </div>
-
-                        {/* New Project */}
-                        <Dialog
-                            open={createDialogOpen}
-                            onOpenChange={setCreateDialogOpen}
-                        >
-                            <DialogTrigger asChild>
-                                <Button className="h-9 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/20 text-sm font-medium">
-                                    <Plus className="w-4 h-4 mr-1.5" />
-                                    Yeni Proje
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="border-border/50 sm:max-w-md rounded-2xl">
-                                <DialogHeader>
-                                    <DialogTitle className="text-xl font-bold">
-                                        Yeni Proje Oluştur
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        Pazarlamak istediğiniz web projesinin URL&apos;sini girin.
-                                        AI sistemi analiz edip size özel strateji oluşturacak.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 pt-4">
-                                    <div className="relative group">
-                                        <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-violet-400 transition-colors" />
-                                        <Input
-                                            placeholder="https://example.com"
-                                            value={newProjectUrl}
-                                            onChange={(e) => setNewProjectUrl(e.target.value)}
-                                            className="pl-10 h-12 rounded-xl border-border bg-background focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30"
-                                            disabled={isCreating}
-                                        />
-                                    </div>
-
-                                    <AnimatePresence>
-                                        {isCreating && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: "auto" }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                className="space-y-3"
-                                            >
-                                                <Progress
-                                                    value={analysisProgress}
-                                                    className="h-1.5"
-                                                />
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-500" />
-                                                    {analysisStep}
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-
-                                    <Button
-                                        onClick={handleCreateProject}
-                                        disabled={!newProjectUrl || isCreating}
-                                        className="w-full h-12 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 text-base font-semibold shadow-lg shadow-violet-500/25"
-                                    >
-                                        {isCreating ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                Analiz Ediliyor...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Sparkles className="w-4 h-4 mr-2" />
-                                                Projeyi Analiz Et
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-
-                        {/* User */}
                         <div className="flex items-center gap-2 ml-1 pl-3 border-l border-border/50">
-                            <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center text-xs font-semibold text-violet-500">
-                                    {userEmail.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="text-xs text-muted-foreground hidden lg:block max-w-[140px] truncate">
-                                    {userEmail}
-                                </span>
+                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center text-xs font-semibold text-violet-500">
+                                {userEmail.charAt(0).toUpperCase()}
                             </div>
+                            <span className="text-xs text-muted-foreground hidden lg:block max-w-[140px] truncate">
+                                {userEmail}
+                            </span>
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -629,7 +415,7 @@ function DashboardContent() {
             </header>
 
             {/* ═══ Main Content ═══ */}
-            <main className="relative max-w-7xl mx-auto px-6 py-8">
+            <main className="relative max-w-5xl mx-auto px-6 py-8">
                 <motion.div
                     variants={containerVariants}
                     initial="hidden"
@@ -637,420 +423,422 @@ function DashboardContent() {
                 >
                     {/* ─── Welcome Banner ─── */}
                     <motion.div variants={itemVariants} className="mb-8">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight">
-                                    Hoş geldin 👋
-                                </h1>
-                                <p className="text-muted-foreground text-sm mt-1">
-                                    Projelerini yönet ve yeni içerikler üret
-                                </p>
-                            </div>
-                            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-background text-xs">
-                                <Zap className="w-3 h-3 text-violet-500" />
-                                <span className="text-muted-foreground">
-                                    AI Otonom Motor Aktif
-                                </span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            </div>
+                        <div className="text-center">
+                            <h1 className="text-2xl font-bold tracking-tight">
+                                AI Video Oluşturucu 🎬
+                            </h1>
+                            <p className="text-muted-foreground text-sm mt-1">
+                                Influencer oluştur, script yaz, video üret — hepsi tek sayfada
+                            </p>
                         </div>
                     </motion.div>
 
-                    {/* ═══ Hızlı Video Oluştur ═══ */}
-                    <motion.div variants={itemVariants} className="mb-10">
-                        <div className="relative overflow-hidden rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
-                            {/* Decorative elements */}
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+                    {/* ═══ STEP 1: Create Influencer Form ═══ */}
+                    {!createdInfluencer && (
+                        <motion.div variants={itemVariants} className="mb-10">
+                            <div className="relative overflow-hidden rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-                            <div className="relative p-6 lg:p-8">
-                                {/* Header */}
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                                        <Clapperboard className="w-5 h-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg font-bold tracking-tight">Hızlı Video Oluştur</h2>
-                                        <p className="text-xs text-muted-foreground">Influencer seç, ne söylesin yaz, oluştur!</p>
-                                    </div>
-                                </div>
-
-                                {/* Row 1: Gender + Selectors */}
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
-                                    {/* Gender Selector */}
-                                    <div>
-                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                            <UserRound className="w-3.5 h-3.5" />
-                                            Cinsiyet
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => setQuickGender("female")}
-                                                disabled={isQuickCreating}
-                                                className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "female"
-                                                    ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
-                                                    : "border-border/50 hover:border-violet-300/50 bg-background/50"
-                                                    }`}
-                                            >
-                                                <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
-                                                    <Image src="/default-influencer-female.png" alt="Kadın" width={32} height={32} className="w-full h-full object-cover" />
-                                                </div>
-                                                <span className="text-[10px] font-medium">Kadın</span>
-                                            </button>
-                                            <button
-                                                onClick={() => setQuickGender("male")}
-                                                disabled={isQuickCreating}
-                                                className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "male"
-                                                    ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
-                                                    : "border-border/50 hover:border-violet-300/50 bg-background/50"
-                                                    }`}
-                                            >
-                                                <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
-                                                    <Image src="/default-influencer-male.png" alt="Erkek" width={32} height={32} className="w-full h-full object-cover" />
-                                                </div>
-                                                <span className="text-[10px] font-medium">Erkek</span>
-                                            </button>
+                                <div className="relative p-6 lg:p-8">
+                                    {/* Header */}
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                                            <Clapperboard className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-lg font-bold tracking-tight">Influencer Oluştur</h2>
+                                            <p className="text-xs text-muted-foreground">Cinsiyet seç, sektör belirle, ne söylesin yaz!</p>
                                         </div>
                                     </div>
 
-                                    {/* Sektör */}
-                                    <div>
-                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                            <Building2 className="w-3.5 h-3.5" />
-                                            Sektör <span className="text-red-400">*</span>
-                                        </label>
-                                        <select
-                                            value={quickSector}
-                                            onChange={(e) => setQuickSector(e.target.value)}
-                                            disabled={isQuickCreating}
-                                            className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
-                                        >
-                                            <option value="">Sektör seçin...</option>
-                                            {SECTOR_OPTIONS.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
-                                        </select>
+                                    {/* Row 1: Gender + Selectors */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
+                                        {/* Gender Selector */}
+                                        <div>
+                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                <UserRound className="w-3.5 h-3.5" />
+                                                Cinsiyet
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setQuickGender("female")}
+                                                    disabled={isQuickCreating}
+                                                    className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "female"
+                                                        ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
+                                                        : "border-border/50 hover:border-violet-300/50 bg-background/50"
+                                                        }`}
+                                                >
+                                                    <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
+                                                        <Image src="/default-influencer-female.png" alt="Kadın" width={32} height={32} className="w-full h-full object-cover" />
+                                                    </div>
+                                                    <span className="text-[10px] font-medium">Kadın</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => setQuickGender("male")}
+                                                    disabled={isQuickCreating}
+                                                    className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "male"
+                                                        ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
+                                                        : "border-border/50 hover:border-violet-300/50 bg-background/50"
+                                                        }`}
+                                                >
+                                                    <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
+                                                        <Image src="/default-influencer-male.png" alt="Erkek" width={32} height={32} className="w-full h-full object-cover" />
+                                                    </div>
+                                                    <span className="text-[10px] font-medium">Erkek</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Sektör */}
+                                        <div>
+                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                <Building2 className="w-3.5 h-3.5" />
+                                                Sektör <span className="text-red-400">*</span>
+                                            </label>
+                                            <select
+                                                value={quickSector}
+                                                onChange={(e) => setQuickSector(e.target.value)}
+                                                disabled={isQuickCreating}
+                                                className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
+                                            >
+                                                <option value="">Sektör seçin...</option>
+                                                {SECTOR_OPTIONS.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Ortam */}
+                                        <div>
+                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                <MapPin className="w-3.5 h-3.5" />
+                                                Ortam <span className="text-muted-foreground/40 text-[10px]">(opsiyonel)</span>
+                                            </label>
+                                            <select
+                                                value={quickEnvironment}
+                                                onChange={(e) => setQuickEnvironment(e.target.value)}
+                                                disabled={isQuickCreating}
+                                                className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
+                                            >
+                                                <option value="">Otomatik</option>
+                                                {ENVIRONMENT_OPTIONS.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Enerji */}
+                                        <div>
+                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                <Flame className="w-3.5 h-3.5" />
+                                                Enerji <span className="text-muted-foreground/40 text-[10px]">(opsiyonel)</span>
+                                            </label>
+                                            <select
+                                                value={quickEnergy}
+                                                onChange={(e) => setQuickEnergy(e.target.value)}
+                                                disabled={isQuickCreating}
+                                                className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
+                                            >
+                                                <option value="">Otomatik</option>
+                                                {ENERGY_OPTIONS.map(opt => (
+                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
-                                    {/* Ortam */}
-                                    <div>
-                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                            <MapPin className="w-3.5 h-3.5" />
-                                            Ortam <span className="text-muted-foreground/40 text-[10px]">(opsiyonel)</span>
-                                        </label>
-                                        <select
-                                            value={quickEnvironment}
-                                            onChange={(e) => setQuickEnvironment(e.target.value)}
-                                            disabled={isQuickCreating}
-                                            className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
-                                        >
-                                            <option value="">Otomatik</option>
-                                            {ENVIRONMENT_OPTIONS.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
-                                        </select>
+                                    {/* Row 2: Script + Generate Button */}
+                                    <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mt-4">
+                                        {/* Script Input */}
+                                        <div className="flex-1 min-w-0">
+                                            <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                                <MessageSquareText className="w-3.5 h-3.5" />
+                                                Influencer ne söylesin? <span className="text-muted-foreground/50">(10s video)</span>
+                                            </label>
+                                            <textarea
+                                                placeholder="Örn: Merhaba! Bu kafede oturup size harika bir fitness uygulamasından bahsetmek istiyorum. Spor yapmak artık çok kolay!"
+                                                value={quickScript}
+                                                onChange={(e) => setQuickScript(e.target.value)}
+                                                disabled={isQuickCreating}
+                                                rows={3}
+                                                className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all"
+                                            />
+                                        </div>
+
+                                        {/* Generate Button */}
+                                        <div className="shrink-0 flex items-end">
+                                            <Button
+                                                onClick={handleQuickVideo}
+                                                disabled={!quickScript.trim() || !quickSector || isQuickCreating}
+                                                className="h-[72px] px-8 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex items-center gap-2 w-full lg:w-auto"
+                                            >
+                                                {isQuickCreating ? (
+                                                    <>
+                                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                                        <span>Oluşturuluyor...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Sparkles className="w-5 h-5" />
+                                                        <span>Oluştur</span>
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
                                     </div>
 
-                                    {/* Enerji */}
-                                    <div>
-                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                            <Flame className="w-3.5 h-3.5" />
-                                            Enerji <span className="text-muted-foreground/40 text-[10px]">(opsiyonel)</span>
-                                        </label>
-                                        <select
-                                            value={quickEnergy}
-                                            onChange={(e) => setQuickEnergy(e.target.value)}
-                                            disabled={isQuickCreating}
-                                            className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
-                                        >
-                                            <option value="">Otomatik</option>
-                                            {ENERGY_OPTIONS.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
-                                        </select>
+                                    {/* Progress */}
+                                    <AnimatePresence>
+                                        {isQuickCreating && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: "auto" }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="mt-5 space-y-2"
+                                            >
+                                                <Progress value={quickProgress} className="h-1.5" />
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                    <Loader2 className="w-3 h-3 animate-spin text-violet-500" />
+                                                    {quickStep}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* ═══ STEP 2: Influencer Card + Video Generation ═══ */}
+                    {createdInfluencer && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className="space-y-6"
+                        >
+                            {/* Influencer Card */}
+                            <div className="relative overflow-hidden rounded-2xl border border-emerald-200/50 bg-gradient-to-br from-emerald-500/[0.04] via-teal-500/[0.02] to-transparent shadow-sm">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+                                <div className="relative p-6 lg:p-8">
+                                    <div className="flex flex-col sm:flex-row gap-6">
+                                        {/* Avatar */}
+                                        <div className="shrink-0">
+                                            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-emerald-300/50 shadow-lg mx-auto sm:mx-0">
+                                                {createdInfluencer.avatarUrl ? (
+                                                    <Image
+                                                        src={createdInfluencer.avatarUrl}
+                                                        alt={createdInfluencer.name}
+                                                        width={144}
+                                                        height={144}
+                                                        className="w-full h-full object-cover"
+                                                        unoptimized
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
+                                                        <Bot className="w-12 h-12 text-emerald-400" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-200/50">
+                                                            ✓ Influencer Hazır
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="text-xl font-bold tracking-tight">{createdInfluencer.name}</h3>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleReset}
+                                                    className="text-xs text-muted-foreground hover:text-violet-600 rounded-lg"
+                                                >
+                                                    <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                                                    Yeni Oluştur
+                                                </Button>
+                                            </div>
+
+                                            {createdInfluencer.personality && (
+                                                <p className="text-sm text-muted-foreground mb-2">
+                                                    <span className="font-medium text-foreground">Kişilik:</span> {createdInfluencer.personality}
+                                                </p>
+                                            )}
+                                            {createdInfluencer.backstory && (
+                                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                                    <span className="font-medium text-foreground">Hikaye:</span> {createdInfluencer.backstory}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Row 2: Script + Generate Button */}
-                                <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mt-4">
-                                    {/* Script Input */}
-                                    <div className="flex-1 min-w-0">
-                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                            <MessageSquareText className="w-3.5 h-3.5" />
-                                            Influencer ne söylesin? <span className="text-muted-foreground/50">(10s video)</span>
-                                        </label>
-                                        <textarea
-                                            placeholder="Örn: Merhaba! Bu kafede oturup size harika bir fitness uygulamasından bahsetmek istiyorum. Spor yapmak artık çok kolay!"
-                                            value={quickScript}
-                                            onChange={(e) => setQuickScript(e.target.value)}
-                                            disabled={isQuickCreating}
-                                            rows={3}
-                                            className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all"
-                                        />
+                            {/* ─── Video Generation Section ─── */}
+                            <div className="relative overflow-hidden rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
+                                <div className="relative p-6 lg:p-8">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                                                <Video className="w-5 h-5 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold tracking-tight">Video Üret</h3>
+                                                <p className="text-xs text-muted-foreground">Platform seç ve video oluştur</p>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    {/* Generate Button */}
-                                    <div className="shrink-0 flex items-end">
+                                    {/* Platform + Generate */}
+                                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+                                        {/* Platform Selector */}
+                                        <div className="relative">
+                                            <label className="text-xs font-medium text-muted-foreground mb-2 block">Platform</label>
+                                            <button
+                                                onClick={() => setShowPlatformMenu(!showPlatformMenu)}
+                                                className="flex items-center gap-2 h-11 px-4 rounded-xl border border-border/50 bg-background/50 text-sm hover:border-violet-300 transition-all w-full sm:w-auto min-w-[160px]"
+                                            >
+                                                <span>{PLATFORM_CONFIG[selectedPlatform].icon}</span>
+                                                <span className="font-medium">{PLATFORM_CONFIG[selectedPlatform].label}</span>
+                                                <ChevronDown className="w-3.5 h-3.5 ml-auto text-muted-foreground" />
+                                            </button>
+                                            {showPlatformMenu && (
+                                                <div className="absolute top-full left-0 mt-1 w-full bg-background border border-border rounded-xl shadow-lg z-10 py-1">
+                                                    {(Object.keys(PLATFORM_CONFIG) as Array<keyof typeof PLATFORM_CONFIG>).map(p => (
+                                                        <button
+                                                            key={p}
+                                                            onClick={() => { setSelectedPlatform(p); setShowPlatformMenu(false); }}
+                                                            className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-violet-50 transition-colors ${selectedPlatform === p ? 'bg-violet-50 text-violet-600 font-medium' : ''}`}
+                                                        >
+                                                            <span>{PLATFORM_CONFIG[p].icon}</span>
+                                                            {PLATFORM_CONFIG[p].label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Generate Button */}
                                         <Button
-                                            onClick={handleQuickVideo}
-                                            disabled={!quickScript.trim() || !quickSector || isQuickCreating}
-                                            className="h-[72px] px-8 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex items-center gap-2 w-full lg:w-auto"
+                                            onClick={handleGenerateVideo}
+                                            disabled={isGeneratingVideo}
+                                            className={`h-11 px-6 rounded-xl bg-gradient-to-r ${PLATFORM_CONFIG[selectedPlatform].color} hover:opacity-90 border-0 shadow-lg text-sm font-semibold flex items-center gap-2`}
                                         >
-                                            {isQuickCreating ? (
+                                            {isGeneratingVideo ? (
                                                 <>
-                                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                                    <span>Oluşturuluyor...</span>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Üretiliyor...
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Sparkles className="w-5 h-5" />
-                                                    <span>Oluştur</span>
+                                                    <Play className="w-4 h-4" />
+                                                    Video Üret
                                                 </>
                                             )}
                                         </Button>
                                     </div>
-                                </div>
 
-                                {/* Progress */}
-                                <AnimatePresence>
-                                    {isQuickCreating && (
-                                        <motion.div
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: "auto" }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            className="mt-5 space-y-2"
-                                        >
-                                            <Progress value={quickProgress} className="h-1.5" />
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <Loader2 className="w-3 h-3 animate-spin text-violet-500" />
-                                                {quickStep}
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* ─── Stats Grid ─── */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-                        {stats.map((stat) => (
-                            <motion.div key={stat.label} variants={itemVariants}>
-                                <div className="p-5 rounded-2xl border border-border bg-card shadow-sm hover:border-violet-300/50 hover:shadow-md transition-all group">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div
-                                            className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.iconColor}`}
-                                        >
-                                            <stat.icon className="w-5 h-5" />
-                                        </div>
-                                        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                                            <TrendingUp className="w-3 h-3" />
-                                            {stat.change}
-                                        </span>
-                                    </div>
-                                    <p className="text-3xl font-bold tracking-tight">
-                                        {stat.value}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground mt-0.5">
-                                        {stat.label}
-                                    </p>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* ─── Projects Section ─── */}
-                    <motion.div variants={itemVariants} className="mb-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h2 className="text-xl font-bold tracking-tight">
-                                    Projelerim
-                                </h2>
-                                <p className="text-sm text-muted-foreground mt-0.5">
-                                    {projects.length > 0
-                                        ? `${projects.length} aktif proje`
-                                        : "Henüz proje yok — hemen başla!"}
-                                </p>
-                            </div>
-                            {projects.length > 0 && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCreateDialogOpen(true)}
-                                    className="rounded-xl border-border/50 text-xs h-8"
-                                >
-                                    <Plus className="w-3.5 h-3.5 mr-1" />
-                                    Ekle
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {/* Project Cards */}
-                            {filteredProjects.map((project, index) => (
-                                <motion.div
-                                    key={project.id}
-                                    variants={itemVariants}
-                                    custom={index}
-                                >
-                                    <div
-                                        onClick={() => {
-                                            if (deletingProjectId) return;
-                                            router.push(`/project/${project.id}`);
-                                        }}
-                                        className={`group p-5 rounded-2xl border border-border bg-card shadow-sm hover:border-violet-300 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 cursor-pointer h-full ${deletingProjectId === project.id ? 'opacity-50 pointer-events-none' : ''}`}
-                                    >
-                                        {/* Header */}
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center text-lg">
-                                                    {project.favicon}
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-semibold text-sm group-hover:text-violet-600 transition-colors">
-                                                        {project.name}
-                                                    </h3>
-                                                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                                        <ExternalLink className="w-2.5 h-2.5" />
-                                                        <span className="truncate max-w-[160px]">
-                                                            {project.url}
-                                                        </span>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <Badge
-                                                variant="outline"
-                                                className={`text-[10px] font-medium rounded-lg ${getStatusColor(project.status)}`}
+                                    {/* Video Generation Progress */}
+                                    <AnimatePresence>
+                                        {isGeneratingVideo && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: "auto" }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="mt-5 space-y-2"
                                             >
-                                                {getStatusText(project.status)}
-                                            </Badge>
-                                        </div>
+                                                <Progress value={genProgress} className="h-1.5" />
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                    <Loader2 className="w-3 h-3 animate-spin text-violet-500" />
+                                                    {genStep}
+                                                </div>
+                                                <p className="text-[11px] text-muted-foreground/50">
+                                                    Video üretimi 2-5 dakika sürebilir
+                                                </p>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
 
-                                        {/* Stats */}
-                                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-                                            <span className="flex items-center gap-1.5">
-                                                <Video className="w-3.5 h-3.5" />
-                                                {project.videoCount} video
-                                            </span>
-                                            {project.influencer && (
-                                                <span className="flex items-center gap-1.5">
-                                                    <Bot className="w-3.5 h-3.5" />
-                                                    {project.influencer}
-                                                </span>
-                                            )}
+                                    {/* Error */}
+                                    {genError && !isGeneratingVideo && (
+                                        <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200/50 text-sm text-red-600">
+                                            ⚠️ {genError}
                                         </div>
+                                    )}
+                                </div>
+                            </div>
 
-                                        {/* Footer */}
-                                        <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                                            <div className="flex items-center gap-2">
-                                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                                    <Clock className="w-3 h-3" />
-                                                    {project.lastActivity}
-                                                </span>
+                            {/* ─── Generated Videos ─── */}
+                            {generatedVideos.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                >
+                                    <h3 className="text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
+                                        <Video className="w-5 h-5 text-violet-500" />
+                                        Üretilen Videolar ({generatedVideos.length})
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {generatedVideos.map((video) => (
+                                            <div
+                                                key={video.id}
+                                                className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden hover:border-violet-300/50 hover:shadow-md transition-all"
+                                            >
+                                                {/* Video Player */}
+                                                {video.videoUrl ? (
+                                                    <div className="aspect-[9/16] max-h-[400px] bg-black relative">
+                                                        <video
+                                                            src={video.videoUrl}
+                                                            controls
+                                                            className="w-full h-full object-contain"
+                                                            poster={video.thumbnailUrl || undefined}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="aspect-video bg-muted/50 flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <Loader2 className="w-8 h-8 animate-spin text-violet-400 mx-auto mb-2" />
+                                                            <p className="text-xs text-muted-foreground">Video hazırlanıyor...</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Video Info */}
+                                                <div className="p-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-lg">{PLATFORM_CONFIG[video.platform as keyof typeof PLATFORM_CONFIG]?.icon || '🎬'}</span>
+                                                            <div>
+                                                                <p className="text-sm font-medium">{video.title || 'Video'}</p>
+                                                                <p className="text-xs text-muted-foreground capitalize">{video.platform}</p>
+                                                            </div>
+                                                        </div>
+                                                        {video.videoUrl && (
+                                                            <a
+                                                                href={video.videoUrl}
+                                                                download
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-600 text-xs font-medium hover:bg-violet-500/20 transition-colors"
+                                                            >
+                                                                <Download className="w-3 h-3" />
+                                                                İndir
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDeleteProject(project.id, e);
-                                                    }}
-                                                    className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                                                    title="Projeyi Sil"
-                                                >
-                                                    {deletingProjectId === project.id ? (
-                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                    ) : (
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    )}
-                                                </button>
-                                                <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-violet-500 group-hover:translate-x-0.5 transition-all" />
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </motion.div>
-                            ))}
-
-                            {/* ─── New Project Card ─── */}
-                            <motion.div variants={itemVariants}>
-                                <Dialog
-                                    open={createDialogOpen}
-                                    onOpenChange={setCreateDialogOpen}
-                                >
-                                    <DialogTrigger asChild>
-                                        <div className="group p-5 rounded-2xl border border-dashed border-border hover:border-violet-300 transition-all duration-300 cursor-pointer h-full flex flex-col items-center justify-center min-h-[200px] text-center">
-                                            <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mb-4 group-hover:bg-violet-500/10 transition-colors">
-                                                <Plus className="w-5 h-5 text-muted-foreground/60 group-hover:text-violet-500 transition-colors" />
-                                            </div>
-                                            <h3 className="font-medium text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                                                Yeni Proje Ekle
-                                            </h3>
-                                            <p className="text-xs text-muted-foreground/50 mt-1">
-                                                URL girin ve AI analiz etsin
-                                            </p>
-                                        </div>
-                                    </DialogTrigger>
-                                </Dialog>
-                            </motion.div>
-                        </div>
-                    </motion.div>
-
-                    {/* ─── Empty State ─── */}
-                    {projects.length === 0 && (
-                        <motion.div
-                            variants={itemVariants}
-                            className="text-center py-16"
-                        >
-                            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center mx-auto mb-6">
-                                <Sparkles className="w-9 h-9 text-violet-500" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-2">
-                                AI Marketing Factory&apos;e Hoşgeldiniz!
-                            </h3>
-                            <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm leading-relaxed">
-                                İlk projenizi ekleyin — AI sistemi web sitenizi analiz edecek,
-                                influencer oluşturacak ve video içerikler üretecek.
-                            </p>
-                            <Button
-                                onClick={() => setCreateDialogOpen(true)}
-                                className="h-11 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 font-medium"
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                İlk Projeni Oluştur
-                            </Button>
-
-                            {/* Quick tips */}
-                            <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                                {[
-                                    {
-                                        icon: Globe,
-                                        title: "URL Girin",
-                                        desc: "Web projenizin adresini paylaşın",
-                                    },
-                                    {
-                                        icon: Bot,
-                                        title: "AI Analiz Etsin",
-                                        desc: "Otomatik proje analizi yapılır",
-                                    },
-                                    {
-                                        icon: Video,
-                                        title: "Video Üretin",
-                                        desc: "İçerikler otomatik oluşturulur",
-                                    },
-                                ].map((tip) => (
-                                    <div
-                                        key={tip.title}
-                                        className="p-4 rounded-xl border border-border/30 text-center"
-                                    >
-                                        <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center mx-auto mb-2">
-                                            <tip.icon className="w-4 h-4 text-violet-500" />
-                                        </div>
-                                        <p className="text-xs font-medium">{tip.title}</p>
-                                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                                            {tip.desc}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
+                            )}
                         </motion.div>
                     )}
                 </motion.div>
@@ -1059,12 +847,20 @@ function DashboardContent() {
     );
 }
 
+/* ─── Page Export ─── */
 export default function DashboardPage() {
     return (
         <Suspense
             fallback={
                 <div className="min-h-screen bg-background flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+                    <div className="text-center space-y-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center mx-auto">
+                            <Sparkles className="w-5 h-5 text-white animate-pulse" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Yükleniyor...
+                        </p>
+                    </div>
                 </div>
             }
         >
