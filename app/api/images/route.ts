@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 import { abacusAI } from '@/lib/services/abacus-ai'
 
 export const maxDuration = 120 // 2 minutes for image generation
 
 export async function POST(req: NextRequest) {
     try {
-        const supabase = await createServerSupabaseClient()
+        const supabase = await createServiceRoleClient()
         const body = await req.json()
         const { projectId, prompt, imageType, platform, withBrandOverlay } = body
 
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
 // GET — fetch all generated images for a project
 export async function GET(req: NextRequest) {
     try {
-        const supabase = await createServerSupabaseClient()
+        const supabase = await createServiceRoleClient()
         const { searchParams } = new URL(req.url)
         const projectId = searchParams.get('projectId')
         const imageType = searchParams.get('imageType')
@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
 // DELETE — delete a generated image
 export async function DELETE(req: NextRequest) {
     try {
-        const supabase = await createServerSupabaseClient()
+        const supabase = await createServiceRoleClient()
         const { searchParams } = new URL(req.url)
         const imageId = searchParams.get('imageId')
 
