@@ -1500,7 +1500,8 @@ Respond ONLY with valid JSON.`
         imageType: string,
         platform: string,
         visualDna?: string,
-        brandPersona?: string
+        brandPersona?: string,
+        productContext?: string
     ): Promise<string> {
         const colorStr = brandColors.length > 0 ? brandColors.join(', ') : 'vibrant, modern'
         const dnaSection = visualDna
@@ -1508,6 +1509,9 @@ Respond ONLY with valid JSON.`
             : ''
         const personaSection = brandPersona
             ? `\n- Brand Persona (match this environment/mood): ${brandPersona}`
+            : ''
+        const productSection = productContext
+            ? `\n\nCRITICAL - PRODUCT REQUIREMENT: ${productContext}\nThe image MUST prominently feature and showcase the exact product described above. Do NOT generate generic stock photos. The product itself must be the central subject of the image.`
             : ''
         const systemPrompt = `You are an expert prompt engineer specializing in AI image generation.
 Generate a single, highly detailed image generation prompt in English based on the user's request.
@@ -1518,7 +1522,7 @@ The prompt must be:
 - Include the brand color scheme: ${colorStr}
 - Optimized for ${platform} ${imageType}${dnaSection}${personaSection}
 - Output format: 'A high-end, photorealistic [SUBJECT] in a [ENVIRONMENT], [LIGHTING_STYLE], [TECHNICAL_SPECS]'
-Brand context: ${brandContext}
+Brand context: ${brandContext}${productSection}
 Return ONLY the prompt text, nothing else.`
 
         try {
@@ -1541,8 +1545,9 @@ Return ONLY the prompt text, nothing else.`
         brandContext?: string
         visualDna?: string
         brandPersona?: string
+        productContext?: string
     }): Promise<{ imageUrl: string; width: number; height: number; enhancedPrompt: string }> {
-        const { prompt, imageType, platform, brandColors = [], brandContext = '', visualDna, brandPersona } = params
+        const { prompt, imageType, platform, brandColors = [], brandContext = '', visualDna, brandPersona, productContext } = params
 
         // Get dimensions for this type/platform combo
         const typeDims = IMAGE_DIMENSIONS[imageType] || IMAGE_DIMENSIONS.custom
@@ -1552,9 +1557,9 @@ Return ONLY the prompt text, nothing else.`
 
         console.log(`[Image] Generating ${imageType} for ${platform} (${width}x${height})...`)
 
-        // Enhance the prompt with brand context via LLM
+        // Enhance the prompt with brand context and product info via LLM
         const enhancedPrompt = await this.generateEnhancedPrompt(
-            prompt, brandContext, brandColors, imageType, platform, visualDna, brandPersona
+            prompt, brandContext, brandColors, imageType, platform, visualDna, brandPersona, productContext
         )
 
         console.log(`[Image] Enhanced prompt: ${enhancedPrompt}`)

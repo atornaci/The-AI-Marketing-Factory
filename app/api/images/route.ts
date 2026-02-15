@@ -35,15 +35,44 @@ export async function POST(req: NextRequest) {
         const visualDna = (constitution?.visualDna as string) || undefined
         const brandPersona = (constitution?.brandPersona as string) || undefined
 
+        // Fetch product assets for product context
+        const { data: productAssets } = await supabase
+            .from('assets')
+            .select('*')
+            .eq('project_id', projectId)
+            .eq('asset_type', 'custom')
+
+        // Build product context from uploaded product images and project info
+        let productContext = ''
+        if (productAssets && productAssets.length > 0) {
+            const productNames = productAssets
+                .map((a: { file_name?: string; original_filename?: string }) => a.file_name || a.original_filename || '')
+                .filter(Boolean)
+                .join(', ')
+            const productUrls = productAssets
+                .map((a: { file_path: string }) => {
+                    const { data } = supabase.storage.from('project-assets').getPublicUrl(a.file_path)
+                    return data?.publicUrl || ''
+                })
+                .filter(Boolean)
+            productContext = `PRODUCT FILES: ${productNames}. PRODUCT IMAGE URLs: ${productUrls.join(', ')}. The generated image MUST feature this specific product prominently.`
+        }
+
+        // Build brand context including product info
+        const fullBrandContext = productContext
+            ? `${brandContext}\n\nPRODUCT CONTEXT: ${productContext}`
+            : brandContext
+
         // Generate the image (with Visual DNA for brand-consistent output)
         const result = await abacusAI.generateMarketingImage({
             prompt,
             imageType,
             platform,
             brandColors: withBrandOverlay ? brandColors : [],
-            brandContext,
+            brandContext: fullBrandContext,
             visualDna,
             brandPersona,
+            productContext,
         })
 
         if (!result.imageUrl) {
