@@ -962,7 +962,7 @@ function ProjectDetailPageInner({
                                                 onClick={async () => {
                                                     setIsAnalyzingCompetitors(true);
                                                     try {
-                                                        const res = await fetch(N8N_ENDPOINTS.competitorAnalysis, {
+                                                        const res = await fetch('/api/workflows/competitor-analysis', {
                                                             method: 'POST',
                                                             headers: { 'Content-Type': 'application/json' },
                                                             body: JSON.stringify({ projectId: project.id }),
