@@ -27,11 +27,6 @@ const OAUTH_CONFIGS: Record<string, {
         scopes: ['user.info.basic', 'video.publish', 'video.upload'],
         responseType: 'code',
     },
-    linkedin: {
-        authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
-        scopes: ['openid', 'profile', 'w_member_social'],
-        responseType: 'code',
-    },
     twitter: {
         authUrl: 'https://twitter.com/i/oauth2/authorize',
         scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],

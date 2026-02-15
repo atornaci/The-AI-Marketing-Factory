@@ -4,7 +4,7 @@
 // platforms via their official APIs
 // =========================================
 
-export type SocialPlatform = 'instagram' | 'tiktok' | 'linkedin' | 'twitter' | 'youtube'
+export type SocialPlatform = 'instagram' | 'tiktok' | 'twitter' | 'youtube'
 
 export interface PublishResult {
     success: boolean
@@ -170,125 +170,6 @@ async function publishToTikTok(
 }
 
 // =========================================
-// LinkedIn Publishing (via LinkedIn API)
-// =========================================
-async function publishToLinkedIn(
-    credentials: SocialMediaCredentials,
-    options: PublishOptions
-): Promise<PublishResult> {
-    try {
-        const authorUrn = `urn:li:person:${credentials.accountId}`
-
-        // Step 1: Register upload
-        const registerResponse = await fetch(
-            'https://api.linkedin.com/v2/assets?action=registerUpload',
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${credentials.accessToken}`,
-                    'Content-Type': 'application/json',
-                    'X-Restli-Protocol-Version': '2.0.0',
-                },
-                body: JSON.stringify({
-                    registerUploadRequest: {
-                        recipes: ['urn:li:digitalmediaRecipe:feedshare-video'],
-                        owner: authorUrn,
-                        serviceRelationships: [
-                            {
-                                relationshipType: 'OWNER',
-                                identifier: 'urn:li:userGeneratedContent',
-                            },
-                        ],
-                    },
-                }),
-            }
-        )
-
-        if (!registerResponse.ok) {
-            const error = await registerResponse.text()
-            throw new Error(`LinkedIn upload registration failed: ${error}`)
-        }
-
-        const registerData = await registerResponse.json()
-        const uploadUrl = registerData.value?.uploadMechanism?.['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']?.uploadUrl
-        const asset = registerData.value?.asset
-
-        if (!uploadUrl || !asset) {
-            throw new Error('Failed to get upload URL from LinkedIn')
-        }
-
-        // Step 2: Upload the video
-        const videoResponse = await fetch(options.videoUrl)
-        const videoBuffer = await videoResponse.arrayBuffer()
-
-        await fetch(uploadUrl, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${credentials.accessToken}`,
-                'Content-Type': 'application/octet-stream',
-            },
-            body: videoBuffer,
-        })
-
-        // Step 3: Create the post
-        const postResponse = await fetch(
-            'https://api.linkedin.com/v2/ugcPosts',
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${credentials.accessToken}`,
-                    'Content-Type': 'application/json',
-                    'X-Restli-Protocol-Version': '2.0.0',
-                },
-                body: JSON.stringify({
-                    author: authorUrn,
-                    lifecycleState: 'PUBLISHED',
-                    specificContent: {
-                        'com.linkedin.ugc.ShareContent': {
-                            shareCommentary: {
-                                text: `${options.title}\n\n${options.description}\n\n${options.hashtags.map(h => `#${h}`).join(' ')}`,
-                            },
-                            shareMediaCategory: 'VIDEO',
-                            media: [
-                                {
-                                    status: 'READY',
-                                    media: asset,
-                                    title: { text: options.title },
-                                    description: { text: options.description },
-                                },
-                            ],
-                        },
-                    },
-                    visibility: {
-                        'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
-                    },
-                }),
-            }
-        )
-
-        if (!postResponse.ok) {
-            const error = await postResponse.text()
-            throw new Error(`LinkedIn post creation failed: ${error}`)
-        }
-
-        const postData = await postResponse.json()
-
-        return {
-            success: true,
-            platform: 'linkedin',
-            postId: postData.id,
-            postUrl: `https://www.linkedin.com/feed/update/${postData.id}/`,
-        }
-    } catch (error) {
-        return {
-            success: false,
-            platform: 'linkedin',
-            error: String(error),
-        }
-    }
-}
-
-// =========================================
 // Twitter/X Publishing (via Twitter API v2)
 // =========================================
 async function publishToTwitter(
@@ -407,8 +288,6 @@ export async function publishToSocialMedia(
             return publishToInstagram(credentials, options)
         case 'tiktok':
             return publishToTikTok(credentials, options)
-        case 'linkedin':
-            return publishToLinkedIn(credentials, options)
         case 'twitter':
             return publishToTwitter(credentials, options)
         case 'youtube':

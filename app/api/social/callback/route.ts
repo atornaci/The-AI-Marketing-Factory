@@ -19,7 +19,6 @@ interface TokenResponse {
 const TOKEN_ENDPOINTS: Record<string, string> = {
     instagram: 'https://graph.facebook.com/v19.0/oauth/access_token',
     tiktok: 'https://open.tiktokapis.com/v2/oauth/token/',
-    linkedin: 'https://www.linkedin.com/oauth/v2/accessToken',
     twitter: 'https://api.twitter.com/2/oauth2/token',
     youtube: 'https://oauth2.googleapis.com/token',
 }
@@ -103,17 +102,6 @@ async function getAccountInfo(
                 return {
                     accountId: data.data?.user?.open_id || '',
                     accountName: data.data?.user?.display_name || 'TikTok',
-                }
-            }
-            case 'linkedin': {
-                const res = await fetch(
-                    'https://api.linkedin.com/v2/userinfo',
-                    { headers: { 'Authorization': `Bearer ${accessToken}` } }
-                )
-                const data = await res.json()
-                return {
-                    accountId: data.sub || '',
-                    accountName: data.name || 'LinkedIn',
                 }
             }
             case 'twitter': {

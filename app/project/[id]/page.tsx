@@ -539,7 +539,7 @@ function ProjectDetailPageInner({
 
     /* ─── Generate Video ─── */
     const handleGenerateVideo = async (
-        platform: "instagram" | "tiktok" | "linkedin" | "youtube"
+        platform: "instagram" | "tiktok" | "youtube"
     ) => {
         setIsGenerating(true);
         setGeneratingPlatform(platform);
@@ -643,8 +643,6 @@ function ProjectDetailPageInner({
                 return "from-pink-500 to-rose-500";
             case "tiktok":
                 return "from-cyan-500 to-blue-500";
-            case "linkedin":
-                return "from-blue-600 to-blue-500";
             default:
                 return "from-gray-500 to-gray-400";
         }
@@ -1495,12 +1493,6 @@ function ProjectDetailPageInner({
                                                         img: "/images/platforms/youtube.png",
                                                         desc: "Shorts (60s)",
                                                     },
-                                                    {
-                                                        key: "linkedin" as const,
-                                                        label: "LinkedIn",
-                                                        img: "/images/platforms/linkedin.png",
-                                                        desc: "Video (120s)",
-                                                    },
                                                 ]
                                             ).map((platform) => (
                                                 <button
@@ -1671,7 +1663,6 @@ function ProjectDetailPageInner({
                                             { key: "instagram" as const, label: "Instagram", img: "/images/platforms/instagram.png", desc: "Reels (60s)" },
                                             { key: "tiktok" as const, label: "TikTok", img: "/images/platforms/tiktok.png", desc: "Short (60s)" },
                                             { key: "youtube" as const, label: "YouTube", img: "/images/platforms/youtube.png", desc: "Shorts (60s)" },
-                                            { key: "linkedin" as const, label: "LinkedIn", img: "/images/platforms/linkedin.png", desc: "Video (120s)" },
                                         ]).map((platform) => (
                                             <button
                                                 key={platform.key}
@@ -2150,14 +2141,12 @@ function ProjectDetailPageInner({
                                                     <div className="flex items-center gap-3">
                                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${conn.platform === 'instagram' ? 'bg-gradient-to-br from-purple-500 to-pink-500' :
                                                             conn.platform === 'tiktok' ? 'bg-black' :
-                                                                conn.platform === 'linkedin' ? 'bg-blue-600' :
-                                                                    conn.platform === 'youtube' ? 'bg-red-600' :
-                                                                        'bg-sky-500'
+                                                                conn.platform === 'youtube' ? 'bg-red-600' :
+                                                                    'bg-sky-500'
                                                             }`}>
                                                             {conn.platform === 'instagram' ? 'IG' :
                                                                 conn.platform === 'tiktok' ? 'TT' :
-                                                                    conn.platform === 'linkedin' ? 'IN' :
-                                                                        conn.platform === 'youtube' ? 'YT' : 'X'}
+                                                                    conn.platform === 'youtube' ? 'YT' : 'X'}
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-medium capitalize">{conn.platform}</p>
@@ -2187,12 +2176,11 @@ function ProjectDetailPageInner({
                                     </div>
 
                                     {/* Connect buttons */}
-                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         {[
                                             { key: 'instagram', label: 'Instagram', color: 'from-purple-500 to-pink-500' },
                                             { key: 'tiktok', label: 'TikTok', color: 'from-gray-800 to-gray-900' },
                                             { key: 'youtube', label: 'YouTube', color: 'from-red-600 to-red-700' },
-                                            { key: 'linkedin', label: 'LinkedIn', color: 'from-blue-600 to-blue-700' },
                                             { key: 'twitter', label: 'X (Twitter)', color: 'from-sky-500 to-sky-600' },
                                         ].map(({ key, label, color }) => {
                                             const isConnected = socialConnections.some(c => c.platform === key);
@@ -2287,7 +2275,7 @@ function ProjectDetailPageInner({
                                         <div>
                                             <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Yayınlanacak Platformlar</label>
                                             <div className="flex flex-wrap gap-2">
-                                                {['instagram', 'tiktok', 'youtube', 'linkedin', 'twitter'].map((p) => {
+                                                {['instagram', 'tiktok', 'youtube', 'twitter'].map((p) => {
                                                     const isConnected = socialConnections.some(c => c.platform === p);
                                                     const isSelected = schedulePlatforms.includes(p);
                                                     return (
@@ -2409,13 +2397,11 @@ function ProjectDetailPageInner({
                                             <div className="flex items-center gap-3">
                                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${conn.platform === 'instagram' ? 'bg-gradient-to-br from-purple-500 to-pink-500' :
                                                     conn.platform === 'tiktok' ? 'bg-black' :
-                                                        conn.platform === 'linkedin' ? 'bg-blue-600' :
-                                                            conn.platform === 'youtube' ? 'bg-red-600' : 'bg-sky-500'
+                                                        conn.platform === 'youtube' ? 'bg-red-600' : 'bg-sky-500'
                                                     }`}>
                                                     {conn.platform === 'instagram' ? 'IG' :
                                                         conn.platform === 'tiktok' ? 'TT' :
-                                                            conn.platform === 'linkedin' ? 'IN' :
-                                                                conn.platform === 'youtube' ? 'YT' : 'X'}
+                                                            conn.platform === 'youtube' ? 'YT' : 'X'}
                                                 </div>
                                                 <div className="text-left">
                                                     <p className="text-sm font-medium capitalize">{conn.platform}</p>
