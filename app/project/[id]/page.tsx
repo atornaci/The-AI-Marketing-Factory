@@ -1193,7 +1193,8 @@ function ProjectDetailPageInner({
                                                             setIsCreatingInfluencer(true);
                                                             setInfluencerStep("Mevcut influencer siliniyor...");
 
-                                                            const res = await fetch(`${N8N_ENDPOINTS.deleteInfluencer}?id=${influencer.id}`, { method: 'DELETE' });
+                                                            // Use Next.js API route (direct Supabase) instead of n8n webhook
+                                                            const res = await fetch(`/api/influencer/${influencer.id}`, { method: 'DELETE' });
                                                             if (!res.ok) {
                                                                 const errData = await res.json().catch(() => ({}));
                                                                 throw new Error(errData.error || 'Silme işlemi başarısız');
@@ -1204,6 +1205,7 @@ function ProjectDetailPageInner({
                                                             setIsCreatingInfluencer(false);
                                                             setInfluencerStep("");
                                                             setInfluencerProgress(0);
+                                                            setInfluencerError("");
                                                         } catch (err) {
                                                             console.error('Influencer deletion failed:', err);
                                                             const errMsg = err instanceof Error ? err.message : 'Bilinmeyen hata';
