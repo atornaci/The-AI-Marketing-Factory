@@ -40,7 +40,11 @@ import {
     Layers,
     ChevronRight,
     Trash2,
+    Clapperboard,
+    MessageSquareText,
+    UserRound,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
@@ -103,6 +107,14 @@ function DashboardContent() {
     const [userEmail, setUserEmail] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+
+    /* ─── Quick Video State ─── */
+    const [quickGender, setQuickGender] = useState<"female" | "male">("female");
+    const [quickScript, setQuickScript] = useState("");
+    const [isQuickCreating, setIsQuickCreating] = useState(false);
+    const [quickStep, setQuickStep] = useState("");
+    const [quickProgress, setQuickProgress] = useState(0);
+    const SCRIPT_MAX_LENGTH = 150;
 
     const timeAgo = (dateStr: string) => {
         const diff = Date.now() - new Date(dateStr).getTime();
@@ -277,6 +289,63 @@ function DashboardContent() {
         } finally {
             setIsCreating(false);
             setAnalysisProgress(0);
+        }
+    };
+
+    /* ─── Quick Video Handler ─── */
+    const handleQuickVideo = async () => {
+        if (!quickScript.trim()) return;
+        setIsQuickCreating(true);
+        setQuickProgress(10);
+        setQuickStep("Proje oluşturuluyor...");
+
+        try {
+            // Step 1: Auto-create project
+            const projectName = quickScript.trim().substring(0, 40) + (quickScript.length > 40 ? '...' : '');
+            const projRes = await fetch('/api/projects/quick', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: projectName, description: quickScript }),
+            });
+            if (!projRes.ok) {
+                const err = await projRes.json();
+                throw new Error(err.error || 'Proje oluşturulamadı');
+            }
+            const { project } = await projRes.json();
+            setQuickProgress(30);
+            setQuickStep("AI Influencer oluşturuluyor...");
+
+            // Step 2: Create influencer via n8n
+            const infRes = await fetch('/api/workflows/create-influencer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    projectId: project.id,
+                    gender: quickGender,
+                    brandName: projectName,
+                    brandDescription: quickScript,
+                }),
+            });
+            if (!infRes.ok) {
+                const err = await infRes.json();
+                throw new Error(err.error || 'Influencer oluşturulamadı');
+            }
+            setQuickProgress(70);
+            setQuickStep("Tamamlandı! Yönlendiriliyor...");
+
+            await new Promise((r) => setTimeout(r, 800));
+            setQuickProgress(100);
+
+            // Redirect to project page with script as query param
+            router.push(`/project/${project.id}?script=${encodeURIComponent(quickScript)}`);
+        } catch (err) {
+            setQuickStep(`Hata: ${err instanceof Error ? err.message : 'Bilinmeyen hata'}`);
+        } finally {
+            setTimeout(() => {
+                setIsQuickCreating(false);
+                setQuickProgress(0);
+                setQuickStep('');
+            }, 3000);
         }
     };
 
@@ -524,6 +593,129 @@ function DashboardContent() {
                                     AI Otonom Motor Aktif
                                 </span>
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* ═══ Hızlı Video Oluştur ═══ */}
+                    <motion.div variants={itemVariants} className="mb-10">
+                        <div className="relative overflow-hidden rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
+                            {/* Decorative elements */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+                            <div className="relative p-6 lg:p-8">
+                                {/* Header */}
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                                        <Clapperboard className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold tracking-tight">Hızlı Video Oluştur</h2>
+                                        <p className="text-xs text-muted-foreground">Influencer seç, ne söylesin yaz, oluştur!</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                    {/* Gender Selector */}
+                                    <div className="lg:col-span-3">
+                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                            <UserRound className="w-3.5 h-3.5" />
+                                            Cinsiyet
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setQuickGender("female")}
+                                                disabled={isQuickCreating}
+                                                className={`flex-1 p-3 rounded-xl border text-center transition-all ${quickGender === "female"
+                                                    ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
+                                                    : "border-border/50 hover:border-violet-300/50 bg-background/50"
+                                                    }`}
+                                            >
+                                                <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
+                                                    <Image src="/default-influencer-female.png" alt="Kadın" width={40} height={40} className="w-full h-full object-cover" />
+                                                </div>
+                                                <span className="text-xs font-medium">Kadın</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setQuickGender("male")}
+                                                disabled={isQuickCreating}
+                                                className={`flex-1 p-3 rounded-xl border text-center transition-all ${quickGender === "male"
+                                                    ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
+                                                    : "border-border/50 hover:border-violet-300/50 bg-background/50"
+                                                    }`}
+                                            >
+                                                <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
+                                                    <Image src="/default-influencer-male.png" alt="Erkek" width={40} height={40} className="w-full h-full object-cover" />
+                                                </div>
+                                                <span className="text-xs font-medium">Erkek</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Script Input */}
+                                    <div className="lg:col-span-7">
+                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                            <MessageSquareText className="w-3.5 h-3.5" />
+                                            Influencer ne söylesin? (10 saniyelik video)
+                                        </label>
+                                        <div className="relative">
+                                            <textarea
+                                                placeholder="Örn: Merhaba! Ben yapay zeka ile oluşturulmuş bir influencer'ım. Markanızı tanıtmak için buradayım!"
+                                                value={quickScript}
+                                                onChange={(e) => setQuickScript(e.target.value.slice(0, SCRIPT_MAX_LENGTH))}
+                                                disabled={isQuickCreating}
+                                                rows={3}
+                                                className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all"
+                                            />
+                                            <span className={`absolute bottom-2.5 right-3 text-[10px] font-medium ${quickScript.length > SCRIPT_MAX_LENGTH * 0.9 ? 'text-red-500' : 'text-muted-foreground/50'}`}>
+                                                {quickScript.length}/{SCRIPT_MAX_LENGTH}
+                                            </span>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground/60 mt-1.5 ml-1">
+                                            💡 10 saniyelik video için en fazla ~150 karakter önerilir
+                                        </p>
+                                    </div>
+
+                                    {/* Generate Button */}
+                                    <div className="lg:col-span-2 flex flex-col justify-end">
+                                        <Button
+                                            onClick={handleQuickVideo}
+                                            disabled={!quickScript.trim() || isQuickCreating}
+                                            className="w-full h-[88px] rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex flex-col gap-1.5"
+                                        >
+                                            {isQuickCreating ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    <span className="text-[10px] font-normal opacity-80">Oluşturuluyor</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="w-5 h-5" />
+                                                    <span>Oluştur</span>
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* Progress */}
+                                <AnimatePresence>
+                                    {isQuickCreating && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: "auto" }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            className="mt-5 space-y-2"
+                                        >
+                                            <Progress value={quickProgress} className="h-1.5" />
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <Loader2 className="w-3 h-3 animate-spin text-violet-500" />
+                                                {quickStep}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
                     </motion.div>
