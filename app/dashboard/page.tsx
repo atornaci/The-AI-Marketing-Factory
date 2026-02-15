@@ -96,41 +96,41 @@ function DashboardContent() {
     const [showPlatformMenu, setShowPlatformMenu] = useState(false);
 
     const SECTOR_OPTIONS = [
-        { value: 'fitness', label: '💪 Fitness & Spor' },
-        { value: 'teknoloji', label: '💻 Teknoloji' },
-        { value: 'guzellik', label: '💄 Güzellik & Bakım' },
-        { value: 'egitim', label: '📚 Eğitim' },
-        { value: 'saglik', label: '🏥 Sağlık' },
-        { value: 'eticaret', label: '🛒 E-ticaret' },
-        { value: 'yemek', label: '🍽️ Yemek & Restoran' },
-        { value: 'finans', label: '💰 Finans' },
-        { value: 'gayrimenkul', label: '🏠 Gayrimenkul' },
-        { value: 'seyahat', label: '✈️ Seyahat' },
-        { value: 'moda', label: '👗 Moda' },
-        { value: 'otomotiv', label: '🚗 Otomotiv' },
+        { value: 'fitness', label: '💪 Fitness & Sports' },
+        { value: 'technology', label: '💻 Technology' },
+        { value: 'beauty', label: '💄 Beauty & Skincare' },
+        { value: 'education', label: '📚 Education' },
+        { value: 'health', label: '🏥 Healthcare' },
+        { value: 'ecommerce', label: '🛒 E-commerce' },
+        { value: 'food', label: '🍽️ Food & Restaurant' },
+        { value: 'finance', label: '💰 Finance' },
+        { value: 'realestate', label: '🏠 Real Estate' },
+        { value: 'travel', label: '✈️ Travel' },
+        { value: 'fashion', label: '👗 Fashion' },
+        { value: 'automotive', label: '🚗 Automotive' },
     ];
 
     const ENVIRONMENT_OPTIONS = [
-        { value: 'kafe', label: '☕ Kafe' },
-        { value: 'spor-salonu', label: '🏋️ Spor Salonu' },
+        { value: 'cafe', label: '☕ Café' },
+        { value: 'gym', label: '🏋️ Gym' },
         { value: 'park', label: '🌳 Park' },
-        { value: 'ev', label: '🏠 Ev / Salon' },
-        { value: 'ofis', label: '💼 Ofis' },
-        { value: 'sokak', label: '🚶 Sokak' },
-        { value: 'restoran', label: '🍽️ Restoran' },
-        { value: 'araba', label: '🚗 Araba İçi' },
-        { value: 'yatak-odasi', label: '🛏️ Yatak Odası' },
-        { value: 'mutfak', label: '🍳 Mutfak' },
-        { value: 'balkon', label: '🌆 Balkon' },
+        { value: 'home', label: '🏠 Home / Living Room' },
+        { value: 'office', label: '💼 Office' },
+        { value: 'street', label: '🚶 Street' },
+        { value: 'restaurant', label: '🍽️ Restaurant' },
+        { value: 'car', label: '🚗 Inside Car' },
+        { value: 'bedroom', label: '🛏️ Bedroom' },
+        { value: 'kitchen', label: '🍳 Kitchen' },
+        { value: 'balcony', label: '🌆 Balcony' },
     ];
 
     const ENERGY_OPTIONS = [
-        { value: 'sakin', label: '😌 Sakin' },
-        { value: 'enerjik', label: '⚡ Enerjik' },
-        { value: 'samimi', label: '🤗 Samimi' },
-        { value: 'ciddi', label: '🎯 Ciddi' },
-        { value: 'coskulu', label: '🔥 Coşkulu' },
-        { value: 'motivasyonel', label: '💪 Motivasyonel' },
+        { value: 'calm', label: '😌 Calm' },
+        { value: 'energetic', label: '⚡ Energetic' },
+        { value: 'friendly', label: '🤗 Friendly' },
+        { value: 'serious', label: '🎯 Serious' },
+        { value: 'enthusiastic', label: '🔥 Enthusiastic' },
+        { value: 'motivational', label: '💪 Motivational' },
     ];
 
     const PLATFORM_CONFIG = {
@@ -171,7 +171,7 @@ function DashboardContent() {
         if (!quickScript.trim() || !quickSector) return;
         setIsQuickCreating(true);
         setQuickProgress(10);
-        setQuickStep("Proje oluşturuluyor...");
+        setQuickStep("Creating project...");
 
         try {
             const sectorLabel = SECTOR_OPTIONS.find(s => s.value === quickSector)?.label?.replace(/^\S+\s/, '') || quickSector;
@@ -179,9 +179,9 @@ function DashboardContent() {
             const energyLabel = quickEnergy ? (ENERGY_OPTIONS.find(e => e.value === quickEnergy)?.label?.replace(/^\S+\s/, '') || quickEnergy) : '';
 
             const projectDescription = [
-                `Sektör: ${sectorLabel}.`,
-                envLabel ? `Ortam: ${envLabel}.` : '',
-                energyLabel ? `Enerji: ${energyLabel}.` : '',
+                `Industry: ${sectorLabel}.`,
+                envLabel ? `Environment: ${envLabel}.` : '',
+                energyLabel ? `Energy: ${energyLabel}.` : '',
                 quickScript.trim(),
             ].filter(Boolean).join(' ');
 
@@ -195,11 +195,11 @@ function DashboardContent() {
             });
             if (!projRes.ok) {
                 const err = await projRes.json();
-                throw new Error(err.error || 'Proje oluşturulamadı');
+                throw new Error(err.error || 'Failed to create project');
             }
             const { project } = await projRes.json();
             setQuickProgress(30);
-            setQuickStep("AI Influencer oluşturuluyor...");
+            setQuickStep("Creating AI Influencer...");
 
             // Step 2: Create influencer
             const infRes = await fetch('/api/workflows/create-influencer', {
@@ -217,11 +217,11 @@ function DashboardContent() {
             });
             if (!infRes.ok) {
                 const err = await infRes.json();
-                throw new Error(err.error || 'Influencer oluşturulamadı');
+                throw new Error(err.error || 'Failed to create influencer');
             }
             const { influencer } = await infRes.json();
             setQuickProgress(90);
-            setQuickStep("Influencer hazır! ✓");
+            setQuickStep("Influencer ready! ✓");
 
             // Save influencer to state (no redirect!)
             setCreatedInfluencer({
@@ -236,7 +236,7 @@ function DashboardContent() {
             await new Promise((r) => setTimeout(r, 600));
             setQuickProgress(100);
         } catch (err) {
-            setQuickStep(`Hata: ${err instanceof Error ? err.message : 'Bilinmeyen hata'}`);
+            setQuickStep(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
         } finally {
             setTimeout(() => {
                 setIsQuickCreating(false);
@@ -251,18 +251,18 @@ function DashboardContent() {
         if (!createdInfluencer) return;
         setIsGeneratingVideo(true);
         setGenProgress(0);
-        setGenStep("Video üretimi başlatılıyor...");
+        setGenStep("Starting video generation...");
         setGenError("");
 
         const steps = [
-            { progress: 10, label: "Video prompt hazırlanıyor..." },
-            { progress: 25, label: "AI ile prompt güçlendiriliyor..." },
-            { progress: 40, label: "fal.ai'ya gönderiliyor..." },
-            { progress: 55, label: "Video render ediliyor..." },
-            { progress: 65, label: "Render devam ediyor..." },
-            { progress: 75, label: "Neredeyse hazır..." },
-            { progress: 85, label: "Son dokunuşlar..." },
-            { progress: 90, label: "Video kaydediliyor..." },
+            { progress: 10, label: "Preparing video prompt..." },
+            { progress: 25, label: "Enhancing prompt with AI..." },
+            { progress: 40, label: "Sending to fal.ai..." },
+            { progress: 55, label: "Rendering video..." },
+            { progress: 65, label: "Still rendering..." },
+            { progress: 75, label: "Almost ready..." },
+            { progress: 85, label: "Final touches..." },
+            { progress: 90, label: "Saving video..." },
         ];
 
         let currentStep = 0;
@@ -292,7 +292,7 @@ function DashboardContent() {
                     influencerPersonality: createdInfluencer.personality || null,
                     influencerBackstory: createdInfluencer.backstory || null,
                     productImageUrls: [],
-                    language: 'tr',
+                    language: 'en',
                 }),
             });
 
@@ -300,13 +300,13 @@ function DashboardContent() {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || "Video üretilemedi");
+                throw new Error(errorData.error || "Failed to generate video");
             }
 
             const { video } = await response.json();
 
             setGenProgress(100);
-            setGenStep("Video tamamlandı! ✓");
+            setGenStep("Video complete! ✓");
 
             setGeneratedVideos(prev => [{
                 id: video.id,
@@ -321,7 +321,7 @@ function DashboardContent() {
             clearInterval(progressInterval);
             const errMsg = err instanceof Error ? err.message : "Bilinmeyen hata";
             setGenError(errMsg);
-            setGenStep(`Hata: ${errMsg}`);
+            setGenStep(`Error: ${errMsg}`);
         } finally {
             setTimeout(() => {
                 setIsGeneratingVideo(false);
@@ -356,7 +356,7 @@ function DashboardContent() {
                         <Sparkles className="w-7 h-7 text-white animate-pulse" />
                     </div>
                     <div>
-                        <p className="text-sm font-medium">Yükleniyor...</p>
+                        <p className="text-sm font-medium">Loading...</p>
                     </div>
                 </motion.div>
             </div>
@@ -390,7 +390,7 @@ function DashboardContent() {
                     <div className="flex items-center gap-3">
                         <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-background text-xs">
                             <Zap className="w-3 h-3 text-violet-500" />
-                            <span className="text-muted-foreground">AI Motor Aktif</span>
+                            <span className="text-muted-foreground">AI Engine Active</span>
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         </div>
                         <div className="flex items-center gap-2 ml-1 pl-3 border-l border-border/50">
@@ -405,7 +405,7 @@ function DashboardContent() {
                                 size="icon"
                                 onClick={handleSignOut}
                                 className="w-8 h-8 text-muted-foreground/60 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Çıkış Yap"
+                                title="Sign Out"
                             >
                                 <LogOut className="w-3.5 h-3.5" />
                             </Button>
@@ -425,10 +425,10 @@ function DashboardContent() {
                     <motion.div variants={itemVariants} className="mb-8">
                         <div className="text-center">
                             <h1 className="text-2xl font-bold tracking-tight">
-                                AI Video Oluşturucu 🎬
+                                AI Video Creator 🎬
                             </h1>
                             <p className="text-muted-foreground text-sm mt-1">
-                                Influencer oluştur, script yaz, video üret — hepsi tek sayfada
+                                Create an influencer, write a script, generate video — all on one page
                             </p>
                         </div>
                     </motion.div>
@@ -447,8 +447,8 @@ function DashboardContent() {
                                             <Clapperboard className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
-                                            <h2 className="text-lg font-bold tracking-tight">Influencer Oluştur</h2>
-                                            <p className="text-xs text-muted-foreground">Cinsiyet seç, sektör belirle, ne söylesin yaz!</p>
+                                            <h2 className="text-lg font-bold tracking-tight">Create Influencer</h2>
+                                            <p className="text-xs text-muted-foreground">Pick a gender, choose an industry, write what they should say!</p>
                                         </div>
                                     </div>
 
@@ -458,7 +458,7 @@ function DashboardContent() {
                                         <div>
                                             <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                                 <UserRound className="w-3.5 h-3.5" />
-                                                Cinsiyet
+                                                Gender
                                             </label>
                                             <div className="flex gap-2">
                                                 <button
@@ -470,9 +470,9 @@ function DashboardContent() {
                                                         }`}
                                                 >
                                                     <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
-                                                        <Image src="/default-influencer-female.png" alt="Kadın" width={32} height={32} className="w-full h-full object-cover" />
+                                                        <Image src="/default-influencer-female.png" alt="Female" width={32} height={32} className="w-full h-full object-cover" />
                                                     </div>
-                                                    <span className="text-[10px] font-medium">Kadın</span>
+                                                    <span className="text-[10px] font-medium">Female</span>
                                                 </button>
                                                 <button
                                                     onClick={() => setQuickGender("male")}
@@ -483,18 +483,18 @@ function DashboardContent() {
                                                         }`}
                                                 >
                                                     <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
-                                                        <Image src="/default-influencer-male.png" alt="Erkek" width={32} height={32} className="w-full h-full object-cover" />
+                                                        <Image src="/default-influencer-male.png" alt="Male" width={32} height={32} className="w-full h-full object-cover" />
                                                     </div>
-                                                    <span className="text-[10px] font-medium">Erkek</span>
+                                                    <span className="text-[10px] font-medium">Male</span>
                                                 </button>
                                             </div>
                                         </div>
 
-                                        {/* Sektör */}
+                                        {/* Industry */}
                                         <div>
                                             <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                                 <Building2 className="w-3.5 h-3.5" />
-                                                Sektör <span className="text-red-400">*</span>
+                                                Industry <span className="text-red-400">*</span>
                                             </label>
                                             <select
                                                 value={quickSector}
@@ -502,18 +502,18 @@ function DashboardContent() {
                                                 disabled={isQuickCreating}
                                                 className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
                                             >
-                                                <option value="">Sektör seçin...</option>
+                                                <option value="">Select industry...</option>
                                                 {SECTOR_OPTIONS.map(opt => (
                                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                 ))}
                                             </select>
                                         </div>
 
-                                        {/* Ortam */}
+                                        {/* Environment */}
                                         <div>
                                             <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                                 <MapPin className="w-3.5 h-3.5" />
-                                                Ortam <span className="text-muted-foreground/40 text-[10px]">(opsiyonel)</span>
+                                                Setting <span className="text-muted-foreground/40 text-[10px]">(optional)</span>
                                             </label>
                                             <select
                                                 value={quickEnvironment}
@@ -521,18 +521,18 @@ function DashboardContent() {
                                                 disabled={isQuickCreating}
                                                 className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
                                             >
-                                                <option value="">Otomatik</option>
+                                                <option value="">Auto</option>
                                                 {ENVIRONMENT_OPTIONS.map(opt => (
                                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                 ))}
                                             </select>
                                         </div>
 
-                                        {/* Enerji */}
+                                        {/* Energy */}
                                         <div>
                                             <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                                 <Flame className="w-3.5 h-3.5" />
-                                                Enerji <span className="text-muted-foreground/40 text-[10px]">(opsiyonel)</span>
+                                                Energy <span className="text-muted-foreground/40 text-[10px]">(optional)</span>
                                             </label>
                                             <select
                                                 value={quickEnergy}
@@ -540,7 +540,7 @@ function DashboardContent() {
                                                 disabled={isQuickCreating}
                                                 className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
                                             >
-                                                <option value="">Otomatik</option>
+                                                <option value="">Auto</option>
                                                 {ENERGY_OPTIONS.map(opt => (
                                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                 ))}
@@ -554,10 +554,10 @@ function DashboardContent() {
                                         <div className="flex-1 min-w-0">
                                             <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                                 <MessageSquareText className="w-3.5 h-3.5" />
-                                                Influencer ne söylesin? <span className="text-muted-foreground/50">(10s video)</span>
+                                                What should the influencer say? <span className="text-muted-foreground/50">(10s video)</span>
                                             </label>
                                             <textarea
-                                                placeholder="Örn: Merhaba! Bu kafede oturup size harika bir fitness uygulamasından bahsetmek istiyorum. Spor yapmak artık çok kolay!"
+                                                placeholder="E.g.: Hey! I'm sitting in this café and I want to tell you about an amazing fitness app. Working out has never been easier!"
                                                 value={quickScript}
                                                 onChange={(e) => setQuickScript(e.target.value)}
                                                 disabled={isQuickCreating}
@@ -576,12 +576,12 @@ function DashboardContent() {
                                                 {isQuickCreating ? (
                                                     <>
                                                         <Loader2 className="w-5 h-5 animate-spin" />
-                                                        <span>Oluşturuluyor...</span>
+                                                        <span>Creating...</span>
                                                     </>
                                                 ) : (
                                                     <>
                                                         <Sparkles className="w-5 h-5" />
-                                                        <span>Oluştur</span>
+                                                        <span>Create</span>
                                                     </>
                                                 )}
                                             </Button>
@@ -650,7 +650,7 @@ function DashboardContent() {
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-200/50">
-                                                            ✓ Influencer Hazır
+                                                            ✓ Influencer Ready
                                                         </span>
                                                     </div>
                                                     <h3 className="text-xl font-bold tracking-tight">{createdInfluencer.name}</h3>
@@ -662,18 +662,18 @@ function DashboardContent() {
                                                     className="text-xs text-muted-foreground hover:text-violet-600 rounded-lg"
                                                 >
                                                     <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                                                    Yeni Oluştur
+                                                    New
                                                 </Button>
                                             </div>
 
                                             {createdInfluencer.personality && (
                                                 <p className="text-sm text-muted-foreground mb-2">
-                                                    <span className="font-medium text-foreground">Kişilik:</span> {createdInfluencer.personality}
+                                                    <span className="font-medium text-foreground">Personality:</span> {createdInfluencer.personality}
                                                 </p>
                                             )}
                                             {createdInfluencer.backstory && (
                                                 <p className="text-sm text-muted-foreground line-clamp-2">
-                                                    <span className="font-medium text-foreground">Hikaye:</span> {createdInfluencer.backstory}
+                                                    <span className="font-medium text-foreground">Backstory:</span> {createdInfluencer.backstory}
                                                 </p>
                                             )}
                                         </div>
@@ -690,8 +690,8 @@ function DashboardContent() {
                                                 <Video className="w-5 h-5 text-white" />
                                             </div>
                                             <div>
-                                                <h3 className="text-lg font-bold tracking-tight">Video Üret</h3>
-                                                <p className="text-xs text-muted-foreground">Platform seç ve video oluştur</p>
+                                                <h3 className="text-lg font-bold tracking-tight">Generate Video</h3>
+                                                <p className="text-xs text-muted-foreground">Pick a platform and create your video</p>
                                             </div>
                                         </div>
                                     </div>
@@ -734,12 +734,12 @@ function DashboardContent() {
                                             {isGeneratingVideo ? (
                                                 <>
                                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                                    Üretiliyor...
+                                                    Generating...
                                                 </>
                                             ) : (
                                                 <>
                                                     <Play className="w-4 h-4" />
-                                                    Video Üret
+                                                    Generate Video
                                                 </>
                                             )}
                                         </Button>
@@ -760,7 +760,7 @@ function DashboardContent() {
                                                     {genStep}
                                                 </div>
                                                 <p className="text-[11px] text-muted-foreground/50">
-                                                    Video üretimi 2-5 dakika sürebilir
+                                                    Video generation may take 2-5 minutes
                                                 </p>
                                             </motion.div>
                                         )}
@@ -783,7 +783,7 @@ function DashboardContent() {
                                 >
                                     <h3 className="text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
                                         <Video className="w-5 h-5 text-violet-500" />
-                                        Üretilen Videolar ({generatedVideos.length})
+                                        Generated Videos ({generatedVideos.length})
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {generatedVideos.map((video) => (
@@ -805,7 +805,7 @@ function DashboardContent() {
                                                     <div className="aspect-video bg-muted/50 flex items-center justify-center">
                                                         <div className="text-center">
                                                             <Loader2 className="w-8 h-8 animate-spin text-violet-400 mx-auto mb-2" />
-                                                            <p className="text-xs text-muted-foreground">Video hazırlanıyor...</p>
+                                                            <p className="text-xs text-muted-foreground">Preparing video...</p>
                                                         </div>
                                                     </div>
                                                 )}
@@ -829,7 +829,7 @@ function DashboardContent() {
                                                                 className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-600 text-xs font-medium hover:bg-violet-500/20 transition-colors"
                                                             >
                                                                 <Download className="w-3 h-3" />
-                                                                İndir
+                                                                Download
                                                             </a>
                                                         )}
                                                     </div>
@@ -858,7 +858,7 @@ export default function DashboardPage() {
                             <Sparkles className="w-5 h-5 text-white animate-pulse" />
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Yükleniyor...
+                            Loading...
                         </p>
                     </div>
                 </div>

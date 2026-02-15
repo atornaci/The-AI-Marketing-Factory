@@ -62,7 +62,7 @@ const LANGUAGE_CONFIG: Record<Language, {
 export async function POST(req: NextRequest) {
     try {
         const { projectId, gender, language: requestLanguage, sector, environment, energy } = await req.json()
-        const language: Language = requestLanguage || 'tr'
+        const language: Language = requestLanguage || 'en'
 
         if (!projectId) {
             return NextResponse.json(
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
         const nameStyle = nameStyles[Math.floor(Math.random() * nameStyles.length)]
         const uniqueSeed = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
         const selectedGender = gender || 'female'
-        const langConfig = LANGUAGE_CONFIG[language] || LANGUAGE_CONFIG['tr']
+        const langConfig = LANGUAGE_CONFIG[language] || LANGUAGE_CONFIG['en']
 
         const prompt = `Create a UNIQUE AI Influencer character profile for marketing the following project.
 Generation seed: ${uniqueSeed} — use this to ensure uniqueness.

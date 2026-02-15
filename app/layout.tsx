@@ -11,16 +11,16 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "The AI Marketing Factory | AI Influencer & Video Pazarlama",
+  title: "The AI Marketing Factory | Autonomous AI Video Marketing",
   description:
-    "Web sitenizi analiz edin, markanıza özel AI Influencer oluşturun ve Instagram, TikTok, YouTube, LinkedIn için profesyonel pazarlama videoları otomatik üretin.",
+    "Create AI Influencers for your brand, produce professional marketing videos for Instagram, TikTok, YouTube, and LinkedIn automatically.",
   keywords: [
     "AI marketing",
     "AI influencer",
     "video marketing",
     "autonomous marketing",
     "AI video generation",
-    "sosyal medya pazarlama",
+    "social media marketing",
   ],
 };
 
@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className="dark">
+    <html lang="en" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics ga_id={process.env.NEXT_PUBLIC_GA_ID} />

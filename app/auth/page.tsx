@@ -60,10 +60,10 @@ const itemVariants = {
 
 /* ─── Features for side panel ─── */
 const sideFeatures = [
-    { icon: Globe, title: "Proje Analizi", desc: "URL girin, AI analiz etsin" },
-    { icon: Bot, title: "AI Influencer", desc: "Markanıza özel karakter" },
-    { icon: Video, title: "Video Üretimi", desc: "Platformlara özel içerik" },
-    { icon: Share2, title: "Otonom Dağıtım", desc: "Otomatik yayınlama" },
+    { icon: Globe, title: "Project Analysis", desc: "Enter a URL, let AI analyze it" },
+    { icon: Bot, title: "AI Influencer", desc: "Custom character for your brand" },
+    { icon: Video, title: "Video Production", desc: "Platform-specific content" },
+    { icon: Share2, title: "Auto Distribution", desc: "Automated publishing" },
 ];
 
 /* ─── Dark Input ─── */
@@ -145,17 +145,17 @@ export default function AuthPage() {
                 });
                 if (error) throw error;
                 setSuccess(
-                    "Kayıt başarılı! E-posta kutunu kontrol et veya direkt giriş yap."
+                    "Registration successful! Check your inbox or sign in directly."
                 );
             }
         } catch (err) {
             const message =
-                err instanceof Error ? err.message : "Bir hata oluştu";
+                err instanceof Error ? err.message : "An error occurred";
             setError(
                 message === "Invalid login credentials"
-                    ? "E-posta veya şifre hatalı"
+                    ? "Invalid email or password"
                     : message === "User already registered"
-                        ? "Bu e-posta zaten kayıtlı"
+                        ? "This email is already registered"
                         : message
             );
         } finally {
@@ -175,9 +175,9 @@ export default function AuthPage() {
                 redirectTo: `${window.location.origin}/auth?type=recovery`,
             });
             if (error) throw error;
-            setSuccess("Şifre sıfırlama bağlantısı e-posta adresine gönderildi!");
+            setSuccess("Password reset link sent to your email!");
         } catch (err) {
-            const message = err instanceof Error ? err.message : "Bir hata oluştu";
+            const message = err instanceof Error ? err.message : "An error occurred";
             setError(message);
         } finally {
             setLoading(false);
@@ -228,11 +228,11 @@ export default function AuthPage() {
                         {/* Title */}
                         <motion.div variants={itemVariants} className="mb-6">
                             <h1 className="text-4xl xl:text-5xl font-bold tracking-tight leading-[1.1]">
-                                Pazarlamanızı
+                                Automate Your
                                 <br />
                                 <span className="relative whitespace-nowrap">
                                     <span className="relative gradient-text">
-                                        Otomatikleştirin
+                                        Marketing
                                     </span>
                                     <SquiggleUnderline />
                                 </span>
@@ -243,8 +243,8 @@ export default function AuthPage() {
                             variants={itemVariants}
                             className="text-muted-foreground text-lg mb-12 max-w-md leading-relaxed"
                         >
-                            Tek bir URL ile AI Influencer oluşturun, profesyonel videolar
-                            üretin ve tüm platformlara otomatik yayınlayın.
+                            Create AI Influencers with a single URL, produce professional videos,
+                            and auto-publish across all platforms.
                         </motion.p>
 
                         {/* Feature list */}
@@ -384,7 +384,7 @@ export default function AuthPage() {
                                         transition={{ delay: 0.2 }}
                                         className="text-xl font-bold text-foreground"
                                     >
-                                        {isLogin ? "Tekrar Hoş Geldin" : isForgotPassword ? "Şifremi Unuttum" : "Hesap Oluştur"}
+                                        {isLogin ? "Welcome Back" : isForgotPassword ? "Forgot Password" : "Create Account"}
                                     </motion.h1>
 
                                     <motion.p
@@ -393,8 +393,8 @@ export default function AuthPage() {
                                         transition={{ delay: 0.3 }}
                                         className="text-muted-foreground text-xs"
                                     >
-                                        AI Marketing Factory&apos;e{" "}
-                                        {isLogin ? "giriş yap" : isForgotPassword ? "şifre sıfırla" : "kayıt ol"}
+                                        AI Marketing Factory&apos;s{" "}
+                                        {isLogin ? "sign in" : isForgotPassword ? "password reset" : "sign up"}
                                     </motion.p>
                                 </div>
 
@@ -411,7 +411,7 @@ export default function AuthPage() {
                                                 <Mail className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "email" ? "text-violet-500" : "text-muted-foreground"}`} />
                                                 <LightInput
                                                     type="email"
-                                                    placeholder="E-posta adresi"
+                                                    placeholder="Email address"
                                                     value={email}
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     onFocus={() => setFocusedInput("email")}
@@ -443,7 +443,7 @@ export default function AuthPage() {
                                                     <Lock className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "password" ? "text-violet-500" : "text-muted-foreground"}`} />
                                                     <LightInput
                                                         type={showPassword ? "text" : "password"}
-                                                        placeholder="Şifre"
+                                                        placeholder="Password"
                                                         value={password}
                                                         onChange={(e) => setPassword(e.target.value)}
                                                         onFocus={() => setFocusedInput("password")}
@@ -509,7 +509,7 @@ export default function AuthPage() {
                                                     </div>
                                                 </div>
                                                 <span className="text-sm text-gray-600 group-hover/check:text-gray-900 transition-colors font-medium">
-                                                    Beni hatırla
+                                                    Remember me
                                                 </span>
                                             </label>
                                             <button
@@ -522,7 +522,7 @@ export default function AuthPage() {
                                                 }}
                                                 className="text-sm text-violet-600 hover:text-violet-700 transition-all duration-200 font-semibold hover:underline underline-offset-2"
                                             >
-                                                Şifremi unuttum?
+                                                Forgot password?
                                             </button>
                                         </div>
                                     )}
@@ -574,7 +574,7 @@ export default function AuthPage() {
                                                     </motion.div>
                                                 ) : (
                                                     <motion.span key="text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center gap-1 text-sm font-medium">
-                                                        {isForgotPassword ? "Sıfırlama Bağlantısı Gönder" : isLogin ? "Giriş Yap" : "Kayıt Ol"}
+                                                        {isForgotPassword ? "Send Reset Link" : isLogin ? "Sign In" : "Sign Up"}
                                                         <ArrowRight className="w-3 h-3 group-hover/button:translate-x-1 transition-transform duration-300" />
                                                     </motion.span>
                                                 )}
@@ -591,7 +591,7 @@ export default function AuthPage() {
                                             animate={{ opacity: [0.7, 0.9, 0.7] }}
                                             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                                         >
-                                            veya
+                                            or
                                         </motion.span>
                                         <div className="flex-grow border-t border-border" />
                                     </div>
@@ -611,7 +611,7 @@ export default function AuthPage() {
                                                 className="w-4 h-4"
                                             />
                                             <span className="text-muted-foreground group-hover/google:text-foreground transition-colors text-xs">
-                                                Google ile giriş yap
+                                                Sign in with Google
                                             </span>
                                             <motion.div
                                                 className="absolute inset-0 bg-gradient-to-r from-transparent via-muted/30 to-transparent"
@@ -629,7 +629,7 @@ export default function AuthPage() {
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: 0.5 }}
                                     >
-                                        {isLogin ? "Hesabın yok mu? " : isForgotPassword ? "Şifreni hatırladın mı? " : "Zaten hesabın var mı? "}
+                                        {isLogin ? "Don't have an account? " : isForgotPassword ? "Remember your password? " : "Already have an account? "}
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -645,7 +645,7 @@ export default function AuthPage() {
                                             className="relative inline-block group/toggle"
                                         >
                                             <span className="relative z-10 text-violet-600 group-hover/toggle:text-violet-500 transition-colors duration-300 font-medium">
-                                                {isLogin ? "Kayıt ol" : isForgotPassword ? "Giriş yap" : "Giriş yap"}
+                                                {isLogin ? "Sign up" : isForgotPassword ? "Sign in" : "Sign in"}
                                             </span>
                                             <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-violet-500 group-hover/toggle:w-full transition-all duration-300" />
                                         </button>

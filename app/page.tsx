@@ -73,88 +73,88 @@ const fadeInUp = {
 
 /* ─── Data ─── */
 const stats = [
-  { value: "%90", label: "Maliyet Tasarrufu", icon: DollarSign },
-  { value: "10x", label: "Daha Hızlı İçerik", icon: Zap },
-  { value: "4+", label: "Platform Desteği", icon: Globe },
-  { value: "7/24", label: "Otonom Çalışır", icon: Clock },
+  { value: "90%", label: "Cost Savings", icon: DollarSign },
+  { value: "10x", label: "Faster Content", icon: Zap },
+  { value: "4+", label: "Platform Support", icon: Globe },
+  { value: "24/7", label: "Autonomous Operation", icon: Clock },
 ];
 
 const features = [
   {
     icon: Target,
-    title: "URL Girin, AI Analiz Etsin",
+    title: "Enter URL, AI Analyzes",
     description:
-      "Web sitenizin URL'sini girin, 30 saniyede projeniz analiz edilsin. Değer önerisi, hedef kitle ve rakip analizi hazır.",
-    benefit: "Manuel analiz yerine anında sonuç",
+      "Enter your website URL and get your project analyzed in 30 seconds. Value proposition, target audience, and competitor analysis ready.",
+    benefit: "Instant results instead of manual analysis",
     gradient: "from-blue-500 to-cyan-500",
   },
   {
     icon: Bot,
-    title: "AI Influencer Oluşturun",
+    title: "Create AI Influencer",
     description:
-      "Markanıza özel, tutarlı bir AI karakter yaratın — her videoda aynı yüz, aynı ses, aynı kimlik.",
-    benefit: "Influencer maliyeti olmadan marka yüzü",
+      "Create a custom AI character for your brand — same face, same voice, same identity in every video.",
+    benefit: "Brand face without influencer costs",
     gradient: "from-violet-500 to-purple-500",
   },
   {
     icon: Video,
-    title: "Profesyonel Videolar Üretin",
+    title: "Produce Professional Videos",
     description:
-      "Instagram, TikTok, YouTube ve LinkedIn için platformlara özel, profesyonel videolar otomatik üretilir.",
-    benefit: "Video ekibi gerektirmez",
+      "Platform-specific professional videos for Instagram, TikTok, YouTube, and LinkedIn are automatically produced.",
+    benefit: "No video team required",
     gradient: "from-pink-500 to-rose-500",
   },
   {
     icon: Share2,
-    title: "Otonom Dağıtım",
+    title: "Auto Distribution",
     description:
-      "Hazırlanan videolar otomatik olarak tüm sosyal medya platformlarına yayınlanır. Siz izleyin.",
-    benefit: "Zaman ve emek tasarrufu",
+      "Generated videos are automatically published across all social media platforms. Just sit back and watch.",
+    benefit: "Save time and effort",
     gradient: "from-orange-500 to-amber-500",
   },
 ];
 
 const testimonials = [
   {
-    name: "Elif Demir",
-    role: "Kurucu, TechStart",
-    avatar: "ED",
+    name: "Sarah Mitchell",
+    role: "Founder, TechStart",
+    avatar: "SM",
     content:
-      "Video içerik maliyetimizi %90 düşürdük. Eskiden her video için 3000₺ ödüyorduk, şimdi AI ile dakikalar içinde profesyonel videolar üretiyoruz.",
-    stat: "%90 maliyet düşüşü",
+      "We cut our video content costs by 90%. We used to pay $3,000 per video, now we produce professional videos with AI in minutes.",
+    stat: "90% cost reduction",
     stars: 5,
   },
   {
-    name: "Kaan Yılmaz",
-    role: "Dijital Pazarlama Müdürü",
-    avatar: "KY",
+    name: "James Wilson",
+    role: "Digital Marketing Director",
+    avatar: "JW",
     content:
-      "Haftalık 20 saat harcadığımız sosyal medya içerik üretimini 2 saate indirdik. AI Influencer özelliği marka tutarlılığımızı da artırdı.",
-    stat: "10x zaman tasarrufu",
+      "We reduced the 20 hours per week we spent on social media content production down to 2 hours. The AI Influencer feature also improved our brand consistency.",
+    stat: "10x time savings",
     stars: 5,
   },
   {
-    name: "Selin Acar",
-    role: "E-ticaret Girişimcisi",
-    avatar: "SA",
+    name: "Emily Chen",
+    role: "E-commerce Entrepreneur",
+    avatar: "EC",
     content:
-      "Küçük bir ekipiz ama büyük markaların içerik kalitesinde videolar üretebiliyoruz. 4 platformda aynı anda yayın yapmak inanılmaz.",
-    stat: "4 platform, tek tıklama",
+      "We're a small team but we can produce videos at the quality level of big brands. Publishing on 4 platforms simultaneously is incredible.",
+    stat: "4 platforms, one click",
     stars: 5,
   },
 ];
 
 const integrations = [
   { name: "Instagram", desc: "Reels & Stories", color: "from-pink-500 to-rose-500" },
-  { name: "TikTok", desc: "Viral Videolar", color: "from-cyan-400 to-teal-500" },
+  { name: "TikTok", desc: "Viral Videos", color: "from-cyan-400 to-teal-500" },
   { name: "YouTube", desc: "Shorts & Video", color: "from-red-500 to-red-600" },
-  { name: "LinkedIn", desc: "Profesyonel İçerik", color: "from-blue-600 to-blue-700" },
+  { name: "LinkedIn", desc: "Professional Content", color: "from-blue-600 to-blue-700" },
 ];
 
 const trustedBy = [
-  { name: "OpenRouter", desc: "Akıllı İçerik Motoru" },
-  { name: "ElevenLabs", desc: "Doğal Ses Üretimi" },
-  { name: "Kling AI", desc: "Sinematik Video Üretimi" },
+  { name: "OpenRouter", desc: "Smart Content Engine" },
+  { name: "ElevenLabs", desc: "Natural Voice Generation" },
+  { name: "Kling AI", desc: "Cinematic Video Production" },
 ];
 
 /* ─── Section wrapper with useInView ─── */
@@ -210,7 +210,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link href="/auth">
               <Button variant="ghost" size="sm" className="text-sm">
-                Giriş Yap
+                Sign In
               </Button>
             </Link>
             <Link href="/auth">
@@ -218,7 +218,7 @@ export default function LandingPage() {
                 size="sm"
                 className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white rounded-xl text-sm px-5 shadow-lg shadow-violet-500/25"
               >
-                Ücretsiz Deneyin
+                Try Free
                 <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
               </Button>
             </Link>
@@ -246,7 +246,7 @@ export default function LandingPage() {
             <motion.div variants={itemVariants} className="mb-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-violet-500/20 bg-violet-500/5 text-sm">
                 <Sparkles className="w-4 h-4 text-violet-500" />
-                <span className="text-muted-foreground">Türkiye&apos;nin İlk Otonom AI Pazarlama Motoru</span>
+                <span className="text-muted-foreground">The World&apos;s First Autonomous AI Marketing Engine</span>
                 <ChevronRight className="w-3.5 h-3.5 text-violet-400" />
               </div>
             </motion.div>
@@ -256,10 +256,10 @@ export default function LandingPage() {
               variants={itemVariants}
               className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6"
             >
-              Video Pazarlamanızı
+              Fully Automate Your
               <br />
               <span className="relative whitespace-nowrap">
-                <span className="relative gradient-text">Tamamen Otomatikleştirin</span>
+                <span className="relative gradient-text">Video Marketing</span>
                 <SquiggleUnderline />
               </span>
             </motion.h1>
@@ -269,9 +269,9 @@ export default function LandingPage() {
               variants={itemVariants}
               className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
             >
-              URL&apos;nizi girin → AI analiz etsin → 4 platformda profesyonel videolar üretilsin.
+              Enter your URL → Let AI analyze → Professional videos produced for 4 platforms.
               <br />
-              <strong className="text-foreground">Ekip kurmadan, ajans tutmadan, dakikalar içinde.</strong>
+              <strong className="text-foreground">No team needed, no agency required, in minutes.</strong>
             </motion.p>
 
             {/* URL Input + CTA */}
@@ -291,7 +291,7 @@ export default function LandingPage() {
               </div>
               <Link href={url ? `/auth?url=${encodeURIComponent(url)}` : "/auth"}>
                 <Button className="h-14 px-8 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-base font-semibold shadow-xl shadow-violet-500/25 transition-all hover:shadow-2xl hover:shadow-violet-500/30 w-full sm:w-auto">
-                  Ücretsiz Deneyin
+                  Try Free
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
@@ -303,7 +303,7 @@ export default function LandingPage() {
               className="flex items-center justify-center gap-2 text-sm text-muted-foreground/60"
             >
               <Shield className="w-4 h-4" />
-              Kredi kartı gerekmez · 30 saniyede başlayın
+              No credit card required · Start in 30 seconds
             </motion.p>
           </motion.div>
 
@@ -337,7 +337,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6">
           <motion.div variants={itemVariants} className="text-center mb-8">
             <p className="text-sm text-muted-foreground/60 uppercase tracking-widest font-medium">
-              Güçlü Teknoloji Altyapısı
+              Powered By Leading Technology
             </p>
           </motion.div>
           <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-8 md:gap-16">
@@ -364,18 +364,17 @@ export default function LandingPage() {
           <motion.div variants={itemVariants} className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-background/50 text-xs mb-4">
               <PlayCircle className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-muted-foreground">Sadece 3 adım</span>
+              <span className="text-muted-foreground">Just 3 steps</span>
             </div>
             <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
-              Nasıl{" "}
+              How It{" "}
               <span className="relative whitespace-nowrap">
-                <span className="relative gradient-text">Çalışır</span>
+                <span className="relative gradient-text">Works</span>
                 <SquiggleUnderline />
               </span>
-              ?
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Tamamen otonom bir AI pazarlama motoru. URL&apos;nizi girin, gerisini biz halledelim.
+              A fully autonomous AI marketing engine. Enter your URL, we handle the rest.
             </p>
           </motion.div>
 
@@ -394,7 +393,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="text-xs font-bold text-muted-foreground/40 mb-2">
-                  ADIM {String(i + 1).padStart(2, "0")}
+                  STEP {String(i + 1).padStart(2, "0")}
                 </div>
                 <h3 className="text-lg font-bold mb-2">{f.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed mb-3">
@@ -417,15 +416,14 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6">
           <motion.div variants={itemVariants} className="text-center mb-16">
             <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
-              Tüm{" "}
+              Integrated With All{" "}
               <span className="relative whitespace-nowrap">
-                <span className="relative gradient-text">Platformlarla</span>
+                <span className="relative gradient-text">Platforms</span>
                 <SquiggleUnderline />
               </span>
-              {" "}Entegre
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Her platformun formatına, boyutuna ve trendine uygun videolar otomatik üretilir.
+              Videos automatically produced to match each platform's format, size, and trends.
             </p>
           </motion.div>
 
@@ -457,15 +455,14 @@ export default function LandingPage() {
           <motion.div variants={itemVariants} className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-background/50 text-xs mb-4">
               <Users className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-muted-foreground">Kullanıcı Yorumları</span>
+              <span className="text-muted-foreground">User Reviews</span>
             </div>
             <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
-              Kullanıcılarımız{" "}
+              What Our Users{" "}
               <span className="relative whitespace-nowrap">
-                <span className="relative gradient-text">Ne Diyor</span>
+                <span className="relative gradient-text">Are Saying</span>
                 <SquiggleUnderline />
               </span>
-              ?
             </h2>
           </motion.div>
 
@@ -526,14 +523,14 @@ export default function LandingPage() {
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 text-sm mb-8">
                 <Zap className="w-4 h-4" />
-                Hemen Başlayın
+                Start Now
               </div>
               <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
-                İlk Videonuzu Şimdi Üretin
+                Produce Your First Video Now
               </h2>
               <p className="text-lg text-white/80 max-w-xl mx-auto mb-8">
-                Kredi kartı gerekmez. 30 saniyede kaydolun, URL&apos;nizi girin ve
-                AI&apos;ın sihirini izleyin.
+                No credit card required. Sign up in 30 seconds, enter your URL and
+                watch the AI magic.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/auth">
@@ -541,7 +538,7 @@ export default function LandingPage() {
                     size="lg"
                     className="h-14 px-10 rounded-2xl bg-white text-violet-700 hover:bg-white/90 text-base font-bold shadow-xl"
                   >
-                    Ücretsiz Deneyin
+                    Try Free
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </Link>
@@ -549,15 +546,15 @@ export default function LandingPage() {
               <div className="flex items-center justify-center gap-6 mt-8 text-sm text-white/60">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  Kredi kartı gerekmez
+                  No credit card required
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  Anında kurulum
+                  Instant setup
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  İstediğiniz zaman iptal
+                  Cancel anytime
                 </span>
               </div>
             </div>
@@ -584,16 +581,16 @@ export default function LandingPage() {
             {/* Links */}
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link href="/auth" className="hover:text-foreground transition-colors">
-                Giriş Yap
+                Sign In
               </Link>
               <Link href="/auth" className="hover:text-foreground transition-colors">
-                Kayıt Ol
+                Sign Up
               </Link>
             </div>
 
             {/* Copyright */}
             <div className="text-xs text-muted-foreground/50">
-              © {new Date().getFullYear()} AI Marketing Factory. Tüm hakları saklıdır.
+              © {new Date().getFullYear()} AI Marketing Factory. All rights reserved.
             </div>
           </div>
 
@@ -601,15 +598,15 @@ export default function LandingPage() {
           <div className="flex items-center justify-center gap-6 mt-8 pt-8 border-t border-border/20">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/40">
               <Shield className="w-3.5 h-3.5" />
-              SSL Korumalı
+              SSL Protected
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/40">
               <Globe className="w-3.5 h-3.5" />
-              KVKK Uyumlu
+              GDPR Compliant
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/40">
               <BarChart3 className="w-3.5 h-3.5" />
-              Vercel ile Çalışır
+              Powered by Vercel
             </div>
           </div>
         </div>

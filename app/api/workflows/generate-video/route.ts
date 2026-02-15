@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
         const { projectId, platform, prompt, brandName, title, influencerId, influencerName, influencerPersonality, influencerBackstory, productImageUrls, language: requestLanguage } = body
-        const language: Language = requestLanguage || 'tr'
+        const language: Language = requestLanguage || 'en'
 
         if (!projectId || !platform) {
             return NextResponse.json(
