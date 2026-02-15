@@ -1891,9 +1891,28 @@ function ProjectDetailPageInner({
                                                     >
                                                         {/* Video Preview */}
                                                         <div
-                                                            className={`aspect-video bg-gradient-to-br ${getPlatformColor(video.platform)} relative flex items-center justify-center`}
+                                                            className={`aspect-video relative flex items-center justify-center overflow-hidden ${!video.video_url ? `bg-gradient-to-br ${getPlatformColor(video.platform)}` : 'bg-black'}`}
                                                         >
-                                                            <div className="absolute inset-0 bg-black/30" />
+                                                            {video.video_url && video.status === 'ready' && (
+                                                                <video
+                                                                    src={video.video_url}
+                                                                    className="absolute inset-0 w-full h-full object-cover"
+                                                                    muted
+                                                                    playsInline
+                                                                    preload="metadata"
+                                                                    onMouseEnter={(e) => {
+                                                                        const v = e.currentTarget;
+                                                                        v.currentTime = 0;
+                                                                        v.play().catch(() => { });
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        const v = e.currentTarget;
+                                                                        v.pause();
+                                                                        v.currentTime = 0;
+                                                                    }}
+                                                                />
+                                                            )}
+                                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
                                                             {video.status === "ready" ? (
                                                                 <button className="relative z-10 w-14 h-14 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform">
                                                                     <Play className="w-6 h-6 text-white ml-0.5" />
