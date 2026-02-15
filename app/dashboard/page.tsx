@@ -532,7 +532,7 @@ function DashboardContent() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                         {stats.map((stat) => (
                             <motion.div key={stat.label} variants={itemVariants}>
-                                <div className="p-5 rounded-2xl border border-border bg-card hover:border-violet-300/50 hover:shadow-md transition-all group">
+                                <div className="p-5 rounded-2xl border border-border bg-card shadow-sm hover:border-violet-300/50 hover:shadow-md transition-all group">
                                     <div className="flex items-start justify-between mb-4">
                                         <div
                                             className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.iconColor}`}
@@ -590,7 +590,7 @@ function DashboardContent() {
                                     custom={index}
                                 >
                                     <Link href={`/project/${project.id}`}>
-                                        <div className={`group p-5 rounded-2xl border border-border bg-card hover:border-violet-300 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 cursor-pointer h-full ${deletingProjectId === project.id ? 'opacity-50 pointer-events-none' : ''}`}>
+                                        <div className={`group p-5 rounded-2xl border border-border bg-card shadow-sm hover:border-violet-300 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 cursor-pointer h-full ${deletingProjectId === project.id ? 'opacity-50 pointer-events-none' : ''}`}>
                                             {/* Header */}
                                             <div className="flex items-start justify-between mb-4">
                                                 <div className="flex items-center gap-3">
