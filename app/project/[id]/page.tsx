@@ -940,176 +940,18 @@ function ProjectDetailPageInner({
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="p-6 rounded-2xl border border-dashed border-border/50 text-center h-full flex flex-col items-center justify-center">
-                                            <h3 className="font-medium mb-3">
-                                                Influencer Oluştur
-                                            </h3>
-
-                                            {/* AI / Manuel Toggle */}
-                                            <div className="flex gap-1 p-1 rounded-lg bg-muted/50 mb-4 w-full">
-                                                <button
-                                                    onClick={() => setCreationMode("ai")}
-                                                    className={`flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all ${creationMode === "ai" ? "bg-violet-500 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                                                >
-                                                    ✨ AI ile Oluştur
-                                                </button>
-                                                <button
-                                                    onClick={() => setCreationMode("manual")}
-                                                    className={`flex-1 py-1.5 px-2 rounded-md text-xs font-medium transition-all ${creationMode === "manual" ? "bg-violet-500 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                                                >
-                                                    ✏️ Manuel Oluştur
-                                                </button>
+                                        <div className="p-6 rounded-2xl border border-dashed border-border/50 text-center h-full flex flex-col items-center justify-center min-h-[300px]">
+                                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mb-4">
+                                                <Bot className="w-8 h-8 text-violet-500" />
                                             </div>
-
-                                            {creationMode === "ai" ? (
-                                                <>
-                                                    <p className="text-xs text-muted-foreground mb-3">
-                                                        Cinsiyet seçin, AI otomatik oluştursun
-                                                    </p>
-                                                    {/* Gender Selector */}
-                                                    <div className="flex gap-2 mb-4 w-full">
-                                                        <button
-                                                            onClick={() => setSelectedGender("female")}
-                                                            className={`flex-1 p-3 rounded-xl border text-center transition-all ${selectedGender === "female"
-                                                                ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
-                                                                : "border-border/50 hover:border-violet-300/50"
-                                                                }`}
-                                                        >
-                                                            <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
-                                                                <Image src="/default-influencer-female.png" alt="Kadın" width={40} height={40} className="w-full h-full object-cover" />
-                                                            </div>
-                                                            <span className="text-xs font-medium">Kadın</span>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setSelectedGender("male")}
-                                                            className={`flex-1 p-3 rounded-xl border text-center transition-all ${selectedGender === "male"
-                                                                ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30"
-                                                                : "border-border/50 hover:border-violet-300/50"
-                                                                }`}
-                                                        >
-                                                            <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
-                                                                <Image src="/default-influencer-male.png" alt="Erkek" width={40} height={40} className="w-full h-full object-cover" />
-                                                            </div>
-                                                            <span className="text-xs font-medium">Erkek</span>
-                                                        </button>
-                                                    </div>
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={handleCreateInfluencer}
-                                                        disabled={isCreatingInfluencer}
-                                                        className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 border-0 text-xs"
-                                                    >
-                                                        {isCreatingInfluencer ? (
-                                                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                                                        ) : (
-                                                            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                                                        )}
-                                                        {isCreatingInfluencer ? "Oluşturuluyor..." : "AI Influencer Oluştur"}
-                                                    </Button>
-                                                    <AnimatePresence>
-                                                        {isCreatingInfluencer && (
-                                                            <motion.div
-                                                                initial={{ opacity: 0, height: 0 }}
-                                                                animate={{ opacity: 1, height: "auto" }}
-                                                                exit={{ opacity: 0, height: 0 }}
-                                                                className="mt-5 p-4 rounded-xl bg-muted/30 space-y-3 w-full text-left"
-                                                            >
-                                                                <div className="flex items-center gap-2 text-sm">
-                                                                    {influencerError ? (
-                                                                        <AlertTriangle className="w-4 h-4 text-red-500" />
-                                                                    ) : (
-                                                                        <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
-                                                                    )}
-                                                                    <span>{influencerStep}</span>
-                                                                </div>
-                                                                <Progress value={influencerProgress} className="h-1.5" />
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </>
-                                            ) : (
-                                                <div className="w-full space-y-3 text-left">
-                                                    <div>
-                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">İsim *</label>
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Örn: Ayşe Yıldız"
-                                                            value={manualForm.name}
-                                                            onChange={(e) => setManualForm(p => ({ ...p, name: e.target.value }))}
-                                                            className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
-                                                        />
-                                                    </div>
-                                                    {/* Gender */}
-                                                    <div>
-                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Cinsiyet</label>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => setManualForm(p => ({ ...p, gender: "female" }))}
-                                                                className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-all ${manualForm.gender === "female" ? "border-violet-400 bg-violet-500/10 text-violet-600" : "border-border/50"}`}
-                                                            >
-                                                                👩 Kadın
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setManualForm(p => ({ ...p, gender: "male" }))}
-                                                                className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-all ${manualForm.gender === "male" ? "border-violet-400 bg-violet-500/10 text-violet-600" : "border-border/50"}`}
-                                                            >
-                                                                👨 Erkek
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Kişilik</label>
-                                                        <textarea
-                                                            placeholder="Enerjik, samimi, güven veren..."
-                                                            value={manualForm.personality}
-                                                            onChange={(e) => setManualForm(p => ({ ...p, personality: e.target.value }))}
-                                                            rows={2}
-                                                            className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Görünüş Tanımı</label>
-                                                        <textarea
-                                                            placeholder="30'lu yaşlarında, kahverengi saçlı..."
-                                                            value={manualForm.appearance_description}
-                                                            onChange={(e) => setManualForm(p => ({ ...p, appearance_description: e.target.value }))}
-                                                            rows={2}
-                                                            className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Hikaye / Arka Plan</label>
-                                                        <textarea
-                                                            placeholder="Teknoloji tutkunu bir girişimci..."
-                                                            value={manualForm.backstory}
-                                                            onChange={(e) => setManualForm(p => ({ ...p, backstory: e.target.value }))}
-                                                            rows={3}
-                                                            className="w-full px-3 py-2 rounded-lg border border-border/50 bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400"
-                                                        />
-                                                    </div>
-                                                    {influencerError && (
-                                                        <p className="text-xs text-red-500 flex items-center gap-1">
-                                                            <AlertTriangle className="w-3 h-3" /> {influencerError}
-                                                        </p>
-                                                    )}
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={handleCreateManualInfluencer}
-                                                        disabled={isSavingManual || !manualForm.name.trim()}
-                                                        className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 border-0 text-xs"
-                                                    >
-                                                        {isSavingManual ? (
-                                                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                                                        ) : (
-                                                            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                                                        )}
-                                                        {isSavingManual ? "Kaydediliyor..." : "Influencer Kaydet"}
-                                                    </Button>
-                                                </div>
-                                            )}
+                                            <h3 className="font-medium mb-2">Henüz Influencer Yok</h3>
+                                            <p className="text-xs text-muted-foreground">
+                                                Sağdaki formu kullanarak AI influencer oluşturun
+                                            </p>
                                         </div>
                                     )}
                                 </motion.div>
+
 
                                 <motion.div
                                     initial={{ opacity: 0, y: 16 }}
@@ -1501,469 +1343,473 @@ function ProjectDetailPageInner({
                                     </p>
                                 )}
                             </div>
-                        </TabsContent>
+                        </TabsContent >
 
                         {/* ═══ VIDEOS TAB ═══ */}
-                        <TabsContent value="videos" className="space-y-6">
-                            {videos.length === 0 ? (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4 }}
-                                    className="py-8"
-                                >
-                                    <div className="text-center mb-8">
-                                        <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
-                                            <Video className="w-8 h-8 text-violet-500" />
+                        < TabsContent value="videos" className="space-y-6" >
+                            {
+                                videos.length === 0 ? (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 16 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="py-8"
+                                    >
+                                        <div className="text-center mb-8">
+                                            <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
+                                                <Video className="w-8 h-8 text-violet-500" />
+                                            </div>
+                                            <h3 className="font-bold mb-2">Henüz Video Yok</h3>
+                                            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                                                Platform seçin ve AI ilk videonuzu otomatik oluştursun
+                                            </p>
                                         </div>
-                                        <h3 className="font-bold mb-2">Henüz Video Yok</h3>
-                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                                            Platform seçin ve AI ilk videonuzu otomatik oluştursun
-                                        </p>
-                                    </div>
 
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
-                                        {([
-                                            { key: "instagram" as const, label: "Instagram", img: "/images/platforms/instagram.png", desc: "Reels (10s)" },
-                                            { key: "tiktok" as const, label: "TikTok", img: "/images/platforms/tiktok.png", desc: "Short (10s)" },
-                                            { key: "youtube" as const, label: "YouTube", img: "/images/platforms/youtube.png", desc: "Shorts (10s)" },
-                                        ]).map((platform) => (
-                                            <button
-                                                key={platform.key}
-                                                onClick={() => handleGenerateVideo(platform.key)}
-                                                disabled={isGenerating}
-                                                className="group relative overflow-hidden rounded-xl border border-border/50 hover:border-violet-300/50 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                <div className="relative w-full aspect-[4/3] overflow-hidden">
-                                                    <Image
-                                                        src={platform.img}
-                                                        alt={platform.label}
-                                                        fill
-                                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                                        sizes="(max-width: 640px) 50vw, 25vw"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                                                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                                                        <h4 className="text-sm font-semibold text-white drop-shadow-lg">
-                                                            {platform.label}
-                                                        </h4>
-                                                        <p className="text-[11px] text-white/80">
-                                                            {platform.desc}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
+                                            {([
+                                                { key: "instagram" as const, label: "Instagram", img: "/images/platforms/instagram.png", desc: "Reels (10s)" },
+                                                { key: "tiktok" as const, label: "TikTok", img: "/images/platforms/tiktok.png", desc: "Short (10s)" },
+                                                { key: "youtube" as const, label: "YouTube", img: "/images/platforms/youtube.png", desc: "Shorts (10s)" },
+                                            ]).map((platform) => (
+                                                <button
+                                                    key={platform.key}
+                                                    onClick={() => handleGenerateVideo(platform.key)}
+                                                    disabled={isGenerating}
+                                                    className="group relative overflow-hidden rounded-xl border border-border/50 hover:border-violet-300/50 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <div className="relative w-full aspect-[4/3] overflow-hidden">
+                                                        <Image
+                                                            src={platform.img}
+                                                            alt={platform.label}
+                                                            fill
+                                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                                            sizes="(max-width: 640px) 50vw, 25vw"
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                                                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                                                            <h4 className="text-sm font-semibold text-white drop-shadow-lg">
+                                                                {platform.label}
+                                                            </h4>
+                                                            <p className="text-[11px] text-white/80">
+                                                                {platform.desc}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {isGenerating && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: "auto" }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    className="mt-5 p-4 rounded-xl bg-muted/30 space-y-3 max-w-2xl mx-auto"
+                                                >
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        {genError ? (
+                                                            <AlertTriangle className="w-4 h-4 text-red-500" />
+                                                        ) : (
+                                                            <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
+                                                        )}
+                                                        <span className="capitalize">{generatingPlatform}</span> — {genStep}
+                                                    </div>
+                                                    <Progress value={genProgress} className="h-1.5" />
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </motion.div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {videos.map((video, index) => {
+                                                const statusInfo = getStatusBadge(video.status);
+                                                return (
+                                                    <motion.div
+                                                        key={video.id}
+                                                        initial={{ opacity: 0, y: 16 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                                                    >
+                                                        <div
+                                                            onClick={() => video.status === 'ready' && setSelectedVideo(video)}
+                                                            className={`rounded-2xl border border-border/50 bg-background/50 overflow-hidden group hover:border-violet-300/50 transition-all ${video.status === 'ready' ? 'cursor-pointer' : ''}`}
+                                                        >
+                                                            {/* Video Preview */}
+                                                            <div
+                                                                className={`aspect-video relative flex items-center justify-center overflow-hidden ${!video.video_url ? `bg-gradient-to-br ${getPlatformColor(video.platform)}` : 'bg-black'}`}
+                                                            >
+                                                                {video.video_url && video.status === 'ready' && (
+                                                                    <video
+                                                                        src={video.video_url}
+                                                                        className="absolute inset-0 w-full h-full object-cover"
+                                                                        muted
+                                                                        playsInline
+                                                                        preload="metadata"
+                                                                        onMouseEnter={(e) => {
+                                                                            const v = e.currentTarget;
+                                                                            v.currentTime = 0;
+                                                                            v.play().catch(() => { });
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            const v = e.currentTarget;
+                                                                            v.pause();
+                                                                            v.currentTime = 0;
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                                                                {video.status === "ready" ? (
+                                                                    <button className="relative z-10 w-14 h-14 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform">
+                                                                        <Play className="w-6 h-6 text-white ml-0.5" />
+                                                                    </button>
+                                                                ) : (
+                                                                    <div className="relative z-10 flex flex-col items-center gap-2">
+                                                                        <Loader2 className="w-8 h-8 animate-spin text-white/80" />
+                                                                        <span className="text-xs text-white/60">
+                                                                            İşleniyor...
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                <div className="absolute top-3 left-3 z-10">
+                                                                    <Badge
+                                                                        className={`${statusInfo.color} text-[10px] rounded-lg`}
+                                                                        variant="outline"
+                                                                    >
+                                                                        {statusInfo.text}
+                                                                    </Badge>
+                                                                </div>
+                                                                <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+                                                                    {video.duration_seconds && (
+                                                                        <Badge className="bg-black/30 text-white border-0 text-[10px] backdrop-blur-sm rounded-lg">
+                                                                            {video.duration_seconds}s
+                                                                        </Badge>
+                                                                    )}
+                                                                    <button
+                                                                        onClick={async (e) => {
+                                                                            e.stopPropagation()
+                                                                            try {
+                                                                                const { error } = await supabase
+                                                                                    .from('videos')
+                                                                                    .delete()
+                                                                                    .eq('id', video.id)
+                                                                                if (!error) {
+                                                                                    setVideos(prev => prev.filter(v => v.id !== video.id))
+                                                                                } else {
+                                                                                    console.error('Video delete error:', error)
+                                                                                    alert('Video silinemedi. Lütfen tekrar deneyin.')
+                                                                                }
+                                                                            } catch (err) {
+                                                                                console.error('Video delete error:', err)
+                                                                                alert('Video silme hatası. Lütfen tekrar deneyin.')
+                                                                            }
+                                                                        }}
+                                                                        className="w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm flex items-center justify-center transition-opacity hover:bg-red-500/80"
+                                                                        title="Videoyu Sil"
+                                                                    >
+                                                                        <Trash2 className="w-3.5 h-3.5 text-white" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="p-4">
+                                                                <h3 className="font-medium text-sm mb-2">
+                                                                    {video.title || `${video.platform} videosu`}
+                                                                </h3>
+                                                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                                                    <span className="capitalize">
+                                                                        {video.platform}
+                                                                    </span>
+                                                                    <span>{timeAgo(video.created_at)}</span>
+                                                                </div>
+                                                                {video.status === "ready" && (
+                                                                    <div className="flex gap-2 mt-3">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            className="flex-1 h-8 text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 text-white border-0"
+                                                                            onClick={() => {
+                                                                                if (video.video_url) {
+                                                                                    const a = document.createElement('a');
+                                                                                    a.href = video.video_url;
+                                                                                    a.download = `${video.title || 'video'}.mp4`;
+                                                                                    a.target = '_blank';
+                                                                                    document.body.appendChild(a);
+                                                                                    a.click();
+                                                                                    document.body.removeChild(a);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <Download className="w-3 h-3 mr-1" />
+                                                                            Videoyu İndir
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })}
+
+                                            {/* Generate New Video Card */}
+                                            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+                                                <div
+                                                    onClick={() => setActiveTab("influencer")}
+                                                    className="rounded-2xl border border-dashed border-border/50 hover:border-violet-300/50 transition-all cursor-pointer h-full flex items-center justify-center min-h-[280px]"
+                                                >
+                                                    <div className="text-center p-6">
+                                                        <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                                                            <Wand2 className="w-5 h-5 text-muted-foreground/60" />
+                                                        </div>
+                                                        <h3 className="font-medium text-sm text-muted-foreground">
+                                                            Yeni Video Üret
+                                                        </h3>
+                                                        <p className="text-xs text-muted-foreground/50 mt-1">
+                                                            AI ile otomatik oluştur
                                                         </p>
                                                     </div>
                                                 </div>
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    <AnimatePresence>
-                                        {isGenerating && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: "auto" }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                className="mt-5 p-4 rounded-xl bg-muted/30 space-y-3 max-w-2xl mx-auto"
-                                            >
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    {genError ? (
-                                                        <AlertTriangle className="w-4 h-4 text-red-500" />
-                                                    ) : (
-                                                        <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
-                                                    )}
-                                                    <span className="capitalize">{generatingPlatform}</span> — {genStep}
-                                                </div>
-                                                <Progress value={genProgress} className="h-1.5" />
                                             </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            ) : (
-                                <>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {videos.map((video, index) => {
-                                            const statusInfo = getStatusBadge(video.status);
-                                            return (
-                                                <motion.div
-                                                    key={video.id}
-                                                    initial={{ opacity: 0, y: 16 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                                                >
-                                                    <div
-                                                        onClick={() => video.status === 'ready' && setSelectedVideo(video)}
-                                                        className={`rounded-2xl border border-border/50 bg-background/50 overflow-hidden group hover:border-violet-300/50 transition-all ${video.status === 'ready' ? 'cursor-pointer' : ''}`}
-                                                    >
-                                                        {/* Video Preview */}
-                                                        <div
-                                                            className={`aspect-video relative flex items-center justify-center overflow-hidden ${!video.video_url ? `bg-gradient-to-br ${getPlatformColor(video.platform)}` : 'bg-black'}`}
-                                                        >
-                                                            {video.video_url && video.status === 'ready' && (
-                                                                <video
-                                                                    src={video.video_url}
-                                                                    className="absolute inset-0 w-full h-full object-cover"
-                                                                    muted
-                                                                    playsInline
-                                                                    preload="metadata"
-                                                                    onMouseEnter={(e) => {
-                                                                        const v = e.currentTarget;
-                                                                        v.currentTime = 0;
-                                                                        v.play().catch(() => { });
-                                                                    }}
-                                                                    onMouseLeave={(e) => {
-                                                                        const v = e.currentTarget;
-                                                                        v.pause();
-                                                                        v.currentTime = 0;
-                                                                    }}
-                                                                />
-                                                            )}
-                                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                                                            {video.status === "ready" ? (
-                                                                <button className="relative z-10 w-14 h-14 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform">
-                                                                    <Play className="w-6 h-6 text-white ml-0.5" />
-                                                                </button>
-                                                            ) : (
-                                                                <div className="relative z-10 flex flex-col items-center gap-2">
-                                                                    <Loader2 className="w-8 h-8 animate-spin text-white/80" />
-                                                                    <span className="text-xs text-white/60">
-                                                                        İşleniyor...
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                            <div className="absolute top-3 left-3 z-10">
-                                                                <Badge
-                                                                    className={`${statusInfo.color} text-[10px] rounded-lg`}
-                                                                    variant="outline"
-                                                                >
-                                                                    {statusInfo.text}
+                                        </div>
+
+                                        {/* Video Detail Dialog */}
+                                        <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
+                                            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                                                <DialogHeader>
+                                                    <DialogTitle className="flex items-center gap-2">
+                                                        <Video className="w-5 h-5 text-violet-500" />
+                                                        {selectedVideo?.title || 'Video Detayı'}
+                                                    </DialogTitle>
+                                                </DialogHeader>
+                                                {selectedVideo && (
+                                                    <div className="space-y-6 mt-2">
+                                                        {/* Platform & Duration */}
+                                                        <div className="flex items-center gap-3 flex-wrap">
+                                                            <Badge className="bg-violet-500/10 text-violet-600 border-violet-200 capitalize">
+                                                                📱 {selectedVideo.platform}
+                                                            </Badge>
+                                                            {selectedVideo.duration_seconds && (
+                                                                <Badge variant="outline" className="border-border/50">
+                                                                    ⏱ {selectedVideo.duration_seconds}s
                                                                 </Badge>
-                                                            </div>
-                                                            <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-                                                                {video.duration_seconds && (
-                                                                    <Badge className="bg-black/30 text-white border-0 text-[10px] backdrop-blur-sm rounded-lg">
-                                                                        {video.duration_seconds}s
-                                                                    </Badge>
-                                                                )}
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation()
-                                                                        try {
-                                                                            const { error } = await supabase
-                                                                                .from('videos')
-                                                                                .delete()
-                                                                                .eq('id', video.id)
-                                                                            if (!error) {
-                                                                                setVideos(prev => prev.filter(v => v.id !== video.id))
-                                                                            } else {
-                                                                                console.error('Video delete error:', error)
-                                                                                alert('Video silinemedi. Lütfen tekrar deneyin.')
-                                                                            }
-                                                                        } catch (err) {
-                                                                            console.error('Video delete error:', err)
-                                                                            alert('Video silme hatası. Lütfen tekrar deneyin.')
-                                                                        }
-                                                                    }}
-                                                                    className="w-7 h-7 rounded-lg bg-black/30 backdrop-blur-sm flex items-center justify-center transition-opacity hover:bg-red-500/80"
-                                                                    title="Videoyu Sil"
-                                                                >
-                                                                    <Trash2 className="w-3.5 h-3.5 text-white" />
-                                                                </button>
-                                                            </div>
+                                                            )}
+                                                            <Badge variant="outline" className="border-green-200 text-green-600 bg-green-50">
+                                                                ✅ Hazır
+                                                            </Badge>
                                                         </div>
-                                                        <div className="p-4">
-                                                            <h3 className="font-medium text-sm mb-2">
-                                                                {video.title || `${video.platform} videosu`}
-                                                            </h3>
-                                                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                                                <span className="capitalize">
-                                                                    {video.platform}
-                                                                </span>
-                                                                <span>{timeAgo(video.created_at)}</span>
+
+                                                        {/* Hook */}
+                                                        {selectedVideo.metadata?.hook && (
+                                                            <div className="rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 p-4 border border-violet-100 dark:border-violet-800/30">
+                                                                <h4 className="text-xs font-semibold text-violet-600 uppercase tracking-wider mb-2">🎣 Hook</h4>
+                                                                <p className="text-sm font-medium">{selectedVideo.metadata.hook}</p>
                                                             </div>
-                                                            {video.status === "ready" && (
-                                                                <div className="flex gap-2 mt-3">
+                                                        )}
+
+                                                        {/* Script */}
+                                                        {selectedVideo.script && (
+                                                            <div>
+                                                                <div className="flex items-center justify-between mb-3">
+                                                                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                                                                        <FileText className="w-4 h-4 text-muted-foreground" />
+                                                                        Video Script
+                                                                    </h4>
                                                                     <Button
                                                                         size="sm"
-                                                                        className="flex-1 h-8 text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 text-white border-0"
+                                                                        variant="outline"
+                                                                        className="h-7 text-xs rounded-lg"
                                                                         onClick={() => {
-                                                                            if (video.video_url) {
-                                                                                const a = document.createElement('a');
-                                                                                a.href = video.video_url;
-                                                                                a.download = `${video.title || 'video'}.mp4`;
-                                                                                a.target = '_blank';
-                                                                                document.body.appendChild(a);
-                                                                                a.click();
-                                                                                document.body.removeChild(a);
-                                                                            }
+                                                                            navigator.clipboard.writeText(selectedVideo.script || '');
                                                                         }}
                                                                     >
-                                                                        <Download className="w-3 h-3 mr-1" />
-                                                                        Videoyu İndir
+                                                                        📋 Kopyala
                                                                     </Button>
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            );
-                                        })}
-
-                                        {/* Generate New Video Card */}
-                                        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                                            <div
-                                                onClick={() => setActiveTab("influencer")}
-                                                className="rounded-2xl border border-dashed border-border/50 hover:border-violet-300/50 transition-all cursor-pointer h-full flex items-center justify-center min-h-[280px]"
-                                            >
-                                                <div className="text-center p-6">
-                                                    <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                                                        <Wand2 className="w-5 h-5 text-muted-foreground/60" />
-                                                    </div>
-                                                    <h3 className="font-medium text-sm text-muted-foreground">
-                                                        Yeni Video Üret
-                                                    </h3>
-                                                    <p className="text-xs text-muted-foreground/50 mt-1">
-                                                        AI ile otomatik oluştur
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    </div>
-
-                                    {/* Video Detail Dialog */}
-                                    <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
-                                        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                                            <DialogHeader>
-                                                <DialogTitle className="flex items-center gap-2">
-                                                    <Video className="w-5 h-5 text-violet-500" />
-                                                    {selectedVideo?.title || 'Video Detayı'}
-                                                </DialogTitle>
-                                            </DialogHeader>
-                                            {selectedVideo && (
-                                                <div className="space-y-6 mt-2">
-                                                    {/* Platform & Duration */}
-                                                    <div className="flex items-center gap-3 flex-wrap">
-                                                        <Badge className="bg-violet-500/10 text-violet-600 border-violet-200 capitalize">
-                                                            📱 {selectedVideo.platform}
-                                                        </Badge>
-                                                        {selectedVideo.duration_seconds && (
-                                                            <Badge variant="outline" className="border-border/50">
-                                                                ⏱ {selectedVideo.duration_seconds}s
-                                                            </Badge>
+                                                                <div className="rounded-xl bg-muted/30 border border-border/50 p-4">
+                                                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                                                                        {selectedVideo.script}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
                                                         )}
-                                                        <Badge variant="outline" className="border-green-200 text-green-600 bg-green-50">
-                                                            ✅ Hazır
-                                                        </Badge>
-                                                    </div>
 
-                                                    {/* Hook */}
-                                                    {selectedVideo.metadata?.hook && (
-                                                        <div className="rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 p-4 border border-violet-100 dark:border-violet-800/30">
-                                                            <h4 className="text-xs font-semibold text-violet-600 uppercase tracking-wider mb-2">🎣 Hook</h4>
-                                                            <p className="text-sm font-medium">{selectedVideo.metadata.hook}</p>
-                                                        </div>
-                                                    )}
+                                                        {/* CTA */}
+                                                        {selectedVideo.metadata?.cta && (
+                                                            <div className="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-4 border border-amber-100 dark:border-amber-800/30">
+                                                                <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">📢 Call to Action</h4>
+                                                                <p className="text-sm font-medium">{selectedVideo.metadata.cta}</p>
+                                                            </div>
+                                                        )}
 
-                                                    {/* Script */}
-                                                    {selectedVideo.script && (
-                                                        <div>
-                                                            <div className="flex items-center justify-between mb-3">
-                                                                <h4 className="text-sm font-semibold flex items-center gap-2">
-                                                                    <FileText className="w-4 h-4 text-muted-foreground" />
-                                                                    Video Script
+                                                        {/* Hashtags */}
+                                                        {selectedVideo.metadata?.hashtags && selectedVideo.metadata.hashtags.length > 0 && (
+                                                            <div>
+                                                                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                                                    # Hashtag{"'"}ler
                                                                 </h4>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {selectedVideo.metadata.hashtags.map((tag: string, i: number) => (
+                                                                        <Badge
+                                                                            key={i}
+                                                                            variant="outline"
+                                                                            className="text-xs bg-blue-50 dark:bg-blue-950/20 text-blue-600 border-blue-200 dark:border-blue-800/30"
+                                                                        >
+                                                                            #{tag.replace(/^#/, '')}
+                                                                        </Badge>
+                                                                    ))}
+                                                                </div>
                                                                 <Button
                                                                     size="sm"
-                                                                    variant="outline"
-                                                                    className="h-7 text-xs rounded-lg"
+                                                                    variant="ghost"
+                                                                    className="mt-2 h-7 text-xs"
                                                                     onClick={() => {
-                                                                        navigator.clipboard.writeText(selectedVideo.script || '');
+                                                                        const tags = (selectedVideo.metadata?.hashtags || []).map((t: string) => `#${t.replace(/^#/, '')}`).join(' ');
+                                                                        navigator.clipboard.writeText(tags);
                                                                     }}
                                                                 >
-                                                                    📋 Kopyala
+                                                                    📋 Hashtag{"'"}leri Kopyala
                                                                 </Button>
                                                             </div>
-                                                            <div className="rounded-xl bg-muted/30 border border-border/50 p-4">
-                                                                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                                                                    {selectedVideo.script}
+                                                        )}
+
+                                                        {/* Video Player or Status */}
+                                                        {selectedVideo.video_url ? (
+                                                            <div className="rounded-xl overflow-hidden border border-border/50 bg-black">
+                                                                <video
+                                                                    src={selectedVideo.video_url}
+                                                                    controls
+                                                                    className="w-full aspect-[9/16] max-h-[400px] object-contain"
+                                                                    poster={selectedVideo.thumbnail_url || undefined}
+                                                                />
+                                                            </div>
+                                                        ) : selectedVideo.status === 'rendering' ? (
+                                                            <div className="rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border border-violet-100 dark:border-violet-800/30 p-6 text-center">
+                                                                <div className="relative mx-auto w-12 h-12 mb-3">
+                                                                    <div className="absolute inset-0 rounded-full bg-violet-500/20 animate-ping" />
+                                                                    <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-violet-500/10">
+                                                                        <Video className="w-6 h-6 text-violet-500 animate-pulse" />
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-sm font-medium text-violet-600 mb-1">Video Render Ediliyor...</p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    AI video oluşturuyor. Bu işlem 1-3 dakika sürebilir.
                                                                 </p>
                                                             </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* CTA */}
-                                                    {selectedVideo.metadata?.cta && (
-                                                        <div className="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-4 border border-amber-100 dark:border-amber-800/30">
-                                                            <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">📢 Call to Action</h4>
-                                                            <p className="text-sm font-medium">{selectedVideo.metadata.cta}</p>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Hashtags */}
-                                                    {selectedVideo.metadata?.hashtags && selectedVideo.metadata.hashtags.length > 0 && (
-                                                        <div>
-                                                            <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                                                # Hashtag{"'"}ler
-                                                            </h4>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {selectedVideo.metadata.hashtags.map((tag: string, i: number) => (
-                                                                    <Badge
-                                                                        key={i}
-                                                                        variant="outline"
-                                                                        className="text-xs bg-blue-50 dark:bg-blue-950/20 text-blue-600 border-blue-200 dark:border-blue-800/30"
-                                                                    >
-                                                                        #{tag.replace(/^#/, '')}
-                                                                    </Badge>
-                                                                ))}
+                                                        ) : (
+                                                            <div className="rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-800/30 p-4">
+                                                                <p className="text-xs text-blue-600 flex items-center gap-2">
+                                                                    <Sparkles className="w-4 h-4" />
+                                                                    Script ve ses üretimi tamamlandı. Video render edildikten sonra burada izleyebileceksiniz.
+                                                                </p>
                                                             </div>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className="mt-2 h-7 text-xs"
-                                                                onClick={() => {
-                                                                    const tags = (selectedVideo.metadata?.hashtags || []).map((t: string) => `#${t.replace(/^#/, '')}`).join(' ');
-                                                                    navigator.clipboard.writeText(tags);
-                                                                }}
-                                                            >
-                                                                📋 Hashtag{"'"}leri Kopyala
-                                                            </Button>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Video Player or Status */}
-                                                    {selectedVideo.video_url ? (
-                                                        <div className="rounded-xl overflow-hidden border border-border/50 bg-black">
-                                                            <video
-                                                                src={selectedVideo.video_url}
-                                                                controls
-                                                                className="w-full aspect-[9/16] max-h-[400px] object-contain"
-                                                                poster={selectedVideo.thumbnail_url || undefined}
-                                                            />
-                                                        </div>
-                                                    ) : selectedVideo.status === 'rendering' ? (
-                                                        <div className="rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border border-violet-100 dark:border-violet-800/30 p-6 text-center">
-                                                            <div className="relative mx-auto w-12 h-12 mb-3">
-                                                                <div className="absolute inset-0 rounded-full bg-violet-500/20 animate-ping" />
-                                                                <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-violet-500/10">
-                                                                    <Video className="w-6 h-6 text-violet-500 animate-pulse" />
-                                                                </div>
-                                                            </div>
-                                                            <p className="text-sm font-medium text-violet-600 mb-1">Video Render Ediliyor...</p>
-                                                            <p className="text-xs text-muted-foreground">
-                                                                AI video oluşturuyor. Bu işlem 1-3 dakika sürebilir.
-                                                            </p>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-800/30 p-4">
-                                                            <p className="text-xs text-blue-600 flex items-center gap-2">
-                                                                <Sparkles className="w-4 h-4" />
-                                                                Script ve ses üretimi tamamlandı. Video render edildikten sonra burada izleyebileceksiniz.
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </DialogContent>
-                                    </Dialog>
-                                </>
-                            )}
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </DialogContent>
+                                        </Dialog>
+                                    </>
+                                )
+                            }
 
                             {/* ═══ STORYBOARD SECTION ═══ */}
-                            {videos.some(v => v.storyboard?.scenes?.length) && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4, delay: 0.2 }}
-                                    className="mt-8 space-y-6"
-                                >
-                                    <h3 className="text-lg font-bold flex items-center gap-2">
-                                        <span className="text-2xl">🎬</span> Storyboard & Hook'lar
-                                    </h3>
-                                    {videos.filter(v => v.storyboard).map((video) => (
-                                        <div key={`sb-${video.id}`} className="space-y-4">
-                                            {/* Hook Variations */}
-                                            {video.storyboard?.hookVariations && video.storyboard.hookVariations.length > 0 && (
-                                                <div className="rounded-xl border border-border/50 bg-card/50 p-4">
-                                                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                                        <span>🪝</span> Hook Varyasyonları
-                                                    </h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                        {video.storyboard.hookVariations.map((hook) => (
-                                                            <div
-                                                                key={hook.id}
-                                                                className={`rounded-lg p-3 border text-sm ${hook.id === video.storyboard?.selectedHook
-                                                                    ? 'border-violet-500 bg-violet-500/10'
-                                                                    : 'border-border/30 bg-muted/30'
-                                                                    }`}
-                                                            >
-                                                                <div className="flex items-center justify-between mb-1">
-                                                                    <span className="text-xs font-medium text-muted-foreground capitalize">{hook.style}</span>
-                                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${hook.estimatedImpact === 'high' ? 'bg-green-500/20 text-green-400' :
-                                                                        hook.estimatedImpact === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                                            'bg-gray-500/20 text-gray-400'
-                                                                        }`}>{hook.estimatedImpact}</span>
-                                                                </div>
-                                                                <p className="font-medium">&ldquo;{hook.text}&rdquo;</p>
-                                                                {hook.id === video.storyboard?.selectedHook && (
-                                                                    <span className="text-xs text-violet-400 mt-1 block">✓ Seçili Hook</span>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Scene Timeline */}
-                                            {video.storyboard?.scenes && video.storyboard.scenes.length > 0 && (
-                                                <div className="rounded-xl border border-border/50 bg-card/50 p-4">
-                                                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                                        <span>🎞️</span> Sahne Planı ({video.storyboard.totalDuration}s)
-                                                    </h4>
-                                                    <div className="space-y-3">
-                                                        {video.storyboard.scenes.map((scene) => (
-                                                            <div key={scene.sceneNumber} className="flex gap-3 rounded-lg bg-muted/20 p-3">
-                                                                <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-violet-500/10 flex flex-col items-center justify-center">
-                                                                    <span className="text-lg font-bold text-violet-400">{scene.sceneNumber}</span>
-                                                                    <span className="text-[10px] text-muted-foreground">{scene.startSecond}-{scene.endSecond}s</span>
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">{scene.cameraDirection}</span>
-                                                                        <span className="text-xs px-2 py-0.5 rounded bg-pink-500/20 text-pink-400">{scene.emotion}</span>
+                            {
+                                videos.some(v => v.storyboard?.scenes?.length) && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 16 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, delay: 0.2 }}
+                                        className="mt-8 space-y-6"
+                                    >
+                                        <h3 className="text-lg font-bold flex items-center gap-2">
+                                            <span className="text-2xl">🎬</span> Storyboard & Hook'lar
+                                        </h3>
+                                        {videos.filter(v => v.storyboard).map((video) => (
+                                            <div key={`sb-${video.id}`} className="space-y-4">
+                                                {/* Hook Variations */}
+                                                {video.storyboard?.hookVariations && video.storyboard.hookVariations.length > 0 && (
+                                                    <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+                                                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                                            <span>🪝</span> Hook Varyasyonları
+                                                        </h4>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                            {video.storyboard.hookVariations.map((hook) => (
+                                                                <div
+                                                                    key={hook.id}
+                                                                    className={`rounded-lg p-3 border text-sm ${hook.id === video.storyboard?.selectedHook
+                                                                        ? 'border-violet-500 bg-violet-500/10'
+                                                                        : 'border-border/30 bg-muted/30'
+                                                                        }`}
+                                                                >
+                                                                    <div className="flex items-center justify-between mb-1">
+                                                                        <span className="text-xs font-medium text-muted-foreground capitalize">{hook.style}</span>
+                                                                        <span className={`text-xs px-2 py-0.5 rounded-full ${hook.estimatedImpact === 'high' ? 'bg-green-500/20 text-green-400' :
+                                                                            hook.estimatedImpact === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                                'bg-gray-500/20 text-gray-400'
+                                                                            }`}>{hook.estimatedImpact}</span>
                                                                     </div>
-                                                                    <p className="text-sm font-medium truncate">&ldquo;{scene.narration}&rdquo;</p>
-                                                                    <p className="text-xs text-muted-foreground mt-0.5">{scene.visualDescription}</p>
+                                                                    <p className="font-medium">&ldquo;{hook.text}&rdquo;</p>
+                                                                    {hook.id === video.storyboard?.selectedHook && (
+                                                                        <span className="text-xs text-violet-400 mt-1 block">✓ Seçili Hook</span>
+                                                                    )}
                                                                 </div>
-                                                            </div>
-                                                        ))}
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
 
-                                            {/* Problem-Solution Map */}
-                                            {video.storyboard?.problemSolutionMap && video.storyboard.problemSolutionMap.length > 0 && (
-                                                <div className="rounded-xl border border-border/50 bg-card/50 p-4">
-                                                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                                                        <span>🎯</span> Problem → Çözüm Eşlemesi
-                                                    </h4>
-                                                    <div className="space-y-2">
-                                                        {video.storyboard.problemSolutionMap.map((item, i) => (
-                                                            <div key={i} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-muted/20">
-                                                                <span className="text-red-400 font-medium flex-shrink-0">❌ {item.problem}</span>
-                                                                <span className="text-muted-foreground">→</span>
-                                                                <span className="text-green-400 font-medium">{item.feature}</span>
-                                                                <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">{item.videoMoment}</span>
-                                                            </div>
-                                                        ))}
+                                                {/* Scene Timeline */}
+                                                {video.storyboard?.scenes && video.storyboard.scenes.length > 0 && (
+                                                    <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+                                                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                                            <span>🎞️</span> Sahne Planı ({video.storyboard.totalDuration}s)
+                                                        </h4>
+                                                        <div className="space-y-3">
+                                                            {video.storyboard.scenes.map((scene) => (
+                                                                <div key={scene.sceneNumber} className="flex gap-3 rounded-lg bg-muted/20 p-3">
+                                                                    <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-violet-500/10 flex flex-col items-center justify-center">
+                                                                        <span className="text-lg font-bold text-violet-400">{scene.sceneNumber}</span>
+                                                                        <span className="text-[10px] text-muted-foreground">{scene.startSecond}-{scene.endSecond}s</span>
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">{scene.cameraDirection}</span>
+                                                                            <span className="text-xs px-2 py-0.5 rounded bg-pink-500/20 text-pink-400">{scene.emotion}</span>
+                                                                        </div>
+                                                                        <p className="text-sm font-medium truncate">&ldquo;{scene.narration}&rdquo;</p>
+                                                                        <p className="text-xs text-muted-foreground mt-0.5">{scene.visualDescription}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </TabsContent>
+                                                )}
+
+                                                {/* Problem-Solution Map */}
+                                                {video.storyboard?.problemSolutionMap && video.storyboard.problemSolutionMap.length > 0 && (
+                                                    <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+                                                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                                                            <span>🎯</span> Problem → Çözüm Eşlemesi
+                                                        </h4>
+                                                        <div className="space-y-2">
+                                                            {video.storyboard.problemSolutionMap.map((item, i) => (
+                                                                <div key={i} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-muted/20">
+                                                                    <span className="text-red-400 font-medium flex-shrink-0">❌ {item.problem}</span>
+                                                                    <span className="text-muted-foreground">→</span>
+                                                                    <span className="text-green-400 font-medium">{item.feature}</span>
+                                                                    <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">{item.videoMoment}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </motion.div>
+                                )
+                            }
+                        </TabsContent >
 
                         {/* ═══ SETTINGS TAB ═══ */}
-                        <TabsContent value="settings" className="space-y-6">
+                        < TabsContent value="settings" className="space-y-6" >
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
 
                                 {/* Manual Publishing Guide */}
