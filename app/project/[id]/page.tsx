@@ -336,7 +336,7 @@ function ProjectDetailPageInner({
 
             // Get generated images
             try {
-                const imgRes = await fetch(`${N8N_ENDPOINTS.listImages}?projectId=${id}`);
+                const imgRes = await fetch(`/api/images?projectId=${id}`);
                 if (imgRes.ok) {
                     const imgData = await imgRes.json();
                     const imgs = imgData.images;
@@ -2392,7 +2392,7 @@ function ProjectDetailPageInner({
                                         onClick={async () => {
                                             setIsGeneratingImage(true);
                                             try {
-                                                const res = await fetch(N8N_ENDPOINTS.generateImage, {
+                                                const res = await fetch('/api/images', {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: JSON.stringify({
@@ -2495,7 +2495,7 @@ function ProjectDetailPageInner({
                                                             <button
                                                                 onClick={async () => {
                                                                     try {
-                                                                        await fetch(`${N8N_ENDPOINTS.deleteImage}?imageId=${img.id}`, { method: 'DELETE' });
+                                                                        await fetch(`/api/images?imageId=${img.id}`, { method: 'DELETE' });
                                                                         setGeneratedImages(prev => prev.filter(i => i.id !== img.id));
                                                                     } catch (err) {
                                                                         console.error('Delete error:', err);
