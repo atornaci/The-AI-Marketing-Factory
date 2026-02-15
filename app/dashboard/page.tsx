@@ -169,7 +169,7 @@ function DashboardContent() {
 
     /* ─── Quick Video Handler — Creates Influencer Inline ─── */
     const handleQuickVideo = async () => {
-        if (!quickScript.trim() || !quickSector) return;
+        if (!quickSector) return;
         setIsQuickCreating(true);
         setQuickProgress(10);
         setQuickStep("Creating project...");
@@ -179,14 +179,18 @@ function DashboardContent() {
             const envLabel = quickEnvironment ? (ENVIRONMENT_OPTIONS.find(e => e.value === quickEnvironment)?.label?.replace(/^\S+\s/, '') || quickEnvironment) : '';
             const energyLabel = quickEnergy ? (ENERGY_OPTIONS.find(e => e.value === quickEnergy)?.label?.replace(/^\S+\s/, '') || quickEnergy) : '';
 
+            // Auto-generate script context if user didn't provide one
+            const userScript = quickScript.trim();
+            const autoContext = !userScript ? `Create an engaging, natural-sounding marketing video script for the ${sectorLabel} industry.${envLabel ? ` The scene takes place in a ${envLabel} setting.` : ''}${energyLabel ? ` The tone should be ${energyLabel}.` : ''} The script should feel authentic and persuasive, like a real influencer recommendation.` : userScript;
+
             const projectDescription = [
                 `Industry: ${sectorLabel}.`,
                 envLabel ? `Environment: ${envLabel}.` : '',
                 energyLabel ? `Energy: ${energyLabel}.` : '',
-                quickScript.trim(),
+                autoContext,
             ].filter(Boolean).join(' ');
 
-            const projectName = `${sectorLabel} — ${quickScript.trim().substring(0, 30)}`;
+            const projectName = `${sectorLabel}${userScript ? ` — ${userScript.substring(0, 30)}` : ''}`;
 
             // Step 1: Auto-create project
             const projRes = await fetch('/api/projects/quick', {
@@ -277,7 +281,11 @@ function DashboardContent() {
 
         try {
             const sectorLabel = SECTOR_OPTIONS.find(s => s.value === quickSector)?.label?.replace(/^\S+\s/, '') || quickSector;
-            const videoPrompt = `Create a ${selectedPlatform} marketing video for "${sectorLabel}". ${quickScript}`;
+            const envLabel = quickEnvironment ? (ENVIRONMENT_OPTIONS.find(e => e.value === quickEnvironment)?.label?.replace(/^\S+\s/, '') || quickEnvironment) : '';
+            const energyLabel = quickEnergy ? (ENERGY_OPTIONS.find(e => e.value === quickEnergy)?.label?.replace(/^\S+\s/, '') || quickEnergy) : '';
+            const videoPrompt = quickScript.trim()
+                ? `Create a ${selectedPlatform} marketing video for "${sectorLabel}". ${quickScript}`
+                : `Create an engaging ${selectedPlatform} marketing video for the ${sectorLabel} industry.${envLabel ? ` Setting: ${envLabel}.` : ''}${energyLabel ? ` Tone: ${energyLabel}.` : ''} Make it feel authentic and natural like a real influencer recommendation.`;
 
             const response = await fetch("/api/workflows/generate-video", {
                 method: "POST",
@@ -320,7 +328,7 @@ function DashboardContent() {
 
         } catch (err) {
             clearInterval(progressInterval);
-            const errMsg = err instanceof Error ? err.message : "Bilinmeyen hata";
+            const errMsg = err instanceof Error ? err.message : "Unknown error";
             setGenError(errMsg);
             setGenStep(`Error: ${errMsg}`);
         } finally {
@@ -449,7 +457,7 @@ function DashboardContent() {
                                         </div>
                                         <div>
                                             <h2 className="text-lg font-bold tracking-tight">Create Influencer</h2>
-                                            <p className="text-xs text-muted-foreground">Pick a gender, choose an industry, write what they should say!</p>
+                                            <p className="text-xs text-muted-foreground">Pick a gender, choose an industry — AI writes the script for you!</p>
                                         </div>
                                     </div>
 
@@ -555,10 +563,10 @@ function DashboardContent() {
                                         <div className="flex-1 min-w-0">
                                             <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                                 <MessageSquareText className="w-3.5 h-3.5" />
-                                                What should the influencer say? <span className="text-muted-foreground/50">(10s video)</span>
+                                                Custom script <span className="text-muted-foreground/40 text-[10px]">(optional — AI writes it if left empty)</span>
                                             </label>
                                             <textarea
-                                                placeholder="E.g.: Hey! I'm sitting in this café and I want to tell you about an amazing fitness app. Working out has never been easier!"
+                                                placeholder="Leave empty for AI-generated script, or write your own: e.g. 'Hey! Let me tell you about this amazing app...'"
                                                 value={quickScript}
                                                 onChange={(e) => setQuickScript(e.target.value)}
                                                 disabled={isQuickCreating}
@@ -571,7 +579,7 @@ function DashboardContent() {
                                         <div className="shrink-0 flex items-end">
                                             <Button
                                                 onClick={handleQuickVideo}
-                                                disabled={!quickScript.trim() || !quickSector || isQuickCreating}
+                                                disabled={!quickSector || isQuickCreating}
                                                 className="h-[72px] px-8 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex items-center gap-2 w-full lg:w-auto"
                                             >
                                                 {isQuickCreating ? (
