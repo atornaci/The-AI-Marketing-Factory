@@ -32,13 +32,13 @@ interface VoiceEntry {
     gender: Gender
 }
 
-// ─── Optimized Voice Settings (User Specification) ────────
-// These settings ensure natural-sounding speech across all languages
+// ─── Optimized Voice Settings (Natural Sounding) ────────
+// Tuned for expressive, natural-sounding influencer narration
 const NATURAL_VOICE_SETTINGS: VoiceSettings = {
-    stability: 0.45,          // Prevents robotic tone
-    similarity_boost: 0.8,    // Stays true to voice character
-    style: 0.25,              // Adds natural inflection
-    use_speaker_boost: true,  // Enhances clarity
+    stability: 0.35,          // Lower = more expressive, less monotone
+    similarity_boost: 0.85,   // High fidelity to original voice character
+    style: 0.45,              // Higher = more natural inflection & emotion
+    use_speaker_boost: true,  // Enhances clarity & presence
 }
 
 // ─── Global Voice Library ─────────────────────────────────
@@ -205,7 +205,7 @@ class ElevenLabsService {
         const finalSettings = { ...NATURAL_VOICE_SETTINGS, ...settings }
 
         const response = await fetch(
-            `${ELEVENLABS_API_BASE}/text-to-speech/${voiceId}`,
+            `${ELEVENLABS_API_BASE}/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
             {
                 method: 'POST',
                 headers: {
