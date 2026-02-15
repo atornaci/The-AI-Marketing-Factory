@@ -1479,19 +1479,19 @@ function ProjectDetailPageInner({
                                                         key: "instagram" as const,
                                                         label: "Instagram",
                                                         img: "/images/platforms/instagram.png",
-                                                        desc: "Reels (60s)",
+                                                        desc: "Reels (10s)",
                                                     },
                                                     {
                                                         key: "tiktok" as const,
                                                         label: "TikTok",
                                                         img: "/images/platforms/tiktok.png",
-                                                        desc: "Short (60s)",
+                                                        desc: "Short (10s)",
                                                     },
                                                     {
                                                         key: "youtube" as const,
                                                         label: "YouTube",
                                                         img: "/images/platforms/youtube.png",
-                                                        desc: "Shorts (60s)",
+                                                        desc: "Shorts (10s)",
                                                     },
                                                 ]
                                             ).map((platform) => (
@@ -1660,9 +1660,9 @@ function ProjectDetailPageInner({
 
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
                                         {([
-                                            { key: "instagram" as const, label: "Instagram", img: "/images/platforms/instagram.png", desc: "Reels (60s)" },
-                                            { key: "tiktok" as const, label: "TikTok", img: "/images/platforms/tiktok.png", desc: "Short (60s)" },
-                                            { key: "youtube" as const, label: "YouTube", img: "/images/platforms/youtube.png", desc: "Shorts (60s)" },
+                                            { key: "instagram" as const, label: "Instagram", img: "/images/platforms/instagram.png", desc: "Reels (10s)" },
+                                            { key: "tiktok" as const, label: "TikTok", img: "/images/platforms/tiktok.png", desc: "Short (10s)" },
+                                            { key: "youtube" as const, label: "YouTube", img: "/images/platforms/youtube.png", desc: "Shorts (10s)" },
                                         ]).map((platform) => (
                                             <button
                                                 key={platform.key}
