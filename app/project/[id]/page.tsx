@@ -813,13 +813,7 @@ function ProjectDetailPageInner({
                                         </span>
                                     )}
                                 </TabsTrigger>
-                                <TabsTrigger
-                                    value="assets"
-                                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm"
-                                >
-                                    <ImageIcon className="w-4 h-4 mr-1.5" />
-                                    Görseller
-                                </TabsTrigger>
+
                             </TabsList>
                         </motion.div>
 
@@ -2226,109 +2220,8 @@ function ProjectDetailPageInner({
                             )}
                         </TabsContent>
 
-                        {/* ═══ ASSETS TAB ═══ */}
-                        <TabsContent value="assets" className="space-y-6">
-                            {/* ═══ ÜRÜN YÜKLEMESİ ═══ */}
-                            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                                <div className="p-6 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-teal-500/5">
-                                    <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
-                                        <Upload className="w-5 h-5 text-emerald-500" />
-                                        Ürün Görselleri
-                                    </h3>
-
-                                    {/* Upload Area */}
-                                    <label className="block mb-4 cursor-pointer">
-                                        <div className="p-6 rounded-xl border-2 border-dashed border-emerald-300/30 hover:border-emerald-400/50 bg-emerald-500/5 text-center transition-all hover:bg-emerald-500/10">
-                                            <Upload className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-                                            <p className="text-sm font-medium">Ürün fotoğraflarını sürükleyin veya tıklayın</p>
-                                            <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP — Maks. 10MB</p>
-                                        </div>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            className="hidden"
-                                            onChange={(e) => handleProductUpload(e.target.files)}
-                                            disabled={isUploadingProduct}
-                                        />
-                                    </label>
-
-                                    {/* Upload Progress */}
-                                    {isUploadingProduct && (
-                                        <div className="mb-4">
-                                            <div className="flex items-center gap-2 text-sm mb-1">
-                                                <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
-                                                <span>Yükleniyor... %{uploadProgress}</span>
-                                            </div>
-                                            <Progress value={uploadProgress} className="h-1.5" />
-                                        </div>
-                                    )}
-
-                                    {/* Product Grid */}
-                                    {productAssets.length > 0 ? (
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                                            {productAssets.map((asset) => {
-                                                const { data } = supabase.storage.from("project-assets").getPublicUrl(asset.file_path);
-                                                return (
-                                                    <div key={asset.id} className="relative group rounded-xl overflow-hidden border border-border/50 bg-background">
-                                                        <img
-                                                            src={data.publicUrl}
-                                                            alt={asset.file_name || "Ürün"}
-                                                            className="w-full aspect-square object-cover"
-                                                        />
-                                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                            <button
-                                                                onClick={() => handleDeleteProduct(asset)}
-                                                                className="p-2 rounded-full bg-red-500/80 text-white hover:bg-red-600 transition-colors"
-                                                                title="Sil"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                        <p className="text-[10px] text-muted-foreground truncate px-2 py-1">{asset.file_name || "Ürün"}</p>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <p className="text-xs text-muted-foreground text-center py-2">
-                                            Henüz ürün görseli yüklenmedi. Yüklenen ürünler video üretiminde kullanılacak.
-                                        </p>
-                                    )}
-                                </div>
-                            </motion.div>
-
-
-
-                            {/* ═══ SCREENSHOTS (eski) ═══ */}
-                            {screenshots.length > 0 && (
-                                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
-                                    <h3 className="text-base font-semibold mb-4">Ekran Görüntüleri</h3>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        {screenshots.map((ss, index) => (
-                                            <motion.div
-                                                key={ss.id}
-                                                initial={{ opacity: 0, y: 16 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.3, delay: index * 0.05 }}
-                                            >
-                                                <div className="rounded-2xl border border-border/50 bg-background/50 overflow-hidden group hover:border-violet-300/50 transition-all cursor-pointer">
-                                                    <div className="aspect-[16/10] bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center">
-                                                        <ImageIcon className="w-8 h-8 text-muted-foreground/30 group-hover:text-violet-500/50 transition-colors" />
-                                                    </div>
-                                                    <div className="p-3">
-                                                        <p className="text-xs font-medium truncate">
-                                                            {ss.original_filename || "Screenshot"}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </TabsContent>
                     </Tabs>
+
                 </motion.div >
             </main >
         </div >
