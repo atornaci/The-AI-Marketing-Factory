@@ -5,7 +5,7 @@
 // =========================================
 
 import { abacusAI } from '@/lib/services/abacus-ai'
-import { elevenLabs } from '@/lib/services/elevenlabs'
+import * as klingAI from '@/lib/services/kling-ai'
 import { captureWebsite, uploadScreenshot, scrapeWebsiteInfo, uploadMediaToStorage } from '@/lib/services/screenshot'
 import type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile } from '@/lib/services/abacus-ai'
 import type { Storyboard } from '@/lib/types/storyboard'
@@ -120,22 +120,20 @@ export async function createInfluencer(
     report('Generating influencer photo...')
     const avatarUrl = await abacusAI.generateInfluencerAvatar(profile, constitution.visualDna)
 
-    // Step 3: Select appropriate voice
-    report('Selecting brand voice...')
-    const voices = await elevenLabs.getRecommendedVoices(constitution.brandVoice)
-    const selectedVoice = voices[0] // Select best match
+    // Step 3: Voice ID no longer needed (Kling AI handles audio natively)
+    // Kept in the return type for backward compatibility
 
     return {
         influencerId: '', // Will be set by API route
         profile,
-        voiceId: selectedVoice?.voice_id || '',
-        voiceName: selectedVoice?.name || 'Default Voice',
+        voiceId: '',
+        voiceName: 'Kling AI Native',
         avatarUrl,
     }
 }
 
 // =========================================
-// Phase 3: Video Generation
+// Phase 3: Video Generation (Kling AI + Master Prompt)
 // =========================================
 export async function generateVideo(
     analysis: ProjectAnalysis,
@@ -164,7 +162,7 @@ export async function generateVideo(
         console.warn('[Workflow] ⚠️ Hook/Storyboard generation failed, continuing with script:', error)
     }
 
-    // Step 1: Generate script
+    // Step 1: Generate script (kept as fallback / metadata)
     report('Writing viral video script...')
     let script: VideoScript
     try {
@@ -172,7 +170,6 @@ export async function generateVideo(
         console.log(`[Workflow] ✅ Script generated: "${script.title}"`)
     } catch (error) {
         console.error('[Workflow] ❌ Script generation failed:', error)
-        // Provide a fallback script so pipeline can continue
         script = {
             title: `${analysis.name} - ${platform} Ad`,
             hook: `Discover ${analysis.name}!`,
@@ -180,62 +177,145 @@ export async function generateVideo(
             fullScript: `${analysis.name}: ${analysis.valueProposition || analysis.description}`,
             cta: 'Try it now!',
             hashtags: [analysis.name.replace(/\s+/g, ''), platform, 'ai'],
-            estimatedDuration: 30,
+            estimatedDuration: 10,
         }
     }
 
-    // Step 2: Generate narration audio (only if voiceId is available)
-    let audioBuffer: ArrayBuffer | null = null
-    if (voiceId && voiceId.trim().length > 0) {
-        report('Generating AI voice narration...')
-        try {
-            audioBuffer = await elevenLabs.generateSpeech(script.fullScript, voiceId)
-            console.log(`[Workflow] ✅ Audio generated (${audioBuffer.byteLength} bytes)`)
-        } catch (error) {
-            console.error('[Workflow] ❌ Audio generation failed:', error)
+    // Step 2: Generate Master Prompt via Claude (Creative Director)
+    report('🎬 Master Prompt: Claude is designing your video...')
+    let masterPrompt: klingAI.MasterPromptOutput | null = null
+    try {
+        const vp = influencerProfile?.visualProfile as Record<string, string> | undefined
+        const persona = (influencerProfile?.appearanceDescription as string)
+            || `${vp?.gender === 'male' ? 'Man' : 'Woman'}, ${vp?.ageRange || '28'}, ${vp?.style || 'professional'}`
+
+        // Fetch previous themes from the script title to avoid repetition
+        const previousThemes = storyboard?.scenes?.map(s =>
+            (s as unknown as Record<string, unknown>).visualDescription as string
+        ).filter(Boolean) || []
+
+        const masterPromptInput: klingAI.MasterPromptInput = {
+            projectName: analysis.name || '',
+            projectType: analysis.category || analysis.industry || '',
+            projectDescription: analysis.description || analysis.valueProposition || '',
+            targetAudience: (analysis as Record<string, unknown>).targetAudience as string || 'General audience',
+            desiredVideoMood: constitution?.brandPersona || 'Professional and engaging',
+            influencerBasePersona: persona,
+            previousVideoThemes: previousThemes,
+            uniqueSellingPoints: (analysis as Record<string, unknown>).uniqueFeatures as string[]
+                || [analysis.valueProposition || ''].filter(Boolean),
+            platform: platform,
+            language: 'Turkish',
         }
-    } else {
-        console.log('[Workflow] ⚠️ No voice ID provided, skipping audio generation')
+
+        // Call Claude to generate the Master Prompt
+        const systemRole = klingAI.buildMasterPromptSystemRole()
+        const userInput = klingAI.buildMasterPromptUserInput(masterPromptInput)
+        const claudeResponse = await abacusAI.chatCompletion(systemRole, userInput, 'creative')
+        masterPrompt = klingAI.parseMasterPromptResponse(claudeResponse)
+
+        console.log(`[Workflow] ✅ Master Prompt generated:`)
+        console.log(`[Workflow]   Theme: ${masterPrompt.themeTag}`)
+        console.log(`[Workflow]   Video prompt: ${masterPrompt.videoPrompt.substring(0, 100)}...`)
+        console.log(`[Workflow]   Script: ${masterPrompt.videoScript.substring(0, 100)}...`)
+    } catch (error) {
+        console.error('[Workflow] ❌ Master Prompt generation failed, using fallback:', error)
     }
 
-    // Step 3: Upload audio to Supabase Storage
-    let audioUrl = ''
-    if (audioBuffer && audioBuffer.byteLength > 0) {
-        report('Uploading narration audio...')
-        try {
-            audioUrl = await uploadMediaToStorage(
-                Buffer.from(audioBuffer),
-                projectId,
-                `narration-${platform}-${Date.now()}.mp3`,
-                'audio/mpeg'
-            )
-            console.log(`[Workflow] ✅ Audio uploaded: ${audioUrl}`)
-        } catch (error) {
-            console.error('[Workflow] ❌ Audio upload failed:', error)
-        }
+    // Determine final prompt and script
+    const finalVideoPrompt = masterPrompt?.videoPrompt || script.fullScript
+    const finalNegativePrompt = masterPrompt?.negativePrompt
+        || 'cartoon, 3d render, anime, blurry, distorted, low quality, glitch, extra fingers, CGI, plastic skin'
+    const finalScript = masterPrompt?.videoScript || script.fullScript
+
+    // Update script with master prompt output
+    if (masterPrompt) {
+        script.fullScript = finalScript
+        script.hook = finalScript.split('|')[0]?.trim() || script.hook
     }
 
-    // Step 4: Generate video with AI influencer
-    report('Rendering video with AI influencer...')
+    // Step 3: Generate video with Kling AI
+    report('🎥 Kling AI: Generating realistic video with audio...')
     let videoUrl = ''
     let thumbnailUrl = ''
+
+    // Platform-specific settings
+    const aspectRatio = platform === 'linkedin' ? '16:9' as const : '9:16' as const
+
     try {
-        const videoResult = await abacusAI.generateVideo({
-            script: script.fullScript,
-            audioUrl,
-            influencerProfile,
-            screenshotUrls,
-            platform,
-            visualDna: constitution?.visualDna,
-            brandPersona: constitution?.brandPersona,
-            brandColors: constitution?.visualGuidelines?.colorPalette?.join(', '),
-            scenes: storyboard?.scenes,
+        const videoResult = await klingAI.generateVideo({
+            prompt: `${finalVideoPrompt}\n\nDIALOGUE (spoken by the person in the video, in Turkish):\n"${finalScript}"`,
+            negativePrompt: finalNegativePrompt,
+            duration: 10,
+            aspectRatio: aspectRatio,
+            avatarUrl: (influencerProfile?.avatarUrl as string) || '',
+            model: 'kling-v2-1',
+            mode: 'pro',
+            cfgScale: 0.5,
         })
+
         videoUrl = videoResult.videoUrl
-        thumbnailUrl = videoResult.thumbnailUrl
-        console.log(`[Workflow] ✅ Video generation complete. URL: ${videoUrl || '(pending)'}`)
+        console.log(`[Workflow] ✅ Kling AI video ready: ${videoUrl}`)
+
+        // Upload Kling video to Supabase for permanent storage
+        if (videoUrl) {
+            report('Uploading video to storage...')
+            try {
+                const videoResponse = await fetch(videoUrl)
+                if (videoResponse.ok) {
+                    const videoBuffer = Buffer.from(await videoResponse.arrayBuffer())
+                    const uploadedUrl = await uploadMediaToStorage(
+                        videoBuffer,
+                        projectId,
+                        `video-${platform}-${Date.now()}.mp4`,
+                        'video/mp4'
+                    )
+                    if (uploadedUrl) {
+                        videoUrl = uploadedUrl
+                        console.log(`[Workflow] ✅ Video uploaded to Supabase: ${videoUrl}`)
+                    }
+                }
+            } catch (uploadError) {
+                console.error('[Workflow] ⚠️ Video upload failed, using Kling URL directly:', uploadError)
+            }
+        }
     } catch (error) {
-        console.error('[Workflow] ❌ Video generation failed:', error)
+        console.error('[Workflow] ❌ Kling AI video generation failed:', error)
+
+        // Fallback: try fal.ai minimax as backup
+        console.log('[Workflow] Attempting fal.ai fallback...')
+        try {
+            const fallbackResult = await abacusAI.generateVideo({
+                script: script.fullScript,
+                audioUrl: '',
+                influencerProfile,
+                screenshotUrls,
+                platform,
+                visualDna: constitution?.visualDna,
+                brandPersona: constitution?.brandPersona,
+                brandColors: constitution?.visualGuidelines?.colorPalette?.join(', '),
+                scenes: storyboard?.scenes,
+                avatarUrl: (influencerProfile?.avatarUrl as string) || '',
+            })
+            videoUrl = fallbackResult.videoUrl
+            thumbnailUrl = fallbackResult.thumbnailUrl
+            console.log(`[Workflow] ✅ Fallback video: ${videoUrl || '(none)'}`)
+        } catch (fallbackError) {
+            console.error('[Workflow] ❌ Fallback also failed:', fallbackError)
+        }
+    }
+
+    // Step 4: Generate thumbnail (using Master Prompt image prompt if available)
+    if (!thumbnailUrl && masterPrompt?.imagePrompt) {
+        report('Generating thumbnail...')
+        try {
+            thumbnailUrl = await abacusAI.generateVideoThumbnail(
+                masterPrompt.imagePrompt,
+                masterPrompt.videoPrompt.substring(0, 200),
+                platform,
+                constitution?.visualDna
+            )
+        } catch { /* ignore thumbnail errors */ }
     }
 
     return {

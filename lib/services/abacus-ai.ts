@@ -15,7 +15,7 @@ const DEFAULT_MODEL = 'anthropic/claude-3.5-haiku' // Fast & cost-effective
 const MODELS = {
     default: 'anthropic/claude-3.5-haiku',
     analysis: 'openai/gpt-4o-mini',                   // Better structured analysis & reasoning
-    creative: 'anthropic/claude-sonnet-4-20250514',    // Better creative writing & storytelling
+    creative: 'anthropic/claude-sonnet-4',              // Better creative writing & storytelling
 } as const
 
 // Universal negative prompt pool — appended to every fal.ai image/video request
@@ -69,6 +69,9 @@ interface ProjectAnalysis {
     competitors: string[]
     brandTone: string
     keywords: string[]
+    category?: string
+    industry?: string
+    [key: string]: unknown
 }
 
 interface MarketingConstitution {
@@ -112,6 +115,14 @@ class AIService {
 
     constructor() {
         this.apiKey = process.env.OPENROUTER_API_KEY || ''
+    }
+
+    /**
+     * Public chat completion method — wraps callLLM for external use
+     * Used by Master Prompt Generator to call Claude as Creative Director
+     */
+    async chatCompletion(systemPrompt: string, userPrompt: string, modelType: keyof typeof MODELS = 'default'): Promise<string> {
+        return this.callLLM(userPrompt, systemPrompt, MODELS[modelType])
     }
 
     private async callLLM(prompt: string, systemPrompt?: string, preferredModel?: string, maxTokens?: number): Promise<string> {
@@ -305,32 +316,32 @@ Respond ONLY with valid JSON.`
         const lang = LANGUAGE_PROMPTS[language]
         const platformSpecs = {
             instagram: {
-                maxDuration: 60,
-                style: 'Samimi, duygusal, görsel ağırlıklı, trend',
+                maxDuration: 6,
+                style: 'Tek cümlelik vurucu, merak uyandıran',
                 format: 'Reels',
-                tone: 'Arkadaşına anlatır gibi, enerjik ve samimi',
-                storyStyle: 'Kısa, vurucu bir kişisel deneyim hikayesi. Sorunu yaşa → çözümü keşfet → sonucu göster.',
+                tone: 'Samimi, heyecanlı, kısa',
+                storyStyle: 'Tek güçlü cümle. Hook + değer önerisi.',
             },
             tiktok: {
-                maxDuration: 60,
-                style: 'Hızlı, otantik, viral, dikkat çekici',
+                maxDuration: 6,
+                style: 'Viral, dikkat çekici, tek nefeste',
                 format: 'Short-form',
-                tone: 'Doğal, spontan, samimi - sanki arkadaşına mesaj atıyor gibi',
-                storyStyle: '"Ben de aynı sorunla boğuşuyordum..." diye başlayan, merak uyandıran bir mini hikaye. Sonunda çene düşüren bir sonuç.',
+                tone: 'Doğal, spontan, enerjik',
+                storyStyle: 'Tek vurucu cümle — durdurucu ve merak uyandırıcı.',
             },
             linkedin: {
-                maxDuration: 120,
-                style: 'Profesyonel ama insani, düşünce liderliği',
+                maxDuration: 6,
+                style: 'Profesyonel, özlü, etkileyici',
                 format: 'Professional video',
-                tone: 'Deneyim paylaşan bir meslektaş gibi - otoriter ama samimi',
-                storyStyle: 'Profesyonel bir zorlukla başla → çözüm arayışını anlat → keşfi paylaş → somut sonuçları göster. Veri ve kişisel deneyimi harmanla.',
+                tone: 'Güvenilir ve net',
+                storyStyle: 'Tek profesyonel mesaj — sorun + çözüm önerisi.',
             },
             youtube: {
-                maxDuration: 60,
-                style: 'Hızlı, enerjik, eğlenceli, YouTube Shorts viral formatı',
+                maxDuration: 6,
+                style: 'Enerjik, merak uyandıran',
                 format: 'YouTube Shorts',
-                tone: 'Enerjik, samimi, heyecanlı - sanki keşif paylaşıyormuş gibi',
-                storyStyle: '\"Bunu bilmiyordunuz ama...\" veya \"3 saniyede hayatınız değişecek\" gibi merak uyandıran bir açılış. Hızlı kesimler, dinamik geçişler.',
+                tone: 'Heyecanlı, samimi',
+                storyStyle: 'Tek vurucu hook — izleyiciyi durduran mini mesaj.',
             },
         }
 
@@ -340,10 +351,47 @@ Respond ONLY with valid JSON.`
         const painPoints = analysis.targetAudience.painPoints.join(', ')
         const demographics = analysis.targetAudience.demographics.join(', ')
 
+        // ═══ SCRIPT VARIETY: Random story angle for unique scripts each time ═══
+        const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+
+        const storyAngles = [
+            'Kendi yaşadığın bir problemi ve çözümünü anlat - kişisel deneyim odaklı',
+            'Bir arkadaşının sorunu çözdüğün bir anıyı anlat - sosyal kanıt odaklı',
+            'Eskiden nasıl yapıyordun vs şimdi nasıl yapıyorsun - karşılaştırma odaklı',
+            'İlk kullandığında yaşadığın şaşkınlığı anlat - keşif anı odaklı',
+            'Rakip ürünleri deneyip hayal kırıklığına uğradıktan sonraki bulma hikayesi',
+            'Bir gün boyunca bu uygulamayla neler başardığını anlat - günlük hayat odaklı',
+            'Bu uygulamanın en bilinmeyen ama en güçlü özelliğini paylaş - gizli özellik odaklı',
+            'Konuya şüpheci başla, sonra ikna ol - samimi dönüşüm hikayesi',
+        ]
+
+        const hookStyles = [
+            'Şok edici bir istatistikle başla',
+            'Bir soruyla başla: "Hiç ... yaşadınız mı?"',
+            'Bir itirafla başla: "İtiraf etmeliyim ki..."',
+            'Bir meydan okumayla başla: "Bunu 30 saniyede yapabileceğinize inanmazsınız"',
+            'Bir sırla başla: "Size hiç kimsenin söylemediği bir şey var..."',
+            'Son sonuçla başla ve geriye doğru anlat',
+            'Popüler bir yanlış inançla başla ve çürüt',
+            'Espriyle başla ve sonra ciddiye dön',
+        ]
+
+        const selectedAngle = pick(storyAngles)
+        const selectedHook = pick(hookStyles)
+        const uniqueSeed = Math.random().toString(36).substring(2, 8)
+        console.log(`[Script] 🎭 Variety: Angle="${selectedAngle.substring(0, 40)}...", Hook="${selectedHook.substring(0, 30)}...", Seed=${uniqueSeed}`)
+
         const prompt = `
 Sen bir AI influencer'sın ve ${analysis.name} uygulamasını gerçekten kullanıp seven biri gibi davranıyorsun.
 
 GÖREV: ${platform.toUpperCase()} için SAMİMİ BİR HİKAYE ANLAT. Bu bir reklam değil, bu senin GERÇEK DENEYİMİN.
+
+⚠️ ÖNEMLİ - BENZERSİZLİK KURALI:
+Bu script TAMAMEN FARKLI ve ÖZGÜN olmalı. Daha önce üretilmiş hiçbir scripte benzememeli.
+- Hikaye açısı: ${selectedAngle}
+- Hook tarzı: ${selectedHook}
+- Benzersizlik kodu: ${uniqueSeed}
+Her seferinde farklı detaylar, farklı örnekler ve farklı bir bakış açısı kullan.
 
 === UYGULAMA BİLGİLERİ ===
 Uygulama: ${analysis.name}
@@ -353,70 +401,37 @@ Hedef kitle: ${demographics}
 Hedef kitlenin sorunları: ${painPoints}
 Marka sesi: ${constitution.brandVoice}
 
-=== HİKAYE YAPISI (ZORUNLU) ===
-Videoyu şu hikaye akışıyla oluştur:
+=== 6 SANİYE KURALI (ÇOK ÖNEMLİ) ===
+Video SADECE 6 SANİYE. Script bu süreye SIĞMALI.
+- Maksimum 15-20 kelime.
+- TEK BİR GÜÇLÜ CÜMLE yaz.
+- Bu cümle hem sorunu, hem çözümü, hem de merak uyandıran bir hook içermeli.
+- Sanki TikTok'ta scroll ederken durduracak tek bir cümle.
 
-1. 🎣 HOOK (İlk 3 saniye - DURDURUCU):
-   - Kişisel bir sorunla başla. "Geçen hafta..." veya "Biliyor musunuz..." ile değil,
-   - Şok edici bir itiraf veya soru ile: "Saatlerce uğraştığım şey 30 saniyede halloldu." gibi.
-   - İzleyici "nasıl?!" diye merak etmeli.
-
-2. 😤 SORUN (Empati kurma - 10 saniye):
-   - Hedef kitlenin EN BÜYÜK acı noktasını KENDİ DENEYİMİN olarak anlat.
-   - Duyguları göster: sinir, hayal kırıklığı, umutsuzluk.
-   - İzleyici "evet, ben de aynısını yaşıyorum!" demeli.
-
-3. 💡 KEŞİF ANI (Dönüm noktası - 10 saniye):
-   - ${analysis.name}'ı nasıl keşfettiğini anlat.
-   - "Bir arkadaşım önerdi" veya "internette rastladım" gibi doğal bir keşif hikayesi.
-   - İlk izlenimini paylaş - şüpheciydin belki?
-
-4. 🎬 DEMO / GÖSTER (Uygulamayı gösterme - 15-20 saniye):
-   - Uygulamanın ekran görüntülerini gösterirken konuş.
-   - "Bakın, burada şunu yapıyorsunuz..." diye adım adım göster.
-   - Kolaylığına ve hızına vurgu yap.
-   - Spesifik özellikleri göster, genel konuşma.
-
-5. 🎉 SONUÇ / DÖNÜŞÜM (Mutluluk - 10 saniye):
-   - Uygulamayı kullandıktan sonra hayatının nasıl değiştiğini anlat.
-   - Somut bir sonuç ver: "İlk hafta 3 teklif aldım" gibi.
-   - Duygusal kapanış: "Keşke daha önce keşfetseydim."
-
-6. 📢 CTA (Eylem çağrısı - 5 saniye):
-   - Doğal ve samimi bir tavsiye: "Ciddi ciddi deneyin" gibi, "Hemen indirin!" gibi bağırmadan.
-   - Bağlantıyı bio'da veya yorumda bulabileceklerini söyle.
-
-=== PLATFORM KURALLARI ===
+=== PLATFORM ===
 - Platform: ${platform.toUpperCase()} ${spec.format}
-- Maksimum süre: ${spec.maxDuration} saniye
+- Süre: ${spec.maxDuration} saniye (SADECE 6 SANİYE!)
 - Ton: ${spec.tone}
-- Hikaye tarzı: ${spec.storyStyle}
+- Stil: ${spec.storyStyle}
 
 === KRİTİK KURALLAR ===
 - ${lang.instruction}
-- LANGUAGE: Write the ENTIRE script in ${lang.name} (${lang.adLang}). Every word must be in ${lang.name}.
-- No ad-speak. Everything must be in 1st person perspective.
-- Be genuine, not fake. Add realistic details.
-- Describe the target audience's problems as your own.
-- Mark app screenshot moments with "[SCREEN: description]".
-- Clear emotional transitions: frustration → curiosity → surprise → happiness.
+- LANGUAGE: ${lang.name} (${lang.adLang}). Her kelime ${lang.name} olmalı.
+- 1. şahıs perspektifi. Samimi ve doğal.
+- KISA TUT. 15-20 kelimeyi ASLA geçme.
+- Uzun hikaye YAZMA. Tek vurucu cümle.
 
 JSON formatında yanıt ver:
 {
-  "title": "Video title in ${lang.name} (attention-grabbing)",
-  "hook": "Opening 3-second hook in ${lang.name}",
-  "body": "Main story body in ${lang.name} (problem → discovery → demo → transformation)",
-  "cta": "Genuine call to action in ${lang.name}",
-  "fullScript": "Complete script in ${lang.name}. All sections included. Stage directions in parentheses. [SCREEN: ...] notes included.",
-  "hashtags": ["relevant", "hashtags", "5-8 items"],
-  "estimatedDuration": ${Math.min(spec.maxDuration, 55)},
+  "title": "Video başlığı ${lang.name} (dikkat çekici)",
+  "hook": "6 saniyelik tek vurucu cümle ${lang.name}",
+  "body": "",
+  "cta": "",
+  "fullScript": "6 saniyeye sığan TEK CÜMLE. Parantez içi yönerge YOK. Maksimum 15-20 kelime. Sadece konuşma metni.",
+  "hashtags": ["relevant", "hashtags", "5 items"],
+  "estimatedDuration": 6,
   "storyBeats": [
-    {"timestamp": "0:00-0:03", "beat": "HOOK", "emotion": "curiosity/shock"},
-    {"timestamp": "0:03-0:13", "beat": "PROBLEM", "emotion": "empathy"},
-    {"timestamp": "0:13-0:23", "beat": "DISCOVERY", "emotion": "hope"},
-    {"timestamp": "0:23-0:43", "beat": "DEMO", "emotion": "excitement"},
-    {"timestamp": "0:43-0:53", "beat": "TRANSFORMATION", "emotion": "happiness"},
-    {"timestamp": "0:53-0:${Math.min(spec.maxDuration, 60)}", "beat": "CTA", "emotion": "sincerity"}
+    {"timestamp": "0:00-0:06", "beat": "HOOK+CTA", "emotion": "impact"}
   ]
 }
 
@@ -431,16 +446,16 @@ IMPORTANT: Always respond in ${lang.name} (${lang.adLang}). Every single word of
         try {
             return JSON.parse(result)
         } catch {
-            // Samimi bir fallback hikaye oluştur
+            // 6 saniyelik kısa fallback
             const painPoint = analysis.targetAudience.painPoints[0] || 'bir sorunu çözmek'
             return {
-                title: `${analysis.name} hayatımı değiştirdi — ciddi söylüyorum`,
-                hook: `${painPoint} yüzünden saatlerce uğraşıyordum. Ta ki bunu keşfedene kadar...`,
-                body: `Hepimiz biliyoruz o duyguyu — ${painPoint}. Ben de aynı durumdalydım. Sonra ${analysis.name}'ı keşfettim. ${analysis.valueProposition}. İlk denediğimde inanamadım, gerçekten bu kadar kolay mıydı?`,
-                cta: `Eğer siz de aynı sorunla uğraşıyorsanız, ${analysis.name}'a bir şans verin. Link bio'da. Ciddi söylüyorum, keşke daha önce bilseydim.`,
-                fullScript: `${painPoint} yüzünden saatlerce uğraşıyordum. Ta ki bunu keşfedene kadar... Hepimiz biliyoruz o duyguyu — ${painPoint}. Ben de tam olarak aynı durumdalydım. Her seferinde aynı hayal kırıklığı. Sonra bir gün ${analysis.name}'ı keşfettim. [EKRAN: Ana sayfa gösteriliyor] ${analysis.valueProposition}. İlk denediğimde inanamadım — gerçekten bu kadar kolay mıydı? [EKRAN: Uygulama kullanım gösterimi] Ve sonuç? İlk haftada farkı gördüm. Eğer siz de aynı sorunla uğraşıyorsanız, ${analysis.name}'a bir şans verin. Link bio'da. Ciddi söylüyorum, keşke daha önce bilseydim.`,
-                hashtags: [`#${analysis.name?.replace(/\s/g, '')}`, '#hayatıkolaylaştır', '#tavsiye', '#deneyim', '#teknoloji'],
-                estimatedDuration: 45,
+                title: `${analysis.name} ile tanışın`,
+                hook: `${painPoint} için saatlerce uğraşmayı bırakın — ${analysis.name} bunu saniyede çözüyor.`,
+                body: '',
+                cta: '',
+                fullScript: `${painPoint} için saatlerce uğraşmayı bırakın — ${analysis.name} bunu saniyede çözüyor.`,
+                hashtags: [`#${analysis.name?.replace(/\s/g, '')}`, '#çözüm', '#tavsiye', '#teknoloji', '#keşfet'],
+                estimatedDuration: 6,
             }
         }
     }
@@ -627,8 +642,10 @@ Respond ONLY with valid JSON.`
         brandPersona?: string
         brandColors?: string
         scenes?: unknown[]
+        avatarUrl?: string
     }): Promise<{ videoUrl: string; thumbnailUrl: string }> {
-        console.log(`[Video] Starting video generation...`)
+        console.log(`[Video] Starting video generation via fal.ai minimax-video...`)
+        console.log(`[Video] Avatar URL: ${params.avatarUrl || 'none (text-only mode)'}`)
         console.log(`[Video] Script: ${params.script.length} chars, platform: ${params.platform}`)
         console.log(`[Video] Audio URL: ${params.audioUrl || 'none'}`)
         console.log(`[Video] Screenshots: ${params.screenshotUrls.length} images`)
@@ -655,16 +672,18 @@ Respond ONLY with valid JSON.`
         )
 
         try {
-            // Method 1: Try ChatLLM video generation endpoint
-            const videoResult = await this.callChatLLMVideoGen(videoPrompt, settings)
+            // Use fal.ai minimax-video for real video generation
+            const videoResult = await this.callFalVideoGen(videoPrompt, params.avatarUrl)
 
             if (videoResult.videoUrl) {
-                console.log(`[Video] ✅ Video generated successfully: ${videoResult.videoUrl}`)
-                return videoResult
+                console.log(`[Video] ✅ Video generated successfully via fal.ai: ${videoResult.videoUrl}`)
+                // Also generate a thumbnail
+                const thumbnailUrl = await this.generateVideoThumbnail(params.script, influencerDesc as string, params.platform, params.visualDna)
+                return { videoUrl: videoResult.videoUrl, thumbnailUrl }
             }
 
-            // Method 2: Fallback — try RouteLLM with image generation for thumbnail
-            console.log(`[Video] ChatLLM video gen returned no URL, generating thumbnail...`)
+            // Fallback: generate just a thumbnail
+            console.log(`[Video] fal.ai video gen returned no URL, generating thumbnail only...`)
             const thumbnailUrl = await this.generateVideoThumbnail(params.script, influencerDesc as string, params.platform, params.visualDna)
 
             return {
@@ -702,7 +721,7 @@ Respond ONLY with valid JSON.`
 
     /**
      * Build a cinematic video generation prompt
-     * Incorporates: character reference, scene-level cinematography, UGC authenticity, Visual DNA
+     * VARIETY SYSTEM: Each call randomly selects different location, outfit, mood, and camera style
      */
     private buildVideoPrompt(
         script: string,
@@ -715,7 +734,6 @@ Respond ONLY with valid JSON.`
         influencerProfile?: Record<string, unknown>,
         scenes?: Array<Record<string, unknown>>
     ): string {
-        // Extract just the spoken parts (remove stage directions in brackets)
         const spokenScript = script
             .replace(/\[.*?\]/g, '')
             .replace(/\(.*?\)/g, '')
@@ -723,15 +741,71 @@ Respond ONLY with valid JSON.`
             .substring(0, 500)
 
         const screenshotContext = screenshotUrls.length > 0
-            ? `\nReference images from the product/app are available. The video should show app screenshots naturally integrated.`
+            ? `\nReference images from the product/app are available.`
             : ''
 
-        // Build character reference for identity consistency
         const characterRef = influencerProfile
             ? this.buildCharacterReference(influencerProfile)
             : `Character: ${influencerDesc}`
 
-        // Build scene-by-scene cinematography breakdown
+        // ═══ VARIETY SYSTEM: Random visual elements ═══
+        const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+
+        const locations = [
+            'modern minimalist apartment with floor-to-ceiling windows, city skyline visible, warm afternoon light',
+            'cozy café with exposed brick walls, warm Edison bulb lighting, coffee steam visible',
+            'bright outdoor terrace with green plants, golden hour sunlight, slight breeze in hair',
+            'sleek modern office with a standing desk, large monitor in background, clean workspace',
+            'trendy rooftop with panoramic city view at sunset, warm orange and purple sky',
+            'home studio setup with ring light, bookshelf and plants in background, cozy vibe',
+            'beachside café with ocean view, tropical plants, natural bright light',
+            'library corner with warm wooden shelves, soft ambient lighting',
+            'modern kitchen with marble countertops, morning sunlight streaming through window',
+            'urban street scene, colorful murals in background, natural daylight',
+            'park bench under a tree, dappled sunlight, peaceful green surroundings',
+            'hotel lobby with luxurious interior, elegant furniture, soft warm lighting',
+        ]
+
+        const outfits = [
+            'wearing a casual chic white t-shirt and light denim jacket, minimal gold jewelry',
+            'in a professional but relaxed outfit: cream blazer over a simple black top',
+            'dressed in a cozy oversized sweater in earth tones, hair in a natural loose style',
+            'wearing a trendy colorful blouse with statement earrings, confident look',
+            'in a smart-casual look: fitted turtleneck and tailored pants, sophisticated vibe',
+            'dressed casually in a hoodie and clean sneakers, relatable everyday look',
+            'wearing a stylish leather jacket over a simple outfit, edgy but approachable',
+            'in a summer dress with a light cardigan, relaxed and friendly appearance',
+            'wearing a professional shirt with rolled-up sleeves, business casual feel',
+            'dressed in athleisure: sleek joggers and a fitted top, energetic vibe',
+        ]
+
+        const moods = [
+            'excited and genuinely surprised, like sharing a secret discovery with a best friend',
+            'calm and thoughtful, like giving honest advice over coffee',
+            'energetic and passionate, like telling an amazing story',
+            'warm and empathetic, like comforting someone who shares the same struggle',
+            'confident and inspiring, like a mentor sharing life-changing wisdom',
+            'playful and humorous, cracking a smile while sharing something cool',
+            'serious then suddenly amazed, showing a genuine transformation moment',
+            'reflective and honest, like a real person sharing a vulnerable moment',
+        ]
+
+        const cameraStyles = [
+            'handheld selfie style, slight natural movement, like a real phone video',
+            'stable tripod shot with subtle zoom-in during key moments',
+            'vlog-style with walking movement, dynamic and engaging',
+            'close-up face shot transitioning to medium shot, intimate and personal',
+            'over-the-shoulder angle showing phone screen, then back to face',
+            'steady medium shot with slow cinematic push-in for emphasis',
+        ]
+
+        const loc = pick(locations)
+        const outfit = pick(outfits)
+        const mood = pick(moods)
+        const cam = pick(cameraStyles)
+
+        console.log(`[Video] Variety: Location="${loc.substring(0, 40)}...", Outfit="${outfit.substring(0, 40)}...", Mood="${mood.substring(0, 40)}..."`)
+
         let sceneBreakdown = ''
         if (scenes && scenes.length > 0) {
             sceneBreakdown = '\n\nSCENE-BY-SCENE BREAKDOWN:\n' + scenes.map(scene => {
@@ -748,159 +822,167 @@ Respond ONLY with valid JSON.`
             }).join('\n')
         }
 
-        // UGC authenticity keywords
         const ugcStr = UGC_AUTHENTICITY_KEYWORDS.slice(0, 6).join(', ')
 
-        return `Create a ${settings.maxDuration}-second marketing video in ${settings.aspectRatio} format.
+        return `Cinematic close-up of a real person speaking to camera for ${settings.maxDuration} seconds. ${settings.aspectRatio} format.
 
 ${characterRef}
-The presenter is speaking directly to the camera in an engaging, authentic way — like a real person sharing a genuine experience.
 
-SCRIPT/STORY:
+SETTING (THIS VIDEO):
+- Location: ${loc}
+- Outfit: ${outfit}
+- Mood: ${mood}
+
+WHAT THE PERSON IS SAYING:
 ${spokenScript}
-${sceneBreakdown}
 
-CINEMATOGRAPHY:
-- Default Lens & DOF: iPhone 15 PRO front-camera (~23mm), deep depth of field, background slightly soft
-- Default Lighting: bright window/light from the side (Rembrandt style), creating crisp exposure on face
-- Framing: centered, medium shot as baseline, close-up for hooks and CTAs
+CINEMATIC REALISM (CRITICAL):
+- Highly realistic, photorealistic human, NOT CGI, NOT 3D render, NOT cartoon, NOT anime
+- Natural skin texture, hyper-detailed pores, subtle facial micro-expressions
+- Soft cinematic rim lighting, shallow depth of field, shot on 35mm lens
+- 4K quality, 60fps, professional color grading
+- Real physical location with natural light and real shadows
 
-UGC AUTHENTICITY:
-${ugcStr}
-The video must look like real creator content — NOT like a corporate ad. Handheld feel, natural expressions, genuine emotion.
-${visualDna ? `\nVISUAL DNA (match this aesthetic): ${visualDna}` : ''}
-${brandPersona ? `\nBRAND PERSONA (match this environment): ${brandPersona}` : ''}
+MOVEMENT (MINIMAL — VERY IMPORTANT):
+- Slow dolly-in camera movement only
+- Gentle head tilt, natural eye blinks, subtle nodding
+- NO fast movements, NO hand gestures, NO body movement
+- The person mostly looks at camera with calm, natural expression
+- Occasional slow blink and slight smile — that's it
+- Think: a talking head video where only lips and eyes move naturally
+
+NEGATIVE (AVOID AT ALL COSTS):
+cartoon, 3d render, anime, blurry, distorted mouth, extra fingers, low quality, glitch, video game, CGI, plastic skin, smooth skin, unnatural eyes, flat lighting, artificial look
+
+${visualDna ? `\nVISUAL DNA: ${visualDna}` : ''}
+${brandPersona ? `\nBRAND PERSONA: ${brandPersona}` : ''}
 ${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}
 ${screenshotContext}`
     }
 
     /**
-     * Call video generation via LLM
+     * Call fal.ai minimax-video queue API for real video generation
+     * Uses submit → poll → get result pattern
      */
-    private async callChatLLMVideoGen(
+    private async callFalVideoGen(
         prompt: string,
-        settings: { aspectRatio: string; maxDuration: number }
-    ): Promise<{ videoUrl: string; thumbnailUrl: string }> {
-        const MAX_RETRIES = 2
-        const TIMEOUT_MS = 180_000 // 3 minutes for video gen
-
-        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
-                const controller = new AbortController()
-                const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
-
-                console.log(`[Video] LLM video attempt ${attempt}/${MAX_RETRIES}...`)
-
-                const response = await fetch(`${API_BASE}/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${this.apiKey}`,
-                    },
-                    body: JSON.stringify({
-                        model: MODELS.creative,
-                        messages: [
-                            { role: 'system', content: 'You are a video production AI. Generate a detailed video production plan.' },
-                            { role: 'user', content: prompt },
-                        ],
-                        max_tokens: 1024,
-                        temperature: 0.7,
-                    }),
-                    signal: controller.signal,
-                })
-
-                clearTimeout(timeoutId)
-
-                if (!response.ok) {
-                    const errorBody = await response.text().catch(() => '')
-                    console.warn(`[Video] LLM attempt ${attempt} failed: ${response.status} — ${errorBody}`)
-
-                    if (response.status >= 500 && attempt < MAX_RETRIES) {
-                        await new Promise(r => setTimeout(r, attempt * 5000))
-                        continue
-                    }
-
-                    // Try alternative endpoint format
-                    return await this.callRouteLLMVideoGen(prompt, settings)
-                }
-
-                const data = await response.json()
-                console.log(`[Video] ChatLLM response keys:`, Object.keys(data))
-
-                // Parse the response — look for video URL in various locations
-                const videoUrl = this.extractVideoUrl(data)
-                const thumbnailUrl = this.extractThumbnailUrl(data)
-
-                return { videoUrl, thumbnailUrl }
-            } catch (error) {
-                const isAbortError = error instanceof Error && error.name === 'AbortError'
-
-                if (isAbortError && attempt < MAX_RETRIES) {
-                    console.warn(`[Video] LLM attempt ${attempt} timed out, retrying...`)
-                    await new Promise(r => setTimeout(r, attempt * 5000))
-                    continue
-                }
-
-                if (attempt === MAX_RETRIES) {
-                    console.warn(`[Video] LLM exhausted, trying fallback...`)
-                    return await this.callRouteLLMVideoGen(prompt, settings)
-                }
-            }
+        avatarUrl?: string,
+    ): Promise<{ videoUrl: string }> {
+        const FAL_KEY = process.env.FAL_KEY || process.env.NEXT_PUBLIC_FAL_KEY || ''
+        if (!FAL_KEY) {
+            console.warn('[Video] No FAL_KEY found, skipping fal.ai video generation')
+            return { videoUrl: '' }
         }
 
-        return { videoUrl: '', thumbnailUrl: '' }
-    }
+        const MAX_POLL_TIME_MS = 480_000 // 8 minutes max wait (minimax can be slow)
+        const POLL_INTERVAL_MS = 5_000   // Poll every 5 seconds
 
-    /**
-     * Fallback: Try using default model for video gen
-     */
-    private async callRouteLLMVideoGen(
-        prompt: string,
-        settings: { aspectRatio: string; maxDuration: number }
-    ): Promise<{ videoUrl: string; thumbnailUrl: string }> {
         try {
-            console.log(`[Video] Trying fallback video generation...`)
+            // Choose model based on whether we have an avatar image
+            // image-to-video: uses avatar as first frame for identity consistency
+            // text-to-video: prompt-only generation (fallback)
+            const useImageToVideo = !!avatarUrl
+            const falModel = useImageToVideo
+                ? 'fal-ai/minimax/video-01-live/image-to-video'
+                : 'fal-ai/minimax-video'
 
-            const response = await fetch(`${API_BASE}/chat/completions`, {
+            // Step 1: Submit the video generation request to fal.ai queue
+            console.log(`[Video] Submitting to fal.ai ${falModel} queue...`)
+            const requestBody: Record<string, unknown> = {
+                prompt: prompt.substring(0, 2000), // fal.ai has prompt limits
+                prompt_optimizer: true,
+            }
+            if (useImageToVideo) {
+                requestBody.image_url = avatarUrl
+                console.log(`[Video] Using influencer avatar as reference frame: ${avatarUrl}`)
+            }
+
+            const submitResponse = await fetch(`https://queue.fal.run/${falModel}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Authorization': `Key ${FAL_KEY}`,
                 },
-                body: JSON.stringify({
-                    model: DEFAULT_MODEL,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: 'You are a video generation AI. Generate a marketing video based on the prompt.',
-                        },
-                        {
-                            role: 'user',
-                            content: prompt,
-                        },
-                    ],
-                    temperature: 0.7,
-                    max_tokens: 1024,
-                    // Video gen settings passed as extra body
-                    video_settings: {
-                        aspect_ratio: settings.aspectRatio,
-                        duration: Math.min(settings.maxDuration, 10),
-                        model: 'kling-ai',
-                    },
-                }),
+                body: JSON.stringify(requestBody),
             })
 
-            if (!response.ok) {
-                console.warn(`[Video] Fallback failed: ${response.status}`)
-                return { videoUrl: '', thumbnailUrl: '' }
+            if (!submitResponse.ok) {
+                const errorText = await submitResponse.text().catch(() => '')
+                console.error(`[Video] fal.ai submit failed: ${submitResponse.status} — ${errorText}`)
+                return { videoUrl: '' }
             }
 
-            const data = await response.json()
-            const videoUrl = this.extractVideoUrl(data)
-            return { videoUrl, thumbnailUrl: '' }
+            const submitData = await submitResponse.json()
+
+            // Check if we got a direct result (synchronous response)
+            if (submitData.video?.url) {
+                console.log(`[Video] fal.ai returned video immediately`)
+                return { videoUrl: submitData.video.url }
+            }
+
+            // Queue response: use status_url and response_url from fal.ai
+            // fal.ai returns simplified URLs that may differ from the full model path
+            const requestId = submitData.request_id
+            const statusUrl = submitData.status_url
+            const responseUrl = submitData.response_url
+            if (!requestId || !statusUrl) {
+                console.warn(`[Video] No request_id or status_url in fal.ai response:`, JSON.stringify(submitData).substring(0, 500))
+                return { videoUrl: '' }
+            }
+
+            console.log(`[Video] fal.ai request queued: ${requestId}`)
+            console.log(`[Video] Status URL: ${statusUrl}`)
+            console.log(`[Video] Response URL: ${responseUrl}`)
+
+            // Step 2: Poll for completion using the status_url from fal.ai
+            const startTime = Date.now()
+            while (Date.now() - startTime < MAX_POLL_TIME_MS) {
+                await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+
+                const statusResponse = await fetch(statusUrl, {
+                    headers: { 'Authorization': `Key ${FAL_KEY}` },
+                })
+
+                if (!statusResponse.ok) {
+                    console.warn(`[Video] Poll status error: ${statusResponse.status}`)
+                    continue
+                }
+
+                const statusData = await statusResponse.json()
+                const elapsed = Math.round((Date.now() - startTime) / 1000)
+                console.log(`[Video] fal.ai status: ${statusData.status} (${elapsed}s elapsed)`)
+
+                if (statusData.status === 'COMPLETED') {
+                    // Step 3: Fetch the result using response_url from fal.ai
+                    const resultResponse = await fetch(responseUrl, {
+                        headers: { 'Authorization': `Key ${FAL_KEY}` },
+                    })
+
+                    if (resultResponse.ok) {
+                        const resultData = await resultResponse.json()
+                        const videoUrl = resultData.video?.url || ''
+                        if (videoUrl) {
+                            console.log(`[Video] ✅ fal.ai video ready: ${videoUrl}`)
+                            return { videoUrl }
+                        }
+                    }
+                    console.warn(`[Video] fal.ai completed but no video URL found`)
+                    return { videoUrl: '' }
+                }
+
+                if (statusData.status === 'FAILED') {
+                    console.error(`[Video] fal.ai generation failed:`, statusData.error)
+                    return { videoUrl: '' }
+                }
+
+                // IN_QUEUE or IN_PROGRESS — keep polling
+            }
+
+            console.warn(`[Video] fal.ai timed out after ${MAX_POLL_TIME_MS / 1000}s`)
+            return { videoUrl: '' }
         } catch (error) {
-            console.warn(`[Video] Fallback error:`, error)
-            return { videoUrl: '', thumbnailUrl: '' }
+            console.error(`[Video] fal.ai error:`, error)
+            return { videoUrl: '' }
         }
     }
 
@@ -973,7 +1055,7 @@ ${screenshotContext}`
     /**
      * Generate a video thumbnail using fal.ai
      */
-    private async generateVideoThumbnail(
+    async generateVideoThumbnail(
         script: string,
         influencerDesc: string,
         platform: string,
