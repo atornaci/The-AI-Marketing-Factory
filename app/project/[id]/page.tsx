@@ -263,24 +263,6 @@ function ProjectDetailPageInner({
     const [isGeneratingAdCopy, setIsGeneratingAdCopy] = useState(false);
     const [copiedAdId, setCopiedAdId] = useState<number | null>(null);
 
-    // Image generation state (Faz 3 + 4)
-    const [imagePrompt, setImagePrompt] = useState("");
-    const [imageType, setImageType] = useState<string>("static_post");
-    const [imagePlatform, setImagePlatform] = useState<string>("instagram");
-    const [withBrandOverlay, setWithBrandOverlay] = useState(true);
-    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-    const [generatedImages, setGeneratedImages] = useState<Array<{
-        id: string;
-        image_type: string;
-        prompt: string;
-        image_url: string;
-        width: number;
-        height: number;
-        platform: string;
-        status: string;
-        created_at: string;
-    }>>([])
-    const [imageFilter, setImageFilter] = useState<string>("all");
 
     /* ─── Fetch project data ─── */
     const fetchData = useCallback(async () => {
@@ -334,18 +316,7 @@ function ProjectDetailPageInner({
 
             setAssets(assetsData || []);
 
-            // Get generated images
-            try {
-                const imgRes = await fetch(`/api/images?projectId=${id}`);
-                if (imgRes.ok) {
-                    const imgData = await imgRes.json();
-                    const imgs = imgData.images;
-                    setGeneratedImages(Array.isArray(imgs) ? imgs : []);
-                }
-            } catch {
-                // generated_images table may not exist yet
-                console.log('Generated images table not available yet');
-            }
+
         } catch (err) {
             console.error("Fetch error:", err);
             setError("Veri yüklenirken hata oluştu");
@@ -2327,239 +2298,7 @@ function ProjectDetailPageInner({
                                 </div>
                             </motion.div>
 
-                            {/* ═══ AI GÖRSEL ÜRETİMİ (Custom Prompt) ═══ */}
-                            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                                <div className="p-6 rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
-                                    <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-violet-500" />
-                                        AI Görsel Üret
-                                    </h3>
 
-                                    {/* Prompt Input */}
-                                    <div className="mb-4">
-                                        <textarea
-                                            value={imagePrompt}
-                                            onChange={(e) => setImagePrompt(e.target.value)}
-                                            placeholder="Nasıl bir görsel istiyorsunuz? Örn: 'Profesyonel bir Instagram post, ürünün avantajlarını gösteren infografik'"
-                                            className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/50 transition-all placeholder:text-muted-foreground/50"
-                                            rows={3}
-                                        />
-                                    </div>
-
-                                    {/* Options Row */}
-                                    <div className="flex flex-wrap gap-3 mb-4">
-                                        {/* Image Type Selector */}
-                                        <select
-                                            value={imageType}
-                                            onChange={(e) => setImageType(e.target.value)}
-                                            className="px-3 py-2 rounded-xl border border-border/50 bg-background/50 text-xs font-medium focus:ring-2 focus:ring-violet-500/30"
-                                        >
-                                            <option value="static_post">📷 Statik Post</option>
-                                            <option value="carousel_slide">🎠 Carousel</option>
-                                            <option value="thumbnail">🖼️ Thumbnail</option>
-                                            <option value="story">📱 Story</option>
-                                            <option value="banner">🏷️ Banner</option>
-                                            <option value="custom">✨ Serbest</option>
-                                        </select>
-
-                                        {/* Platform Selector */}
-                                        <select
-                                            value={imagePlatform}
-                                            onChange={(e) => setImagePlatform(e.target.value)}
-                                            className="px-3 py-2 rounded-xl border border-border/50 bg-background/50 text-xs font-medium focus:ring-2 focus:ring-violet-500/30"
-                                        >
-                                            <option value="instagram">Instagram</option>
-                                            <option value="tiktok">TikTok</option>
-                                            <option value="linkedin">LinkedIn</option>
-                                            <option value="youtube">YouTube</option>
-                                        </select>
-
-                                        {/* Brand Overlay Toggle */}
-                                        <label className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/50 bg-background/50 cursor-pointer text-xs">
-                                            <input
-                                                type="checkbox"
-                                                checked={withBrandOverlay}
-                                                onChange={(e) => setWithBrandOverlay(e.target.checked)}
-                                                className="rounded accent-violet-500"
-                                            />
-                                            <span>Marka Renkleri</span>
-                                        </label>
-                                    </div>
-
-                                    {/* Generate Button */}
-                                    <Button
-                                        disabled={!imagePrompt.trim() || isGeneratingImage}
-                                        onClick={async () => {
-                                            setIsGeneratingImage(true);
-                                            try {
-                                                const res = await fetch('/api/images', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        projectId: id,
-                                                        prompt: imagePrompt,
-                                                        imageType,
-                                                        platform: imagePlatform,
-                                                        withBrandOverlay,
-                                                    }),
-                                                });
-
-                                                if (!res.ok) {
-                                                    const errText = await res.text().catch(() => '');
-                                                    console.error('Image gen API error:', res.status, errText);
-                                                    alert(`Görsel üretme hatası (${res.status}). Lütfen tekrar deneyin.`);
-                                                    return;
-                                                }
-
-                                                const text = await res.text();
-                                                if (!text) {
-                                                    console.error('Image gen: empty response');
-                                                    alert('Görsel üretme yanıtı boş döndü. Lütfen tekrar deneyin.');
-                                                    return;
-                                                }
-
-                                                const data = JSON.parse(text);
-                                                if (data.success && data.image) {
-                                                    setGeneratedImages(prev => [data.image, ...prev]);
-                                                    setImagePrompt("");
-                                                } else {
-                                                    console.error('Image gen failed:', data);
-                                                    alert(data.error || 'Görsel üretilemedi. Lütfen tekrar deneyin.');
-                                                }
-                                            } catch (err) {
-                                                console.error('Image gen error:', err);
-                                                alert('Görsel üretme hatası. Lütfen tekrar deneyin.');
-                                            } finally {
-                                                setIsGeneratingImage(false);
-                                            }
-                                        }}
-                                        className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white rounded-xl px-6 text-sm"
-                                    >
-                                        {isGeneratingImage ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                Üretiliyor...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Sparkles className="w-4 h-4 mr-2" />
-                                                Görsel Üret
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
-                            </motion.div>
-
-                            {/* ═══ FILTER BAR ═══ */}
-                            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    {['all', 'static_post', 'carousel_slide', 'thumbnail', 'story', 'banner', 'custom'].map(filter => (
-                                        <button
-                                            key={filter}
-                                            onClick={() => setImageFilter(filter)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${imageFilter === filter
-                                                ? 'bg-violet-500 text-white'
-                                                : 'bg-background/50 border border-border/50 text-muted-foreground hover:border-violet-300/50'
-                                                }`}
-                                        >
-                                            {filter === 'all' ? 'Tümü' :
-                                                filter === 'static_post' ? '📷 Post' :
-                                                    filter === 'carousel_slide' ? '🎠 Carousel' :
-                                                        filter === 'thumbnail' ? '🖼️ Thumbnail' :
-                                                            filter === 'story' ? '📱 Story' :
-                                                                filter === 'banner' ? '🏷️ Banner' : '✨ Serbest'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </motion.div>
-
-                            {/* ═══ IMAGE GALLERY ═══ */}
-                            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
-                                {(Array.isArray(generatedImages) ? generatedImages : []).filter(img => imageFilter === 'all' || img.image_type === imageFilter).length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {(Array.isArray(generatedImages) ? generatedImages : [])
-                                            .filter(img => imageFilter === 'all' || img.image_type === imageFilter)
-                                            .map((img, index) => (
-                                                <motion.div
-                                                    key={img.id}
-                                                    initial={{ opacity: 0, scale: 0.95 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
-                                                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                                                >
-                                                    <div className="rounded-2xl border border-border/50 bg-background/50 overflow-hidden group hover:border-violet-300/50 transition-all">
-                                                        {/* Image Preview */}
-                                                        <div className="relative">
-                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                            <img
-                                                                src={img.image_url}
-                                                                alt={img.prompt || 'Generated image'}
-                                                                className="w-full object-cover"
-                                                                style={{ aspectRatio: `${img.width}/${img.height}` }}
-                                                                loading="lazy"
-                                                            />
-                                                            {/* Badges */}
-                                                            <div className="absolute top-2 left-2 flex gap-1">
-                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-violet-500/90 text-white">
-                                                                    {img.image_type === 'static_post' ? 'Post' :
-                                                                        img.image_type === 'carousel_slide' ? 'Carousel' :
-                                                                            img.image_type === 'thumbnail' ? 'Thumbnail' :
-                                                                                img.image_type === 'story' ? 'Story' :
-                                                                                    img.image_type === 'banner' ? 'Banner' : 'Custom'}
-                                                                </span>
-                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/50 text-white">
-                                                                    {img.platform}
-                                                                </span>
-                                                            </div>
-                                                            {/* Delete Button */}
-                                                            <button
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        await fetch(`/api/images?imageId=${img.id}`, { method: 'DELETE' });
-                                                                        setGeneratedImages(prev => prev.filter(i => i.id !== img.id));
-                                                                    } catch (err) {
-                                                                        console.error('Delete error:', err);
-                                                                    }
-                                                                }}
-                                                                className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 text-white hover:bg-red-600 transition-colors"
-                                                            >
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                        {/* Info */}
-                                                        <div className="p-3">
-                                                            <p className="text-xs text-muted-foreground truncate" title={img.prompt || ''}>
-                                                                {img.prompt || 'No prompt'}
-                                                            </p>
-                                                            <div className="flex items-center justify-between mt-2">
-                                                                <span className="text-[10px] text-muted-foreground/60">
-                                                                    {img.width}×{img.height}
-                                                                </span>
-                                                                <a
-                                                                    href={img.image_url}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="text-[10px] text-violet-500 font-medium hover:underline flex items-center gap-1"
-                                                                >
-                                                                    <Download className="w-3 h-3" /> İndir
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            ))}
-                                    </div>
-                                ) : (
-                                    <div className="p-12 rounded-2xl border border-dashed border-border/50 text-center">
-                                        <Sparkles className="w-10 h-10 text-violet-500/20 mx-auto mb-3" />
-                                        <p className="text-sm text-muted-foreground">
-                                            Henüz görsel üretilmedi
-                                        </p>
-                                        <p className="text-xs text-muted-foreground/50 mt-1">
-                                            Yukarıdaki prompt alanına istediğinizi yazın ve &quot;Görsel Üret&quot; butonuna tıklayın
-                                        </p>
-                                    </div>
-                                )}
-                            </motion.div>
 
                             {/* ═══ SCREENSHOTS (eski) ═══ */}
                             {screenshots.length > 0 && (
@@ -2590,7 +2329,7 @@ function ProjectDetailPageInner({
                             )}
                         </TabsContent>
                     </Tabs>
-                </motion.div>
+                </motion.div >
             </main >
         </div >
     );
