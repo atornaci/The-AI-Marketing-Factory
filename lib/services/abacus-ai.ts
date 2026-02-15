@@ -861,12 +861,14 @@ ${screenshotContext}`
     }
 
     /**
-     * Call fal.ai minimax-video queue API for real video generation
+     * Call fal.ai Kling Video queue API for real video generation
      * Uses submit → poll → get result pattern
+     * Model: Kling AI V2.1 Pro via fal.ai (10s, cinematic quality)
      */
     private async callFalVideoGen(
         prompt: string,
         avatarUrl?: string,
+        negativePrompt?: string,
     ): Promise<{ videoUrl: string }> {
         const FAL_KEY = process.env.FAL_KEY || process.env.NEXT_PUBLIC_FAL_KEY || ''
         if (!FAL_KEY) {
@@ -874,23 +876,25 @@ ${screenshotContext}`
             return { videoUrl: '' }
         }
 
-        const MAX_POLL_TIME_MS = 480_000 // 8 minutes max wait (minimax can be slow)
-        const POLL_INTERVAL_MS = 5_000   // Poll every 5 seconds
+        const MAX_POLL_TIME_MS = 600_000 // 10 minutes max wait (Kling pro can take time)
+        const POLL_INTERVAL_MS = 8_000   // Poll every 8 seconds
 
         try {
             // Choose model based on whether we have an avatar image
-            // image-to-video: uses avatar as first frame for identity consistency
-            // text-to-video: prompt-only generation (fallback)
+            // Kling V2.1 Pro for image-to-video (10s, cinematic quality)
+            // Kling V2.1 Pro text-to-video fallback
             const useImageToVideo = !!avatarUrl
             const falModel = useImageToVideo
-                ? 'fal-ai/minimax/video-01-live/image-to-video'
-                : 'fal-ai/minimax-video'
+                ? 'fal-ai/kling-video/v2.1/pro/image-to-video'
+                : 'fal-ai/kling-video/v2.1/pro/text-to-video'
 
             // Step 1: Submit the video generation request to fal.ai queue
             console.log(`[Video] Submitting to fal.ai ${falModel} queue...`)
             const requestBody: Record<string, unknown> = {
-                prompt: prompt.substring(0, 2000), // fal.ai has prompt limits
-                prompt_optimizer: true,
+                prompt: prompt.substring(0, 2500), // Kling supports longer prompts
+                duration: '10', // 10 seconds for marketing content
+                negative_prompt: negativePrompt || 'blur, distort, low quality, cartoon, 3d render, anime, extra fingers, CGI',
+                cfg_scale: 0.5,
             }
             if (useImageToVideo) {
                 requestBody.image_url = avatarUrl

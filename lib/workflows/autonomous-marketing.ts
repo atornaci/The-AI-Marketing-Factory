@@ -234,8 +234,8 @@ export async function generateVideo(
         script.hook = finalScript.split('|')[0]?.trim() || script.hook
     }
 
-    // Step 3: Generate video with Kling AI
-    report('🎥 Kling AI: Generating realistic video with audio...')
+    // Step 3: Generate video with Kling AI via fal.ai
+    report('🎥 Kling AI (via fal.ai): Generating cinematic video...')
     let videoUrl = ''
     let thumbnailUrl = ''
 
@@ -243,21 +243,25 @@ export async function generateVideo(
     const aspectRatio = platform === 'linkedin' ? '16:9' as const : '9:16' as const
 
     try {
-        const videoResult = await klingAI.generateVideo({
-            prompt: `${finalVideoPrompt}\n\nDIALOGUE (spoken by the person in the video, in Turkish):\n"${finalScript}"`,
-            negativePrompt: finalNegativePrompt,
-            duration: 10,
-            aspectRatio: aspectRatio,
+        // PRIMARY: Use fal.ai Kling V2.1 Pro (billed through fal.ai account)
+        console.log('[Workflow] Using fal.ai Kling V2.1 Pro as primary video engine...')
+        const falResult = await abacusAI.generateVideo({
+            script: finalScript,
+            audioUrl: '',
+            influencerProfile,
+            screenshotUrls,
+            platform,
+            visualDna: constitution?.visualDna,
+            brandPersona: constitution?.brandPersona,
+            brandColors: constitution?.visualGuidelines?.colorPalette?.join(', '),
+            scenes: storyboard?.scenes,
             avatarUrl: (influencerProfile?.avatarUrl as string) || '',
-            model: 'kling-v2-1',
-            mode: 'pro',
-            cfgScale: 0.5,
         })
+        videoUrl = falResult.videoUrl
+        thumbnailUrl = falResult.thumbnailUrl
+        console.log(`[Workflow] ✅ fal.ai Kling video: ${videoUrl || '(none)'}`)
 
-        videoUrl = videoResult.videoUrl
-        console.log(`[Workflow] ✅ Kling AI video ready: ${videoUrl}`)
-
-        // Upload Kling video to Supabase for permanent storage
+        // Upload to Supabase for permanent storage
         if (videoUrl) {
             report('Uploading video to storage...')
             try {
@@ -276,32 +280,53 @@ export async function generateVideo(
                     }
                 }
             } catch (uploadError) {
-                console.error('[Workflow] ⚠️ Video upload failed, using Kling URL directly:', uploadError)
+                console.error('[Workflow] ⚠️ Video upload failed, using fal.ai URL directly:', uploadError)
             }
         }
-    } catch (error) {
-        console.error('[Workflow] ❌ Kling AI video generation failed:', error)
 
-        // Fallback: try fal.ai minimax as backup
-        console.log('[Workflow] Attempting fal.ai fallback...')
+        // If fal.ai didn't return a video, try direct Kling API as fallback
+        if (!videoUrl) {
+            throw new Error('fal.ai Kling returned no video URL')
+        }
+    } catch (error) {
+        console.error('[Workflow] ❌ fal.ai Kling failed:', error)
+
+        // FALLBACK: Try direct Kling API (requires KLING_ACCESS_KEY credits)
+        console.log('[Workflow] Attempting direct Kling API fallback...')
         try {
-            const fallbackResult = await abacusAI.generateVideo({
-                script: script.fullScript,
-                audioUrl: '',
-                influencerProfile,
-                screenshotUrls,
-                platform,
-                visualDna: constitution?.visualDna,
-                brandPersona: constitution?.brandPersona,
-                brandColors: constitution?.visualGuidelines?.colorPalette?.join(', '),
-                scenes: storyboard?.scenes,
+            const videoResult = await klingAI.generateVideo({
+                prompt: `${finalVideoPrompt}\n\nDIALOGUE (spoken by the person in the video, in Turkish):\n"${finalScript}"`,
+                negativePrompt: finalNegativePrompt,
+                duration: 10,
+                aspectRatio: aspectRatio,
                 avatarUrl: (influencerProfile?.avatarUrl as string) || '',
+                model: 'kling-v2-1',
+                mode: 'pro',
+                cfgScale: 0.5,
             })
-            videoUrl = fallbackResult.videoUrl
-            thumbnailUrl = fallbackResult.thumbnailUrl
-            console.log(`[Workflow] ✅ Fallback video: ${videoUrl || '(none)'}`)
+            videoUrl = videoResult.videoUrl
+            console.log(`[Workflow] ✅ Direct Kling API video: ${videoUrl}`)
+
+            // Upload direct Kling video too
+            if (videoUrl) {
+                try {
+                    const videoResponse = await fetch(videoUrl)
+                    if (videoResponse.ok) {
+                        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer())
+                        const uploadedUrl = await uploadMediaToStorage(
+                            videoBuffer,
+                            projectId,
+                            `video-${platform}-${Date.now()}.mp4`,
+                            'video/mp4'
+                        )
+                        if (uploadedUrl) {
+                            videoUrl = uploadedUrl
+                        }
+                    }
+                } catch { /* use Kling URL directly */ }
+            }
         } catch (fallbackError) {
-            console.error('[Workflow] ❌ Fallback also failed:', fallbackError)
+            console.error('[Workflow] ❌ Direct Kling API also failed:', fallbackError)
         }
     }
 
