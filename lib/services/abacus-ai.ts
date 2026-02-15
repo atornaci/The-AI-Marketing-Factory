@@ -1569,7 +1569,13 @@ Return ONLY the prompt text, nothing else.`
             const aspectRatio = dimensionsToAspectRatio(width, height)
             const fullPrompt = `${enhancedPrompt}. Avoid: ${NEGATIVE_PROMPT}`
 
-            const response = await fetch('https://queue.fal.run/fal-ai/nano-banana-pro', {
+            const falModel = 'fal-ai/nano-banana-pro'
+            const MAX_POLL_MS = 120_000  // 2 min max
+            const POLL_INTERVAL = 3_000  // poll every 3s
+
+            // Step 1: Submit to queue
+            console.log(`[Image] Submitting to fal.ai ${falModel} queue...`)
+            const submitResponse = await fetch(`https://queue.fal.run/${falModel}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Key ${falKey}`,
@@ -1580,19 +1586,70 @@ Return ONLY the prompt text, nothing else.`
                     aspect_ratio: aspectRatio,
                     resolution: '1K',
                     num_images: 1,
-                    safety_tolerance: '2',
+                    safety_tolerance: '4',
                 }),
             })
 
-            if (!response.ok) {
-                console.warn(`[Image] fal.ai returned ${response.status}: ${await response.text()}`)
+            if (!submitResponse.ok) {
+                console.warn(`[Image] fal.ai submit failed: ${submitResponse.status}: ${await submitResponse.text()}`)
                 return { imageUrl: '', width, height, enhancedPrompt }
             }
 
-            const data = await response.json()
-            const imageUrl = data?.images?.[0]?.url || ''
+            const submitData = await submitResponse.json()
+
+            // Check for immediate result
+            if (submitData.images?.[0]?.url) {
+                console.log(`[Image] ✅ Image generated immediately`)
+                return { imageUrl: submitData.images[0].url, width, height, enhancedPrompt }
+            }
+
+            const statusUrl = submitData.status_url
+            const responseUrl = submitData.response_url
+
+            if (!statusUrl || !responseUrl) {
+                console.error('[Image] No status_url/response_url from fal.ai', submitData)
+                return { imageUrl: '', width, height, enhancedPrompt }
+            }
+
+            // Step 2: Poll until complete
+            const startTime = Date.now()
+            while (Date.now() - startTime < MAX_POLL_MS) {
+                await new Promise(r => setTimeout(r, POLL_INTERVAL))
+
+                try {
+                    const statusRes = await fetch(statusUrl, {
+                        headers: { 'Authorization': `Key ${falKey}` },
+                    })
+                    if (statusRes.ok) {
+                        const statusData = await statusRes.json()
+                        console.log(`[Image] Status: ${statusData.status}`)
+                        if (statusData.status === 'COMPLETED') break
+                        if (statusData.status === 'FAILED') {
+                            console.error('[Image] Generation failed:', statusData)
+                            return { imageUrl: '', width, height, enhancedPrompt }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[Image] Status poll error:', e)
+                }
+            }
+
+            // Step 3: Get result
+            const resultRes = await fetch(responseUrl, {
+                headers: { 'Authorization': `Key ${falKey}` },
+            })
+
+            if (!resultRes.ok) {
+                console.warn(`[Image] Result fetch failed: ${resultRes.status}`)
+                return { imageUrl: '', width, height, enhancedPrompt }
+            }
+
+            const resultData = await resultRes.json()
+            const imageUrl = resultData?.images?.[0]?.url || ''
             if (imageUrl) {
                 console.log(`[Image] ✅ Image generated via fal.ai`)
+            } else {
+                console.warn('[Image] No image URL in result:', resultData)
             }
             return { imageUrl, width, height, enhancedPrompt }
         } catch (error) {
