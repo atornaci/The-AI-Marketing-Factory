@@ -21,6 +21,7 @@ const TOKEN_ENDPOINTS: Record<string, string> = {
     tiktok: 'https://open.tiktokapis.com/v2/oauth/token/',
     linkedin: 'https://www.linkedin.com/oauth/v2/accessToken',
     twitter: 'https://api.twitter.com/2/oauth2/token',
+    youtube: 'https://oauth2.googleapis.com/token',
 }
 
 async function exchangeCodeForToken(
@@ -124,6 +125,27 @@ async function getAccountInfo(
                 return {
                     accountId: data.data?.id || '',
                     accountName: `@${data.data?.username || 'twitter'}`,
+                }
+            }
+            case 'youtube': {
+                // Get YouTube channel info via Google userinfo + YouTube API
+                const userRes = await fetch(
+                    'https://www.googleapis.com/oauth2/v2/userinfo',
+                    { headers: { 'Authorization': `Bearer ${accessToken}` } }
+                )
+                const userData = await userRes.json()
+
+                // Try to get channel name
+                const channelRes = await fetch(
+                    'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
+                    { headers: { 'Authorization': `Bearer ${accessToken}` } }
+                )
+                const channelData = await channelRes.json()
+                const channel = channelData.items?.[0]
+
+                return {
+                    accountId: channel?.id || userData.id || '',
+                    accountName: channel?.snippet?.title || userData.name || 'YouTube',
                 }
             }
             default:

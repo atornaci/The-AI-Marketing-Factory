@@ -2151,11 +2151,13 @@ function ProjectDetailPageInner({
                                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${conn.platform === 'instagram' ? 'bg-gradient-to-br from-purple-500 to-pink-500' :
                                                             conn.platform === 'tiktok' ? 'bg-black' :
                                                                 conn.platform === 'linkedin' ? 'bg-blue-600' :
-                                                                    'bg-sky-500'
+                                                                    conn.platform === 'youtube' ? 'bg-red-600' :
+                                                                        'bg-sky-500'
                                                             }`}>
                                                             {conn.platform === 'instagram' ? 'IG' :
                                                                 conn.platform === 'tiktok' ? 'TT' :
-                                                                    conn.platform === 'linkedin' ? 'IN' : 'X'}
+                                                                    conn.platform === 'linkedin' ? 'IN' :
+                                                                        conn.platform === 'youtube' ? 'YT' : 'X'}
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-medium capitalize">{conn.platform}</p>
@@ -2185,10 +2187,11 @@ function ProjectDetailPageInner({
                                     </div>
 
                                     {/* Connect buttons */}
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                                         {[
                                             { key: 'instagram', label: 'Instagram', color: 'from-purple-500 to-pink-500' },
                                             { key: 'tiktok', label: 'TikTok', color: 'from-gray-800 to-gray-900' },
+                                            { key: 'youtube', label: 'YouTube', color: 'from-red-600 to-red-700' },
                                             { key: 'linkedin', label: 'LinkedIn', color: 'from-blue-600 to-blue-700' },
                                             { key: 'twitter', label: 'X (Twitter)', color: 'from-sky-500 to-sky-600' },
                                         ].map(({ key, label, color }) => {
@@ -2284,7 +2287,7 @@ function ProjectDetailPageInner({
                                         <div>
                                             <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Yayınlanacak Platformlar</label>
                                             <div className="flex flex-wrap gap-2">
-                                                {['instagram', 'tiktok', 'linkedin', 'twitter'].map((p) => {
+                                                {['instagram', 'tiktok', 'youtube', 'linkedin', 'twitter'].map((p) => {
                                                     const isConnected = socialConnections.some(c => c.platform === p);
                                                     const isSelected = schedulePlatforms.includes(p);
                                                     return (
@@ -2302,7 +2305,7 @@ function ProjectDetailPageInner({
                                                                 );
                                                             }}
                                                         >
-                                                            {p === 'twitter' ? 'X' : p}
+                                                            {p === 'twitter' ? 'X' : p === 'youtube' ? 'YouTube' : p}
                                                             {!isConnected && ' (bağlı değil)'}
                                                         </Button>
                                                     );
@@ -2406,11 +2409,13 @@ function ProjectDetailPageInner({
                                             <div className="flex items-center gap-3">
                                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${conn.platform === 'instagram' ? 'bg-gradient-to-br from-purple-500 to-pink-500' :
                                                     conn.platform === 'tiktok' ? 'bg-black' :
-                                                        conn.platform === 'linkedin' ? 'bg-blue-600' : 'bg-sky-500'
+                                                        conn.platform === 'linkedin' ? 'bg-blue-600' :
+                                                            conn.platform === 'youtube' ? 'bg-red-600' : 'bg-sky-500'
                                                     }`}>
                                                     {conn.platform === 'instagram' ? 'IG' :
                                                         conn.platform === 'tiktok' ? 'TT' :
-                                                            conn.platform === 'linkedin' ? 'IN' : 'X'}
+                                                            conn.platform === 'linkedin' ? 'IN' :
+                                                                conn.platform === 'youtube' ? 'YT' : 'X'}
                                                 </div>
                                                 <div className="text-left">
                                                     <p className="text-sm font-medium capitalize">{conn.platform}</p>

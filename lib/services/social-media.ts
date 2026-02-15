@@ -4,7 +4,7 @@
 // platforms via their official APIs
 // =========================================
 
-export type SocialPlatform = 'instagram' | 'tiktok' | 'linkedin' | 'twitter'
+export type SocialPlatform = 'instagram' | 'tiktok' | 'linkedin' | 'twitter' | 'youtube'
 
 export interface PublishResult {
     success: boolean
@@ -411,6 +411,8 @@ export async function publishToSocialMedia(
             return publishToLinkedIn(credentials, options)
         case 'twitter':
             return publishToTwitter(credentials, options)
+        case 'youtube':
+            return publishToYouTube(credentials, options)
         default:
             return {
                 success: false,
@@ -443,4 +445,107 @@ export async function publishToAllPlatforms(
             error: String(result.reason),
         }
     })
+}
+
+// =========================================
+// YouTube — Video Upload via YouTube Data API v3
+// =========================================
+async function publishToYouTube(
+    credentials: SocialMediaCredentials,
+    options: PublishOptions
+): Promise<PublishResult> {
+    try {
+        const description = `${options.description || ''}\n\n${options.hashtags.map(h => `#${h}`).join(' ')}`
+
+        // Step 1: Download video
+        const videoResponse = await fetch(options.videoUrl)
+        if (!videoResponse.ok) throw new Error('Failed to download video')
+        const videoBuffer = await videoResponse.arrayBuffer()
+
+        // Step 2: Initiate resumable upload
+        const initResponse = await fetch(
+            'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${credentials.accessToken}`,
+                    'Content-Type': 'application/json',
+                    'X-Upload-Content-Type': 'video/mp4',
+                    'X-Upload-Content-Length': String(videoBuffer.byteLength),
+                },
+                body: JSON.stringify({
+                    snippet: {
+                        title: options.title || 'Video',
+                        description: description.trim(),
+                        tags: options.hashtags,
+                        categoryId: '22', // People & Blogs
+                    },
+                    status: {
+                        privacyStatus: 'public',
+                        selfDeclaredMadeForKids: false,
+                    },
+                }),
+            }
+        )
+
+        if (!initResponse.ok) {
+            const error = await initResponse.text()
+            throw new Error(`YouTube upload init failed: ${error}`)
+        }
+
+        const uploadUrl = initResponse.headers.get('Location')
+        if (!uploadUrl) throw new Error('No upload URL returned')
+
+        // Step 3: Upload video data
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'video/mp4',
+                'Content-Length': String(videoBuffer.byteLength),
+            },
+            body: videoBuffer,
+        })
+
+        if (!uploadResponse.ok) {
+            const error = await uploadResponse.text()
+            throw new Error(`YouTube video upload failed: ${error}`)
+        }
+
+        const videoData = await uploadResponse.json()
+
+        // Step 4: Set thumbnail if available
+        if (options.thumbnailUrl && videoData.id) {
+            try {
+                const thumbResponse = await fetch(options.thumbnailUrl)
+                const thumbBuffer = await thumbResponse.arrayBuffer()
+
+                await fetch(
+                    `https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoData.id}&uploadType=media`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${credentials.accessToken}`,
+                            'Content-Type': 'image/jpeg',
+                        },
+                        body: thumbBuffer,
+                    }
+                )
+            } catch (thumbErr) {
+                console.warn('YouTube thumbnail upload failed:', thumbErr)
+            }
+        }
+
+        return {
+            success: true,
+            platform: 'youtube',
+            postId: videoData.id,
+            postUrl: `https://www.youtube.com/watch?v=${videoData.id}`,
+        }
+    } catch (error) {
+        return {
+            success: false,
+            platform: 'youtube',
+            error: String(error),
+        }
+    }
 }

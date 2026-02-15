@@ -37,6 +37,15 @@ const OAUTH_CONFIGS: Record<string, {
         scopes: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'],
         responseType: 'code',
     },
+    youtube: {
+        authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+        scopes: [
+            'https://www.googleapis.com/auth/youtube.upload',
+            'https://www.googleapis.com/auth/youtube',
+            'https://www.googleapis.com/auth/userinfo.profile',
+        ],
+        responseType: 'code',
+    },
 }
 
 export async function POST(req: NextRequest) {
@@ -98,6 +107,10 @@ export async function POST(req: NextRequest) {
         if (platform === 'twitter') {
             params.set('code_challenge', 'challenge') // PKCE simplified
             params.set('code_challenge_method', 'plain')
+        }
+        if (platform === 'youtube') {
+            params.set('access_type', 'offline')
+            params.set('prompt', 'consent')
         }
 
         const authorizationUrl = `${config.authUrl}?${params.toString()}`
