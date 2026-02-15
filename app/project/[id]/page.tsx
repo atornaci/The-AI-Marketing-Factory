@@ -23,7 +23,6 @@ import {
 import { Progress } from "@/components/ui/progress";
 import {
     Sparkles,
-    Globe,
     Video,
     Bot,
     ArrowLeft,
@@ -34,7 +33,6 @@ import {
     RefreshCw,
     Mic,
     FileText,
-    Image as ImageIcon,
     Loader2,
     CheckCircle2,
     Wand2,
@@ -46,10 +44,8 @@ import {
     AlertTriangle,
     Trash2,
     Copy,
-    Trophy,
     Megaphone,
     Upload,
-    X,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -256,18 +252,8 @@ function ProjectDetailPageInner({
     // Product upload state
     const [isUploadingProduct, setIsUploadingProduct] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const productAssets = assets.filter((a) => a.asset_type === "custom" && (a.metadata as Record<string, unknown>)?.source === "product_scrape");
-    const generatedAdImages = assets.filter((a) => a.asset_type === "generated" && (a.metadata as Record<string, unknown>)?.source === "ad_generator");
+    const productAssets = assets.filter((a) => a.asset_type === "custom");
 
-    // Ad image generation state
-    const [isGeneratingAd, setIsGeneratingAd] = useState(false);
-    const [adPlatform, setAdPlatform] = useState<string>("instagram");
-    const [adImageType, setAdImageType] = useState<string>("static_post");
-    const [selectedProductImage, setSelectedProductImage] = useState<string>("");
-
-    // Competitor analysis state
-    const [isAnalyzingCompetitors, setIsAnalyzingCompetitors] = useState(false);
-    // Ad copy generation state
     const [isGeneratingAdCopy, setIsGeneratingAdCopy] = useState(false);
     const [copiedAdId, setCopiedAdId] = useState<number | null>(null);
 
@@ -821,18 +807,6 @@ function ProjectDetailPageInner({
                                         </span>
                                     )}
                                 </TabsTrigger>
-                                <TabsTrigger
-                                    value="images"
-                                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm"
-                                >
-                                    <ImageIcon className="w-4 h-4 mr-1.5" />
-                                    Görseller
-                                    {(productAssets.length + generatedAdImages.length) > 0 && (
-                                        <span className="ml-1.5 text-[10px] bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-full">
-                                            {productAssets.length + generatedAdImages.length}
-                                        </span>
-                                    )}
-                                </TabsTrigger>
 
                             </TabsList>
                         </motion.div>
@@ -967,173 +941,6 @@ function ProjectDetailPageInner({
                                     </div>
                                 </motion.div>
 
-                                {/* Competitor Analysis */}
-                                <motion.div variants={itemVariants} className="lg:col-span-3">
-                                    <div className="p-6 rounded-2xl border border-border/50 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-2 text-sm font-semibold">
-                                                <Trophy className="w-4 h-4 text-amber-500" />
-                                                Rakip Analizi
-                                            </div>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                disabled={isAnalyzingCompetitors}
-                                                onClick={async () => {
-                                                    setIsAnalyzingCompetitors(true);
-                                                    try {
-                                                        const pid = project?.id || id;
-                                                        console.log('[CompetitorAnalysis] Starting with projectId:', pid);
-                                                        const res = await fetch('/api/workflows/competitor-analysis', {
-                                                            method: 'POST',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ projectId: pid }),
-                                                        });
-                                                        if (!res.ok) {
-                                                            const errText = await res.text().catch(() => '');
-                                                            console.error('Competitor analysis API error:', res.status, errText);
-                                                            alert(`Rakip analizi hatası (${res.status}). Lütfen tekrar deneyin.`);
-                                                            return;
-                                                        }
-                                                        const data = await res.json();
-                                                        if (data.success) {
-                                                            setProject(prev => prev ? { ...prev, competitor_analysis: data.data } : prev);
-                                                        }
-                                                    } catch (e) {
-                                                        console.error('Competitor analysis failed:', e);
-                                                        alert('Rakip analizi başarısız oldu. Lütfen tekrar deneyin.');
-                                                    } finally {
-                                                        setIsAnalyzingCompetitors(false);
-                                                    }
-                                                }}
-                                                className="rounded-lg text-xs"
-                                            >
-                                                {isAnalyzingCompetitors ? (
-                                                    <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Analiz Ediliyor...</>
-                                                ) : (
-                                                    <><RefreshCw className="w-3 h-3 mr-1.5" /> {project.competitor_analysis ? 'Yeniden Analiz Et' : 'Rakipleri Analiz Et'}</>
-                                                )}
-                                            </Button>
-                                        </div>
-
-                                        {project.competitor_analysis?.competitors && project.competitor_analysis.competitors.length > 0 ? (
-                                            <>
-                                                {/* Market Position Summary */}
-                                                {project.competitor_analysis.marketPosition && (
-                                                    <div className="p-4 rounded-xl bg-background/80 border border-border/30 mb-4">
-                                                        <p className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-1">📍 Pazar Konumumuz</p>
-                                                        <p className="text-sm text-muted-foreground leading-relaxed">
-                                                            {project.competitor_analysis.marketPosition}
-                                                        </p>
-                                                    </div>
-                                                )}
-
-                                                {/* Competitor Cards */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                    {project.competitor_analysis.competitors.map((comp, i) => (
-                                                        <div key={i} className="p-4 rounded-xl bg-background/60 border border-border/30 space-y-3">
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="font-semibold text-sm flex items-center gap-2">
-                                                                    <span className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-600">
-                                                                        {i + 1}
-                                                                    </span>
-                                                                    {comp.name}
-                                                                </div>
-                                                                {comp.estimatedPosition && (
-                                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium">
-                                                                        {comp.estimatedPosition}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">💪 Güçlü Yönleri</p>
-                                                                <ul className="space-y-0.5">
-                                                                    {comp.strengths.map((s, si) => (
-                                                                        <li key={si} className="text-xs text-muted-foreground flex items-start gap-1">
-                                                                            <span className="text-green-400 mt-0.5">+</span> {s}
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-xs font-medium text-rose-600 dark:text-rose-400 mb-1">⚠️ Zayıf Noktaları</p>
-                                                                <ul className="space-y-0.5">
-                                                                    {comp.weaknesses.map((w, wi) => (
-                                                                        <li key={wi} className="text-xs text-muted-foreground flex items-start gap-1">
-                                                                            <span className="text-rose-400 mt-0.5">−</span> {w}
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                            {comp.opportunities && comp.opportunities.length > 0 && (
-                                                                <div>
-                                                                    <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">🔍 Fırsatlar</p>
-                                                                    <ul className="space-y-0.5">
-                                                                        {comp.opportunities.map((o, oi) => (
-                                                                            <li key={oi} className="text-xs text-muted-foreground flex items-start gap-1">
-                                                                                <span className="text-blue-400 mt-0.5">◆</span> {o}
-                                                                            </li>
-                                                                        ))}
-                                                                    </ul>
-                                                                </div>
-                                                            )}
-                                                            {comp.threats && comp.threats.length > 0 && (
-                                                                <div>
-                                                                    <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mb-1">⚡ Tehditler</p>
-                                                                    <ul className="space-y-0.5">
-                                                                        {comp.threats.map((t, ti) => (
-                                                                            <li key={ti} className="text-xs text-muted-foreground flex items-start gap-1">
-                                                                                <span className="text-orange-400 mt-0.5">!</span> {t}
-                                                                            </li>
-                                                                        ))}
-                                                                    </ul>
-                                                                </div>
-                                                            )}
-                                                            <div className="pt-2 border-t border-border/30">
-                                                                <p className="text-xs font-medium text-violet-600 dark:text-violet-400 mb-1">🎯 Bizim Avantajımız</p>
-                                                                <p className="text-xs text-muted-foreground">{comp.ourAdvantage}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-
-                                                {/* Market Opportunities */}
-                                                {project.competitor_analysis.marketOpportunities && project.competitor_analysis.marketOpportunities.length > 0 && (
-                                                    <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
-                                                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">🚀 Pazar Fırsatları</p>
-                                                        <ul className="space-y-1.5">
-                                                            {project.competitor_analysis.marketOpportunities.map((opp, oi) => (
-                                                                <li key={oi} className="text-xs text-muted-foreground flex items-start gap-2">
-                                                                    <span className="text-blue-500 font-bold mt-0.5">{oi + 1}.</span>
-                                                                    <span>{opp}</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                )}
-
-                                                {/* Attack Strategies */}
-                                                {project.competitor_analysis.attackStrategies && project.competitor_analysis.attackStrategies.length > 0 && (
-                                                    <div className="mt-3 p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20">
-                                                        <p className="text-sm font-medium text-violet-600 dark:text-violet-400 mb-2">⚔️ Saldırı Stratejileri</p>
-                                                        <ul className="space-y-1.5">
-                                                            {project.competitor_analysis.attackStrategies.map((strat, si) => (
-                                                                <li key={si} className="text-xs text-muted-foreground flex items-start gap-2">
-                                                                    <span className="text-violet-500 font-bold mt-0.5">→</span>
-                                                                    <span>{strat}</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground">
-                                                {isAnalyzingCompetitors ? 'Rakipler analiz ediliyor, lütfen bekleyin...' : 'Henüz rakip analizi yapılmadı. "Rakipleri Analiz Et" butonuna tıklayın.'}
-                                            </p>
-                                        )}
-                                    </div>
-                                </motion.div>
                             </div>
                         </TabsContent>
 
@@ -2249,236 +2056,6 @@ function ProjectDetailPageInner({
                             )}
                         </TabsContent>
 
-                        {/* ═══ IMAGES / AD DESIGN TAB ═══ */}
-                        <TabsContent value="images" className="space-y-6">
-                            {/* Product Images from Website */}
-                            <motion.div variants={itemVariants}>
-                                <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <Globe className="w-5 h-5 text-emerald-500" />
-                                            <h3 className="font-semibold">Siteden Çekilen Ürün Görselleri</h3>
-                                            <span className="text-xs text-muted-foreground">({productAssets.length} görsel)</span>
-                                        </div>
-                                    </div>
-
-                                    {productAssets.length === 0 ? (
-                                        <div className="text-center py-12 text-muted-foreground">
-                                            <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                                            <p className="text-sm">Henüz ürün görseli çekilmemiş</p>
-                                            <p className="text-xs mt-1">Yeni proje oluşturduğunuzda siteden otomatik çekilecek</p>
-                                        </div>
-                                    ) : (
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                                            {productAssets.map((asset) => (
-                                                <div
-                                                    key={asset.id}
-                                                    onClick={() => setSelectedProductImage(selectedProductImage === asset.file_path ? "" : asset.file_path)}
-                                                    className={`relative group cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 aspect-square ${selectedProductImage === asset.file_path
-                                                        ? "border-emerald-500 ring-2 ring-emerald-500/20 scale-[1.02]"
-                                                        : "border-border/50 hover:border-emerald-500/50"
-                                                        }`}
-                                                >
-                                                    <img
-                                                        src={asset.file_path}
-                                                        alt={asset.file_name || "Ürün görseli"}
-                                                        className="w-full h-full object-cover"
-                                                        onError={(e) => {
-                                                            (e.target as HTMLImageElement).style.display = 'none';
-                                                        }}
-                                                    />
-                                                    {selectedProductImage === asset.file_path && (
-                                                        <div className="absolute inset-0 bg-emerald-500/10 flex items-center justify-center">
-                                                            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                                                        </div>
-                                                    )}
-                                                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <p className="text-[10px] text-white truncate">{asset.file_name}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </motion.div>
-
-                            {/* Ad Image Generator */}
-                            <motion.div variants={itemVariants}>
-                                <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Wand2 className="w-5 h-5 text-violet-500" />
-                                        <h3 className="font-semibold">Reklam Görseli Oluştur</h3>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                        {/* Platform Selection */}
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground mb-2 block">Platform</label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {["instagram", "facebook", "linkedin", "tiktok"].map((p) => (
-                                                    <button
-                                                        key={p}
-                                                        onClick={() => setAdPlatform(p)}
-                                                        className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${adPlatform === p
-                                                            ? "bg-violet-500/10 border-violet-500 text-violet-600 font-medium"
-                                                            : "border-border/50 text-muted-foreground hover:border-violet-500/50"
-                                                            }`}
-                                                    >
-                                                        {p.charAt(0).toUpperCase() + p.slice(1)}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Image Type */}
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground mb-2 block">Görsel Tipi</label>
-                                            <div className="flex flex-wrap gap-2">
-                                                {[
-                                                    { value: "static_post", label: "Post" },
-                                                    { value: "story", label: "Story" },
-                                                    { value: "banner", label: "Banner" },
-                                                    { value: "carousel_slide", label: "Carousel" },
-                                                ].map((t) => (
-                                                    <button
-                                                        key={t.value}
-                                                        onClick={() => setAdImageType(t.value)}
-                                                        className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${adImageType === t.value
-                                                            ? "bg-violet-500/10 border-violet-500 text-violet-600 font-medium"
-                                                            : "border-border/50 text-muted-foreground hover:border-violet-500/50"
-                                                            }`}
-                                                    >
-                                                        {t.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Selected Image Info */}
-                                        <div>
-                                            <label className="text-xs font-medium text-muted-foreground mb-2 block">Referans Görsel</label>
-                                            {selectedProductImage ? (
-                                                <div className="flex items-center gap-2">
-                                                    <img src={selectedProductImage} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                                                    <span className="text-xs text-emerald-600">Seçili ✓</span>
-                                                    <button onClick={() => setSelectedProductImage("")} className="text-xs text-muted-foreground hover:text-foreground">
-                                                        <X className="w-3 h-3" />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <p className="text-xs text-muted-foreground">Yukarıdan bir görsel seçebilirsiniz (opsiyonel)</p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <Button
-                                        onClick={async () => {
-                                            setIsGeneratingAd(true);
-                                            try {
-                                                const res = await fetch('/api/workflows/generate-ad-image', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        projectId: project?.id || id,
-                                                        productImageUrl: selectedProductImage || undefined,
-                                                        platform: adPlatform,
-                                                        imageType: adImageType,
-                                                    }),
-                                                });
-                                                if (!res.ok) {
-                                                    const err = await res.json();
-                                                    throw new Error(err.error || 'Görsel oluşturulamadı');
-                                                }
-                                                const data = await res.json();
-                                                if (data.success) {
-                                                    // Refresh assets to show the new image
-                                                    const { data: newAssets } = await supabase
-                                                        .from('assets')
-                                                        .select('*')
-                                                        .eq('project_id', project?.id || id);
-                                                    if (newAssets) setAssets(newAssets);
-                                                }
-                                            } catch (e) {
-                                                console.error('Ad image generation failed:', e);
-                                                alert(`Hata: ${e instanceof Error ? e.message : 'Görsel oluşturulamadı'}`);
-                                            } finally {
-                                                setIsGeneratingAd(false);
-                                            }
-                                        }}
-                                        disabled={isGeneratingAd}
-                                        className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg"
-                                    >
-                                        {isGeneratingAd ? (
-                                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Reklam Görseli Oluşturuluyor...</>
-                                        ) : (
-                                            <><Wand2 className="w-4 h-4 mr-2" /> Reklam Görseli Oluştur</>
-                                        )}
-                                    </Button>
-                                </div>
-                            </motion.div>
-
-                            {/* Generated Ad Images Gallery */}
-                            {generatedAdImages.length > 0 && (
-                                <motion.div variants={itemVariants}>
-                                    <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <Sparkles className="w-5 h-5 text-amber-500" />
-                                            <h3 className="font-semibold">Oluşturulan Reklam Görselleri</h3>
-                                            <span className="text-xs text-muted-foreground">({generatedAdImages.length} görsel)</span>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                            {generatedAdImages.map((asset) => {
-                                                const meta = (asset.metadata || {}) as Record<string, string>;
-                                                return (
-                                                    <div key={asset.id} className="group relative rounded-xl overflow-hidden border border-border/50 bg-muted/20">
-                                                        <img
-                                                            src={asset.file_path}
-                                                            alt={asset.file_name || "Reklam görseli"}
-                                                            className="w-full aspect-square object-cover"
-                                                        />
-                                                        <div className="p-3 space-y-1">
-                                                            <div className="flex items-center gap-2">
-                                                                {meta.platform && (
-                                                                    <Badge variant="secondary" className="text-[10px]">
-                                                                        {String(meta.platform)}
-                                                                    </Badge>
-                                                                )}
-                                                                {meta.imageType && (
-                                                                    <Badge variant="outline" className="text-[10px]">
-                                                                        {String(meta.imageType)}
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex items-center gap-2 mt-2">
-                                                                <a
-                                                                    href={asset.file_path}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="text-xs text-violet-500 hover:underline flex items-center gap-1"
-                                                                >
-                                                                    <ExternalLink className="w-3 h-3" /> Tam Boyut
-                                                                </a>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const link = document.createElement('a');
-                                                                        link.href = asset.file_path;
-                                                                        link.download = asset.file_name || 'ad-image';
-                                                                        link.click();
-                                                                    }}
-                                                                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                                                                >
-                                                                    <Download className="w-3 h-3" /> İndir
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </TabsContent>
 
                     </Tabs>
 
