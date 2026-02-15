@@ -42,20 +42,23 @@ export async function POST(req: NextRequest) {
             .eq('project_id', projectId)
             .eq('asset_type', 'custom')
 
-        // Build product context from uploaded product images and project info
+        // Build product context and get product image URL for image-to-image generation
         let productContext = ''
+        let productImageUrl = ''
         if (productAssets && productAssets.length > 0) {
             const productNames = productAssets
                 .map((a: { file_name?: string; original_filename?: string }) => a.file_name || a.original_filename || '')
                 .filter(Boolean)
                 .join(', ')
-            const productUrls = productAssets
-                .map((a: { file_path: string }) => {
-                    const { data } = supabase.storage.from('project-assets').getPublicUrl(a.file_path)
-                    return data?.publicUrl || ''
-                })
-                .filter(Boolean)
-            productContext = `PRODUCT FILES: ${productNames}. PRODUCT IMAGE URLs: ${productUrls.join(', ')}. The generated image MUST feature this specific product prominently.`
+            productContext = `PRODUCT: ${productNames}. The generated image MUST feature this specific product prominently.`
+
+            // Get public URL for the first product image (for image-to-image reference)
+            const firstAsset = productAssets[0] as { file_path: string }
+            const { data: urlData } = supabase.storage.from('project-assets').getPublicUrl(firstAsset.file_path)
+            if (urlData?.publicUrl) {
+                productImageUrl = urlData.publicUrl
+                console.log(`[Image] Product image URL for reference: ${productImageUrl}`)
+            }
         }
 
         // Build brand context including product info
@@ -63,7 +66,7 @@ export async function POST(req: NextRequest) {
             ? `${brandContext}\n\nPRODUCT CONTEXT: ${productContext}`
             : brandContext
 
-        // Generate the image (with Visual DNA for brand-consistent output)
+        // Generate the image (with product image reference for image-to-image)
         const result = await abacusAI.generateMarketingImage({
             prompt,
             imageType,
@@ -73,6 +76,7 @@ export async function POST(req: NextRequest) {
             visualDna,
             brandPersona,
             productContext,
+            productImageUrl,
         })
 
         if (!result.imageUrl) {

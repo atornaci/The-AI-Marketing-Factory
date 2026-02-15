@@ -1546,8 +1546,9 @@ Return ONLY the prompt text, nothing else.`
         visualDna?: string
         brandPersona?: string
         productContext?: string
+        productImageUrl?: string
     }): Promise<{ imageUrl: string; width: number; height: number; enhancedPrompt: string }> {
-        const { prompt, imageType, platform, brandColors = [], brandContext = '', visualDna, brandPersona, productContext } = params
+        const { prompt, imageType, platform, brandColors = [], brandContext = '', visualDna, brandPersona, productContext, productImageUrl } = params
 
         // Get dimensions for this type/platform combo
         const typeDims = IMAGE_DIMENSIONS[imageType] || IMAGE_DIMENSIONS.custom
@@ -1574,9 +1575,34 @@ Return ONLY the prompt text, nothing else.`
             const aspectRatio = dimensionsToAspectRatio(width, height)
             const fullPrompt = `${enhancedPrompt}. Avoid: ${NEGATIVE_PROMPT}`
 
-            const falModel = 'fal-ai/nano-banana-pro'
             const MAX_POLL_MS = 120_000  // 2 min max
             const POLL_INTERVAL = 3_000  // poll every 3s
+
+            // Choose model based on whether we have a product image reference
+            const useImageToImage = !!productImageUrl
+            const falModel = useImageToImage ? 'fal-ai/flux/dev/image-to-image' : 'fal-ai/nano-banana-pro'
+
+            // Build request body based on model type
+            const requestBody = useImageToImage
+                ? {
+                    image_url: productImageUrl,
+                    prompt: fullPrompt,
+                    strength: 0.7,
+                    num_inference_steps: 40,
+                    guidance_scale: 7.5,
+                    num_images: 1,
+                    output_format: 'png',
+                }
+                : {
+                    prompt: fullPrompt,
+                    aspect_ratio: aspectRatio,
+                    resolution: '1K',
+                    num_images: 1,
+                    safety_tolerance: '4',
+                }
+
+            console.log(`[Image] Using ${useImageToImage ? 'IMAGE-TO-IMAGE' : 'TEXT-TO-IMAGE'} mode with ${falModel}`)
+            if (useImageToImage) console.log(`[Image] Reference image: ${productImageUrl}`)
 
             // Step 1: Submit to queue
             console.log(`[Image] Submitting to fal.ai ${falModel} queue...`)
@@ -1586,13 +1612,7 @@ Return ONLY the prompt text, nothing else.`
                     'Authorization': `Key ${falKey}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    prompt: fullPrompt,
-                    aspect_ratio: aspectRatio,
-                    resolution: '1K',
-                    num_images: 1,
-                    safety_tolerance: '4',
-                }),
+                body: JSON.stringify(requestBody),
             })
 
             if (!submitResponse.ok) {
