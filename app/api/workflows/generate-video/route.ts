@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { generateVideo } from '@/lib/workflows/autonomous-marketing'
 import type { ProjectAnalysis, MarketingConstitution } from '@/lib/services/abacus-ai'
+import type { Language } from '@/lib/i18n/translations'
 
 // Allow up to 5 minutes for video generation pipeline
 export const maxDuration = 300
@@ -9,7 +10,8 @@ export const maxDuration = 300
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
-        const { projectId, platform, prompt, brandName, title, influencerId, influencerName, influencerPersonality, influencerBackstory, productImageUrls } = body
+        const { projectId, platform, prompt, brandName, title, influencerId, influencerName, influencerPersonality, influencerBackstory, productImageUrls, language: requestLanguage } = body
+        const language: Language = requestLanguage || 'tr'
 
         if (!projectId || !platform) {
             return NextResponse.json(
@@ -66,6 +68,7 @@ export async function POST(req: NextRequest) {
                     appearanceDescription: influencer.appearance_description,
                     visualProfile: influencer.visual_profile,
                     avatarUrl: influencer.avatar_url,
+                    language: language,
                 }
                 voiceId = influencer.voice_id || ''
             }
@@ -146,15 +149,16 @@ export async function POST(req: NextRequest) {
                     console.log(`[API] Video progress: ${step}`)
                     // Update status dynamically
                     let status = 'scripting'
-                    if (step.includes('voice') || step.includes('narration') || step.includes('Audio')) status = 'voicing'
-                    if (step.includes('Render') || step.includes('video') || step.includes('Video')) status = 'rendering'
-                    if (step.includes('Upload')) status = 'rendering'
+                    if (step.includes('voice') || step.includes('narration') || step.includes('Audio') || step.includes('ElevenLabs')) status = 'voicing'
+                    if (step.includes('Render') || step.includes('video') || step.includes('Video') || step.includes('Kling')) status = 'rendering'
+                    if (step.includes('Upload') || step.includes('Merging')) status = 'rendering'
 
                     await supabase
                         .from('videos')
                         .update({ status })
                         .eq('id', videoRecord.id)
-                }
+                },
+                language
             )
 
             // Update video record with the results

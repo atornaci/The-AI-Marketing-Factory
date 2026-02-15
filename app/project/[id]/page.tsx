@@ -54,6 +54,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/components/providers/language-provider";
 
 /* ─── Types ─── */
 interface ProjectData {
@@ -215,6 +216,7 @@ function ProjectDetailPageInner({
 }) {
     const { id } = use(params);
     const supabase = createClient();
+    const { language } = useLanguage();
 
     const [activeTab, setActiveTab] = useState("overview");
     const [project, setProject] = useState<ProjectData | null>(null);
@@ -409,7 +411,7 @@ function ProjectDetailPageInner({
             const response = await fetch("/api/workflows/create-influencer", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ projectId: id, gender: selectedGender }),
+                body: JSON.stringify({ projectId: id, gender: selectedGender, language }),
             });
 
             clearInterval(progressInterval);
@@ -595,6 +597,7 @@ function ProjectDetailPageInner({
                     influencerPersonality: influencer?.personality || null,
                     influencerBackstory: influencer?.backstory || null,
                     productImageUrls: productUrls,
+                    language,
                 }),
             });
 

@@ -1,14 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import type { Language } from '@/lib/i18n/translations'
 
 // Allow up to 2 minutes for influencer creation
 export const maxDuration = 120
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || ''
 
+// Language-specific influencer generation config
+const LANGUAGE_CONFIG: Record<Language, {
+    langName: string
+    nameInstruction: string
+    promptLang: string
+    systemNote: string
+}> = {
+    tr: {
+        langName: 'Turkish',
+        nameInstruction: 'a Turkish name (e.g. Elif, Berk, Zeynep, Emre)',
+        promptLang: 'Tüm kişilik ve hikaye metinlerini TÜRKÇE yaz.',
+        systemNote: 'You create Turkish virtual influencer personas. Write personality and backstory in TURKISH.',
+    },
+    en: {
+        langName: 'English',
+        nameInstruction: 'an English name (e.g. Sarah, James, Emily, Ryan)',
+        promptLang: 'Write ALL personality and backstory text in ENGLISH.',
+        systemNote: 'You create English-speaking virtual influencer personas. Write personality and backstory in ENGLISH.',
+    },
+    es: {
+        langName: 'Spanish',
+        nameInstruction: 'a Spanish name (e.g. Isabella, Carlos, Lucía, Diego)',
+        promptLang: 'Escribe TODA la personalidad y la historia de fondo en ESPAÑOL.',
+        systemNote: 'You create Spanish-speaking virtual influencer personas. Write personality and backstory in SPANISH.',
+    },
+    de: {
+        langName: 'German',
+        nameInstruction: 'a German name (e.g. Hannah, Lukas, Sophie, Maximilian)',
+        promptLang: 'Schreibe ALLE Persönlichkeits- und Hintergrundtexte auf DEUTSCH.',
+        systemNote: 'You create German-speaking virtual influencer personas. Write personality and backstory in GERMAN.',
+    },
+    fr: {
+        langName: 'French',
+        nameInstruction: 'a French name (e.g. Camille, Antoine, Chloé, Théo)',
+        promptLang: 'Écris TOUTE la personnalité et l\'histoire en FRANÇAIS.',
+        systemNote: 'You create French-speaking virtual influencer personas. Write personality and backstory in FRENCH.',
+    },
+}
+
 export async function POST(req: NextRequest) {
     try {
-        const { projectId, gender } = await req.json()
+        const { projectId, gender, language: requestLanguage } = await req.json()
+        const language: Language = requestLanguage || 'tr'
 
         if (!projectId) {
             return NextResponse.json(
@@ -81,6 +122,7 @@ export async function POST(req: NextRequest) {
         const nameStyle = nameStyles[Math.floor(Math.random() * nameStyles.length)]
         const uniqueSeed = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
         const selectedGender = gender || 'female'
+        const langConfig = LANGUAGE_CONFIG[language] || LANGUAGE_CONFIG['tr']
 
         const prompt = `Create a UNIQUE AI Influencer character profile for marketing the following project.
 Generation seed: ${uniqueSeed} — use this to ensure uniqueness.
@@ -88,10 +130,12 @@ Generation seed: ${uniqueSeed} — use this to ensure uniqueness.
 Project: ${project.name}
 Description: ${project.description || ''}
 Gender: ${selectedGender}
+Language: ${langConfig.langName}
 
 CREATIVE DIRECTION:
 - Personality archetype: ${archetype}
-- Name style: Give them ${nameStyle}
+- Name: Give them ${langConfig.nameInstruction} OR ${nameStyle}
+- ${langConfig.promptLang}
 
 The AI influencer should be a virtual character that:
 - Has a memorable, UNIQUE name (first and last name) — NEVER use generic names like "Alex Nova" or "Ada"
@@ -125,7 +169,7 @@ Respond with ONLY valid JSON (no markdown formatting):
                 messages: [
                     {
                         role: 'system',
-                        content: 'You are an AI character designer. Create unique, memorable influencer personas. Respond ONLY with valid JSON, no markdown formatting.',
+                        content: langConfig.systemNote,
                     },
                     { role: 'user', content: prompt },
                 ],

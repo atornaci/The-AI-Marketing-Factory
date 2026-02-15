@@ -135,6 +135,15 @@ export async function createInfluencer(
     }
 }
 
+// Language code → full name map for Master Prompt
+const LANGUAGE_NAMES: Record<Language, string> = {
+    tr: 'Turkish',
+    en: 'English',
+    es: 'Spanish',
+    de: 'German',
+    fr: 'French',
+}
+
 // =========================================
 // Phase 3: Video Generation (Kling AI + Master Prompt)
 // =========================================
@@ -146,7 +155,8 @@ export async function generateVideo(
     screenshotUrls: string[],
     platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube',
     projectId: string,
-    onProgress?: (step: string) => void
+    onProgress?: (step: string) => void,
+    language: Language = 'tr'
 ): Promise<VideoResult> {
     const report = (step: string) => onProgress?.(step)
 
@@ -154,12 +164,12 @@ export async function generateVideo(
     report('Generating 5 hook variations...')
     let storyboard: Storyboard | undefined
     try {
-        const hooks = await abacusAI.generateHookVariations(analysis, platform)
+        const hooks = await abacusAI.generateHookVariations(analysis, platform, language)
         console.log(`[Workflow] ✅ ${hooks.length} hooks generated`)
 
         // Step 0.2: Generate Storyboard
         report('Creating cinematic storyboard...')
-        storyboard = await abacusAI.generateStoryboard(analysis, constitution, hooks, platform)
+        storyboard = await abacusAI.generateStoryboard(analysis, constitution, hooks, platform, language)
         console.log(`[Workflow] ✅ Storyboard: ${storyboard.scenes.length} scenes, ${storyboard.totalDuration}s`)
     } catch (error) {
         console.warn('[Workflow] ⚠️ Hook/Storyboard generation failed, continuing with script:', error)
@@ -169,7 +179,7 @@ export async function generateVideo(
     report('Writing viral video script...')
     let script: VideoScript
     try {
-        script = await abacusAI.generateVideoScript(analysis, constitution, platform)
+        script = await abacusAI.generateVideoScript(analysis, constitution, platform, language)
         console.log(`[Workflow] ✅ Script generated: "${script.title}"`)
     } catch (error) {
         console.error('[Workflow] ❌ Script generation failed:', error)
@@ -208,7 +218,7 @@ export async function generateVideo(
             uniqueSellingPoints: (analysis as Record<string, unknown>).uniqueFeatures as string[]
                 || [analysis.valueProposition || ''].filter(Boolean),
             platform: platform,
-            language: 'Turkish',
+            language: LANGUAGE_NAMES[language] || 'Turkish',
         }
 
         // Call Claude to generate the Master Prompt
@@ -269,17 +279,16 @@ export async function generateVideo(
         if (videoUrl) {
             report('🎙️ ElevenLabs: Generating voiceover & merging...')
             try {
-                // Determine language and gender from influencer profile
-                const projectLanguage = (influencerProfile?.language as Language) || 'tr'
+                // Use the pipeline language (from UI) and gender from influencer profile
                 const vp = influencerProfile?.visualProfile as Record<string, string> | undefined
                 const influencerGender: Gender = (vp?.gender === 'male' ? 'male' : 'female')
 
-                console.log(`[Workflow] ElevenLabs TTS: lang=${projectLanguage}, gender=${influencerGender}`)
+                console.log(`[Workflow] ElevenLabs TTS: lang=${language}, gender=${influencerGender}`)
 
                 const audioResult = await processVideoWithAudio({
                     script: finalScript,
                     videoUrl,
-                    language: projectLanguage,
+                    language: language,
                     gender: influencerGender,
                     projectId,
                     platform,
