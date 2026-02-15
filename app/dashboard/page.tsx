@@ -616,9 +616,9 @@ function DashboardContent() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                <div className="flex flex-col lg:flex-row gap-4 lg:gap-5 lg:items-end">
                                     {/* Gender Selector */}
-                                    <div className="lg:col-span-3">
+                                    <div className="shrink-0">
                                         <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                             <UserRound className="w-3.5 h-3.5" />
                                             Cinsiyet
@@ -627,37 +627,37 @@ function DashboardContent() {
                                             <button
                                                 onClick={() => setQuickGender("female")}
                                                 disabled={isQuickCreating}
-                                                className={`flex-1 p-3 rounded-xl border text-center transition-all ${quickGender === "female"
+                                                className={`w-20 p-2.5 rounded-xl border text-center transition-all ${quickGender === "female"
                                                     ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
                                                     : "border-border/50 hover:border-violet-300/50 bg-background/50"
                                                     }`}
                                             >
-                                                <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
-                                                    <Image src="/default-influencer-female.png" alt="Kadın" width={40} height={40} className="w-full h-full object-cover" />
+                                                <div className="w-9 h-9 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
+                                                    <Image src="/default-influencer-female.png" alt="Kadın" width={36} height={36} className="w-full h-full object-cover" />
                                                 </div>
-                                                <span className="text-xs font-medium">Kadın</span>
+                                                <span className="text-[11px] font-medium">Kadın</span>
                                             </button>
                                             <button
                                                 onClick={() => setQuickGender("male")}
                                                 disabled={isQuickCreating}
-                                                className={`flex-1 p-3 rounded-xl border text-center transition-all ${quickGender === "male"
+                                                className={`w-20 p-2.5 rounded-xl border text-center transition-all ${quickGender === "male"
                                                     ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
                                                     : "border-border/50 hover:border-violet-300/50 bg-background/50"
                                                     }`}
                                             >
-                                                <div className="w-10 h-10 rounded-full mx-auto mb-1.5 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
-                                                    <Image src="/default-influencer-male.png" alt="Erkek" width={40} height={40} className="w-full h-full object-cover" />
+                                                <div className="w-9 h-9 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
+                                                    <Image src="/default-influencer-male.png" alt="Erkek" width={36} height={36} className="w-full h-full object-cover" />
                                                 </div>
-                                                <span className="text-xs font-medium">Erkek</span>
+                                                <span className="text-[11px] font-medium">Erkek</span>
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Script Input */}
-                                    <div className="lg:col-span-7">
+                                    <div className="flex-1 min-w-0">
                                         <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                             <MessageSquareText className="w-3.5 h-3.5" />
-                                            Influencer ne söylesin? (10 saniyelik video)
+                                            Influencer ne söylesin? <span className="text-muted-foreground/50">(10s video · max {SCRIPT_MAX_LENGTH} karakter)</span>
                                         </label>
                                         <div className="relative">
                                             <textarea
@@ -665,29 +665,26 @@ function DashboardContent() {
                                                 value={quickScript}
                                                 onChange={(e) => setQuickScript(e.target.value.slice(0, SCRIPT_MAX_LENGTH))}
                                                 disabled={isQuickCreating}
-                                                rows={3}
+                                                rows={2}
                                                 className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all"
                                             />
-                                            <span className={`absolute bottom-2.5 right-3 text-[10px] font-medium ${quickScript.length > SCRIPT_MAX_LENGTH * 0.9 ? 'text-red-500' : 'text-muted-foreground/50'}`}>
+                                            <span className={`absolute bottom-2 right-3 text-[10px] font-medium ${quickScript.length > SCRIPT_MAX_LENGTH * 0.9 ? 'text-red-500' : 'text-muted-foreground/50'}`}>
                                                 {quickScript.length}/{SCRIPT_MAX_LENGTH}
                                             </span>
                                         </div>
-                                        <p className="text-[10px] text-muted-foreground/60 mt-1.5 ml-1">
-                                            💡 10 saniyelik video için en fazla ~150 karakter önerilir
-                                        </p>
                                     </div>
 
                                     {/* Generate Button */}
-                                    <div className="lg:col-span-2 flex flex-col justify-end">
+                                    <div className="shrink-0">
                                         <Button
                                             onClick={handleQuickVideo}
                                             disabled={!quickScript.trim() || isQuickCreating}
-                                            className="w-full h-[88px] rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex flex-col gap-1.5"
+                                            className="h-[60px] px-8 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex items-center gap-2"
                                         >
                                             {isQuickCreating ? (
                                                 <>
                                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                                    <span className="text-[10px] font-normal opacity-80">Oluşturuluyor</span>
+                                                    <span>Oluşturuluyor...</span>
                                                 </>
                                             ) : (
                                                 <>
