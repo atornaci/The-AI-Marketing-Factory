@@ -7,6 +7,19 @@ export const maxDuration = 120
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || ''
 
+// ─── UGC Video Machine Master System Prompt ───
+// This system prompt governs ALL character generation.
+// Key principle: Identity Freeze — once defined, maintain exact physical parameters.
+const UGC_SYSTEM_PROMPT = `Role: You are the "UGC Video Machine" Engine. Your sole purpose is to generate ultra-realistic, consistent social media influencer characters.
+
+Core Logic:
+1. Identity Freeze: Once a character is defined (features, hair, skin texture, age), maintain these EXACT parameters across all outputs. Include specific: ethnicity, eye color, hair texture/length, facial markers.
+2. UGC Realism DNA: Characters must look like real smartphone selfie creators, NOT models or actors.
+3. Human Imperfections: Include visible pores, flyaway hairs, natural skin redness, non-perfect teeth, real human features.
+4. Strictly Avoid: "Cinematic," "Studio lighting," "Professional photography," "Perfect skin," "Model look."
+
+Output Structure: For every request, provide a complete [Character Identity] with frozen physical parameters.`
+
 // Language-specific influencer generation config
 const LANGUAGE_CONFIG: Record<Language, {
     langName: string
@@ -18,31 +31,31 @@ const LANGUAGE_CONFIG: Record<Language, {
         langName: 'Turkish',
         nameInstruction: 'a Turkish name (e.g. Elif, Berk, Zeynep, Emre)',
         promptLang: 'Tüm kişilik ve hikaye metinlerini TÜRKÇE yaz.',
-        systemNote: 'You create Turkish virtual influencer personas. Write personality and backstory in TURKISH.',
+        systemNote: UGC_SYSTEM_PROMPT + '\n\nLANGUAGE: Write personality and backstory in TURKISH.',
     },
     en: {
         langName: 'English',
         nameInstruction: 'an English name (e.g. Sarah, James, Emily, Ryan)',
         promptLang: 'Write ALL personality and backstory text in ENGLISH.',
-        systemNote: 'You create English-speaking virtual influencer personas. Write personality and backstory in ENGLISH.',
+        systemNote: UGC_SYSTEM_PROMPT + '\n\nLANGUAGE: Write personality and backstory in ENGLISH.',
     },
     es: {
         langName: 'Spanish',
         nameInstruction: 'a Spanish name (e.g. Isabella, Carlos, Lucía, Diego)',
         promptLang: 'Escribe TODA la personalidad y la historia de fondo en ESPAÑOL.',
-        systemNote: 'You create Spanish-speaking virtual influencer personas. Write personality and backstory in SPANISH.',
+        systemNote: UGC_SYSTEM_PROMPT + '\n\nLANGUAGE: Write personality and backstory in SPANISH.',
     },
     de: {
         langName: 'German',
         nameInstruction: 'a German name (e.g. Hannah, Lukas, Sophie, Maximilian)',
         promptLang: 'Schreibe ALLE Persönlichkeits- und Hintergrundtexte auf DEUTSCH.',
-        systemNote: 'You create German-speaking virtual influencer personas. Write personality and backstory in GERMAN.',
+        systemNote: UGC_SYSTEM_PROMPT + '\n\nLANGUAGE: Write personality and backstory in GERMAN.',
     },
     fr: {
         langName: 'French',
         nameInstruction: 'a French name (e.g. Camille, Antoine, Chloé, Théo)',
         promptLang: 'Écris TOUTE la personnalité et l\'histoire en FRANÇAIS.',
-        systemNote: 'You create French-speaking virtual influencer personas. Write personality and backstory in FRENCH.',
+        systemNote: UGC_SYSTEM_PROMPT + '\n\nLANGUAGE: Write personality and backstory in FRENCH.',
     },
 }
 
@@ -147,18 +160,33 @@ ${sector ? `- SECTOR/INDUSTRY: ${sector} — tailor the influencer's personality
 ${environment ? `- PREFERRED ENVIRONMENT: ${environment} — use this as the primary sceneEnvironment.` : ''}
 ${energy ? `- ENERGY LEVEL: ${energy} — match the influencer's personality to this energy (e.g. sakin=calm expert, enerjik=bold challenger, samimi=friendly mentor).` : ''}
 
+IDENTITY FREEZE — PHYSICAL DESCRIPTION REQUIREMENTS:
+The "appearanceDescription" field must be EXTREMELY DETAILED and include ALL of the following:
+- Exact ethnicity and skin tone (e.g. "light olive Mediterranean skin", "warm brown South Asian skin")
+- Eye color and shape (e.g. "deep brown almond-shaped eyes", "green-hazel round eyes")
+- Hair texture, length, color, and style (e.g. "shoulder-length wavy dark brown hair with natural highlights, slightly messy")
+- Specific facial markers: freckles, moles, dimples, or beauty marks (e.g. "small mole on left cheek, light freckles across nose bridge")
+- Teeth description (e.g. "slightly uneven front teeth", "warm wide smile with visible canines")
+- Any piercings or distinctive features (e.g. "small gold nose stud", "thick natural eyebrows")
+- Body type hint (e.g. "average build", "athletic", "curvy")
+- Do NOT describe as "perfect" or "model-like" — make them look like a REAL relatable person
+
 Respond with ONLY valid JSON (no markdown formatting):
 {
   "name": "A creative, memorable influencer name",
   "personality": "Detailed personality traits (2-3 sentences)",
   "backstory": "A compelling backstory (3-5 sentences)",
-  "appearanceDescription": "Detailed visual description for AI image generation including clothing, hair, expression",
+  "appearanceDescription": "EXTREMELY DETAILED physical description following the Identity Freeze requirements above. Must include: ethnicity, skin tone, eye color/shape, hair texture/length/color, facial markers (moles/freckles/dimples), teeth, any piercings, body type. This is the CHARACTER MAP used for ALL future image and video generation.",
   "sceneEnvironment": "The physical setting/location where the influencer is (e.g. 'cozy café with warm lighting', 'modern gym with equipment', 'sunny park bench', 'sleek home kitchen'). Must match the project description context.",
   "visualProfile": {
     "gender": "${selectedGender}",
     "ageRange": "25-35",
+    "ethnicity": "specific ethnicity",
+    "eyeColor": "specific eye color",
+    "hairDescription": "detailed hair description",
+    "facialMarkers": "moles, freckles, dimples, or other markers",
     "style": "casual/sporty/business casual/formal — pick what fits the scene",
-    "features": "Key visual features"
+    "features": "Key visual features including piercings, tattoos, glasses etc."
   }
 }`
 
@@ -217,10 +245,12 @@ Respond with ONLY valid JSON (no markdown formatting):
         const constitution = project.marketing_constitution as Record<string, unknown> | undefined
         const visualDna = (constitution?.visualDna as string) || ''
 
-        const appearance = (profile.appearanceDescription || '').substring(0, 150)
-        const scene = (profile.sceneEnvironment || 'modern office environment').substring(0, 100)
+        const appearance = (profile.appearanceDescription || '').substring(0, 300)
+        const scene = (profile.sceneEnvironment || 'cozy living room').substring(0, 100)
         const dnaKeywords = visualDna ? `, ${visualDna}` : ''
-        const avatarPrompt = `Professional photorealistic medium shot portrait of a ${genderWord} aged ${age}, visible from waist up, ${appearance || 'stylish and professional'}, sitting or standing naturally in ${scene}, relaxed natural pose, soft cinematic lighting, warm confident expression looking at camera, 8k uhd, sharp focus, shot on 85mm lens${dnaKeywords}. Avoid: extreme close-up, tight headshot, cropped face, lowres, bad anatomy, text overlap, distorted UI, cartoon, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs`
+
+        // ─── UGC Realism DNA: iPhone selfie, NOT cinematic portrait ───
+        const avatarPrompt = `Raw unfiltered smartphone selfie of a ${genderWord} aged ${age}, shot on iPhone 15 front camera, 9:16 vertical portrait format. ${appearance || 'natural everyday appearance'}. Sitting or standing naturally in ${scene}. Direct gaze at camera lens, slightly off-center framing. Natural ambient lighting matching the environment, NO studio lighting, NO professional photography. Realistic skin texture with visible pores, natural skin redness and imperfections, flyaway hairs, non-perfect teeth visible in a natural smile. Candid and authentic, like a real social media creator about to film a video. Slight lens distortion from front camera proximity${dnaKeywords}. AVOID: professional photography, studio lighting, 85mm lens, shallow depth of field, beauty filter, smooth skin, cinematic look, perfect framing, model pose, extreme close-up, tight headshot, cropped face, lowres, bad anatomy, cartoon, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs`
 
         let avatarUrl = ''
         try {

@@ -701,7 +701,8 @@ Respond ONLY with valid JSON.`
 
     /**
      * Build a character reference string from influencer profile
-     * Creates a consistent identity anchor for all video/image prompts
+     * IDENTITY FREEZE: Creates a detailed, frozen identity anchor
+     * that ensures visual consistency across ALL video/image prompts
      */
     private buildCharacterReference(
         influencerProfile: Record<string, unknown>
@@ -711,12 +712,28 @@ Respond ONLY with valid JSON.`
         const gender = vp?.gender === 'male' ? 'man' : 'woman'
         const age = vp?.ageRange || '28'
         const appearance = (influencerProfile?.appearanceDescription as string || '')
-            .replace(/[^a-zA-Z0-9 ,.\-]/g, '')
-            .substring(0, 200)
+            .replace(/[^a-zA-Z0-9 ,.\-']/g, '')
+            .substring(0, 400)
         const style = vp?.style || 'casual'
         const features = vp?.features || ''
+        const ethnicity = vp?.ethnicity || ''
+        const eyeColor = vp?.eyeColor || ''
+        const hairDesc = vp?.hairDescription || ''
+        const facialMarkers = vp?.facialMarkers || ''
 
-        return `Character: @${name.toLowerCase().replace(/\s+/g, '_')} | ${gender}, aged ${age}, ${appearance || style}${features ? `, ${features}` : ''}. Maintain this exact character appearance across ALL scenes for visual consistency.`
+        // Build frozen identity with all physical parameters
+        const identityParts = [
+            `Character: @${name.toLowerCase().replace(/\s+/g, '_')}`,
+            `${gender}, aged ${age}`,
+            ethnicity ? `ethnicity: ${ethnicity}` : '',
+            eyeColor ? `eyes: ${eyeColor}` : '',
+            hairDesc ? `hair: ${hairDesc}` : '',
+            facialMarkers ? `facial markers: ${facialMarkers}` : '',
+            appearance || style,
+            features ? features : '',
+        ].filter(Boolean).join(' | ')
+
+        return `${identityParts}. IDENTITY FREEZE: Maintain this EXACT character appearance (skin tone, eye color, hair, facial markers, body type) across ALL scenes. This person must be recognizable as the same individual in every frame.`
     }
 
     /**
@@ -809,18 +826,34 @@ PERFORMANCE (CRITICAL — THIS IS THE MOST IMPORTANT PART):
 Speaks naturally as if talking to a close friend.
 Starts speaking immediately with no intro pause.
 Natural micro pauses and breathing between phrases.
-Occasional tiny hesitations — like a real person thinking.
-Subtle eye movement — not constant direct stare, occasional glance away then back.
-Leans slightly closer during key emotional phrases.
-Hands occasionally enter frame with spontaneous gestures.
-Small body shifts and natural posture changes.
+Occasional tiny hesitations — like a real person thinking mid-sentence.
+Subtle eye darts — not constant direct stare, occasional quick glance away then back to camera.
+Licking lips briefly between sentences — natural nervous habit.
+Leaning slightly into the lens during key emotional phrases, then settling back.
+Hands occasionally enter frame with spontaneous conversational gestures.
+Small body shifts in seat or stance, natural fidgeting.
 Authenticity prioritized over perfection.
+
+HUMAN IMPERFECTIONS (CRITICAL):
+Visible skin pores and natural skin texture.
+Natural skin redness on cheeks, nose, or ears.
+Flyaway hairs that catch the light.
+Non-perfect teeth visible when smiling or talking.
+Slightly uneven skin tone — real human skin, NOT beauty-filtered.
+Occasional blink rate variation — sometimes rapid, sometimes slow.
+Breathing movement visible in chest/shoulders.
 
 ENERGY LEVEL: ${energyObj.energy}
 Performance mood: ${energyObj.desc}
 
 WHAT THE PERSON IS SAYING (speaks this aloud with natural lip movement):
 "${spokenScript}"
+
+AUDIO CONTEXT (natural speech rhythm):
+Natural pauses between sentences — not robotic continuous speech.
+Breathing audible between longer phrases.
+Occasional "um" or "hmm" micro-hesitations (subtle, not exaggerated).
+Voice energy matches the scene — intimate settings = softer voice, outdoor = slightly projected.
 
 CAMERA BEHAVIOR:
 Handheld smartphone realism.
