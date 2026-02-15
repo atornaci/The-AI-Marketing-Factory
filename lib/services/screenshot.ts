@@ -180,3 +180,161 @@ export async function scrapeWebsiteInfo(url: string): Promise<{
         }
     }
 }
+
+/**
+ * Scrape product images from a website
+ * Extracts meaningful product/hero images, filters out icons and UI elements
+ */
+export async function scrapeProductImages(url: string, maxImages = 10): Promise<{
+    images: Array<{ src: string; alt: string; score: number }>
+    ogImage?: string
+}> {
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            },
+        })
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch ${url}: ${response.status}`)
+        }
+
+        const html = await response.text()
+        const baseUrl = new URL(url).origin
+
+        // 1. Extract OG image (highest priority)
+        const ogImageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["'](.*?)["']/i)
+            || html.match(/<meta[^>]*content=["'](.*?)["'][^>]*property=["']og:image["']/i)
+        const ogImage = ogImageMatch ? resolveUrl(ogImageMatch[1], baseUrl) : undefined
+
+        // 2. Extract all <img> tags with src and optional attributes
+        const imgRegex = /<img[^>]*>/gi
+        const imgTags = html.match(imgRegex) || []
+
+        const candidates: Array<{ src: string; alt: string; score: number }> = []
+        const seenUrls = new Set<string>()
+
+        for (const tag of imgTags) {
+            // Extract src
+            const srcMatch = tag.match(/src=["'](.*?)["']/i)
+            if (!srcMatch) continue
+
+            let src = srcMatch[1]
+            // Skip data URIs, SVGs, and tracking pixels
+            if (src.startsWith('data:') || src.endsWith('.svg') || src.includes('pixel') || src.includes('tracking')) continue
+
+            src = resolveUrl(src, baseUrl)
+
+            // Deduplicate
+            if (seenUrls.has(src)) continue
+            seenUrls.add(src)
+
+            // Extract alt text
+            const altMatch = tag.match(/alt=["'](.*?)["']/i)
+            const alt = altMatch ? altMatch[1].trim() : ''
+
+            // Extract dimensions if available
+            const widthMatch = tag.match(/width=["']?(\d+)/i)
+            const heightMatch = tag.match(/height=["']?(\d+)/i)
+            const width = widthMatch ? parseInt(widthMatch[1]) : 0
+            const height = heightMatch ? parseInt(heightMatch[1]) : 0
+
+            // Filter out tiny images (icons, buttons, spacers)
+            if ((width > 0 && width < 100) || (height > 0 && height < 100)) continue
+            // Filter common non-product patterns
+            if (/logo|icon|avatar|badge|flag|arrow|spinner|loader|placeholder/i.test(src + ' ' + alt)) continue
+
+            // Score the image for product relevance
+            let score = 0
+            // Large declared dimensions boost
+            if (width >= 300 || height >= 300) score += 3
+            if (width >= 500 || height >= 500) score += 2
+            // Alt text with product-related words
+            if (/product|ürün|item|shop|buy|price|fiyat|resim|foto|image/i.test(alt)) score += 3
+            // Image in product-related paths
+            if (/product|catalog|shop|item|upload|media\/image/i.test(src)) score += 3
+            // High-quality image extensions
+            if (/\.(jpg|jpeg|png|webp)/i.test(src)) score += 1
+            // Alt text exists (real content images usually have alt)
+            if (alt.length > 3) score += 1
+            // Penalize common non-product patterns
+            if (/banner|slider|hero|background|bg/i.test(src)) score -= 1
+            // No dimensions or class info → neutral
+            if (width === 0 && height === 0) score += 0
+
+            candidates.push({ src, alt, score })
+        }
+
+        // 3. Also check for product schema images (JSON-LD)
+        const jsonLdRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
+        let jsonLdMatch
+        while ((jsonLdMatch = jsonLdRegex.exec(html)) !== null) {
+            try {
+                const jsonData = JSON.parse(jsonLdMatch[1])
+                const schemaImages = extractSchemaImages(jsonData, baseUrl)
+                for (const img of schemaImages) {
+                    if (!seenUrls.has(img.src)) {
+                        seenUrls.add(img.src)
+                        candidates.push({ ...img, score: img.score + 5 }) // Schema images are high priority
+                    }
+                }
+            } catch {
+                // Invalid JSON-LD, skip
+            }
+        }
+
+        // Sort by score (highest first) and take top N
+        candidates.sort((a, b) => b.score - a.score)
+        const topImages = candidates.slice(0, maxImages)
+
+        console.log(`[Scraper] Found ${candidates.length} candidate images, returning top ${topImages.length} from ${url}`)
+
+        return { images: topImages, ogImage }
+    } catch (error) {
+        console.error('[Scraper] Product image scraping failed:', error)
+        return { images: [] }
+    }
+}
+
+/** Resolve a potentially relative URL to absolute */
+function resolveUrl(src: string, baseUrl: string): string {
+    if (src.startsWith('http://') || src.startsWith('https://')) return src
+    if (src.startsWith('//')) return 'https:' + src
+    if (src.startsWith('/')) return baseUrl + src
+    return baseUrl + '/' + src
+}
+
+/** Extract image URLs from JSON-LD schema data */
+function extractSchemaImages(data: unknown, baseUrl: string): Array<{ src: string; alt: string; score: number }> {
+    const images: Array<{ src: string; alt: string; score: number }> = []
+
+    if (!data || typeof data !== 'object') return images
+
+    const obj = data as Record<string, unknown>
+
+    // Direct image property
+    if (typeof obj.image === 'string') {
+        images.push({ src: resolveUrl(obj.image, baseUrl), alt: (obj.name as string) || '', score: 5 })
+    } else if (Array.isArray(obj.image)) {
+        for (const img of obj.image) {
+            if (typeof img === 'string') {
+                images.push({ src: resolveUrl(img, baseUrl), alt: (obj.name as string) || '', score: 5 })
+            } else if (img && typeof img === 'object' && (img as Record<string, unknown>).url) {
+                images.push({ src: resolveUrl((img as Record<string, unknown>).url as string, baseUrl), alt: (obj.name as string) || '', score: 5 })
+            }
+        }
+    }
+
+    // Check for nested items (e.g., Product, ItemList)
+    if (Array.isArray(obj.itemListElement)) {
+        for (const item of obj.itemListElement) {
+            images.push(...extractSchemaImages(item, baseUrl))
+        }
+    }
+    if (obj.mainEntity) {
+        images.push(...extractSchemaImages(obj.mainEntity, baseUrl))
+    }
+
+    return images
+}

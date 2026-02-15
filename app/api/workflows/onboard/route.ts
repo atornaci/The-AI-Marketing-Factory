@@ -58,6 +58,28 @@ export async function POST(req: NextRequest) {
             })
         }
 
+        // Save product images as assets
+        for (const img of result.productImages) {
+            await supabase.from('assets').insert({
+                project_id: project.id,
+                asset_type: 'custom',
+                file_name: img.alt || `product-image-${Date.now()}`,
+                file_path: img.src,
+                metadata: { source: 'product_scrape', score: img.score },
+            })
+        }
+
+        // Save OG image if available
+        if (result.ogImage) {
+            await supabase.from('assets').insert({
+                project_id: project.id,
+                asset_type: 'custom',
+                file_name: 'og-image',
+                file_path: result.ogImage,
+                metadata: { source: 'product_scrape', type: 'og_image' },
+            })
+        }
+
         return NextResponse.json({
             success: true,
             project,

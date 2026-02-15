@@ -6,7 +6,7 @@
 
 import { abacusAI } from '@/lib/services/abacus-ai'
 import * as klingAI from '@/lib/services/kling-ai'
-import { captureWebsite, uploadScreenshot, scrapeWebsiteInfo, uploadMediaToStorage } from '@/lib/services/screenshot'
+import { captureWebsite, uploadScreenshot, scrapeWebsiteInfo, scrapeProductImages, uploadMediaToStorage } from '@/lib/services/screenshot'
 import { processVideoWithAudio } from '@/lib/services/audio-utils'
 import type { ProjectAnalysis, MarketingConstitution, VideoScript, InfluencerProfile } from '@/lib/services/abacus-ai'
 import type { Storyboard } from '@/lib/types/storyboard'
@@ -26,6 +26,8 @@ export interface OnboardingResult {
     analysis: ProjectAnalysis
     constitution: MarketingConstitution
     screenshots: string[]
+    productImages: Array<{ src: string; alt: string; score: number }>
+    ogImage?: string
 }
 
 export interface InfluencerResult {
@@ -56,6 +58,7 @@ export async function onboardProject(
         'Validating URL...',
         'Capturing screenshots...',
         'Scraping website content...',
+        'Extracting product images...',
         'Analyzing project with AI...',
         'Generating Marketing Constitution...',
         'Saving to database...',
@@ -86,22 +89,29 @@ export async function onboardProject(
     report(steps[2])
     const websiteInfo = await scrapeWebsiteInfo(validUrl)
 
-    // Step 4: Analyze with AI
+    // Step 4: Extract product images
     report(steps[3])
+    const { images: productImages, ogImage } = await scrapeProductImages(validUrl)
+    console.log(`[Onboard] Found ${productImages.length} product images${ogImage ? ' + OG image' : ''}`)
+
+    // Step 5: Analyze with AI
+    report(steps[4])
     const analysis = await abacusAI.analyzeProject(validUrl, websiteInfo.content)
 
-    // Step 5: Generate Marketing Constitution
-    report(steps[4])
+    // Step 6: Generate Marketing Constitution
+    report(steps[5])
     const constitution = await abacusAI.generateMarketingConstitution(analysis)
 
-    // Step 6: Save to database (done by the API route)
-    report(steps[5])
+    // Step 7: Save to database (done by the API route)
+    report(steps[6])
 
     return {
         projectId: '', // Will be set by API route after DB insert
         analysis,
         constitution,
         screenshots: screenshotUrls,
+        productImages,
+        ogImage,
     }
 }
 
