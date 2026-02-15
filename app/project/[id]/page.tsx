@@ -356,6 +356,31 @@ function ProjectDetailPageInner({
         fetchData();
     }, [fetchData]);
 
+    // Auto-refresh video statuses when there are processing videos
+    useEffect(() => {
+        const hasProcessingVideos = videos.some(
+            (v) => v.status !== 'ready' && v.status !== 'failed' && v.status !== 'script_ready'
+        );
+        if (!hasProcessingVideos) return;
+
+        const pollInterval = setInterval(async () => {
+            try {
+                const { data: freshVideos } = await supabase
+                    .from('videos')
+                    .select('*')
+                    .eq('project_id', id)
+                    .order('created_at', { ascending: false });
+                if (freshVideos) {
+                    setVideos(freshVideos);
+                }
+            } catch (err) {
+                console.error('[Poll] Video status refresh error:', err);
+            }
+        }, 5000);
+
+        return () => clearInterval(pollInterval);
+    }, [videos, id, supabase]);
+
     /* ─── Create Influencer ─── */
     const handleCreateInfluencer = async () => {
         setIsCreatingInfluencer(true);
@@ -1165,9 +1190,7 @@ function ProjectDetailPageInner({
                                                     disabled={isCreatingInfluencer}
                                                     onClick={async () => {
                                                         try {
-                                                            // Start loading immediately so progress is visible
                                                             setIsCreatingInfluencer(true);
-                                                            setInfluencerProgress(5);
                                                             setInfluencerStep("Mevcut influencer siliniyor...");
 
                                                             const res = await fetch(`${N8N_ENDPOINTS.deleteInfluencer}?id=${influencer.id}`, { method: 'DELETE' });
@@ -1176,25 +1199,24 @@ function ProjectDetailPageInner({
                                                                 throw new Error(errData.error || 'Silme işlemi başarısız');
                                                             }
 
+                                                            // Clear influencer so the creation form (with gender selection) appears
                                                             setInfluencer(null);
-                                                            setInfluencerProgress(10);
-                                                            setInfluencerStep("Yeni influencer oluşturuluyor...");
-
-                                                            // Create new influencer
-                                                            await handleCreateInfluencer();
+                                                            setIsCreatingInfluencer(false);
+                                                            setInfluencerStep("");
+                                                            setInfluencerProgress(0);
                                                         } catch (err) {
-                                                            console.error('Influencer recreation failed:', err);
+                                                            console.error('Influencer deletion failed:', err);
                                                             const errMsg = err instanceof Error ? err.message : 'Bilinmeyen hata';
                                                             setInfluencerError(errMsg);
                                                             setInfluencerStep(`Hata: ${errMsg}`);
                                                             setIsCreatingInfluencer(false);
-                                                            alert(`Influencer yeniden oluşturma hatası: ${errMsg}`);
+                                                            alert(`Influencer silme hatası: ${errMsg}`);
                                                         }
                                                     }}
                                                     className="w-full rounded-lg text-xs border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-800 dark:text-orange-400 dark:hover:bg-orange-950/30"
                                                 >
                                                     {isCreatingInfluencer ? (
-                                                        <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Oluşturuluyor...</>
+                                                        <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> Siliniyor...</>
                                                     ) : (
                                                         <><RefreshCw className="w-3 h-3 mr-1.5" /> Yeniden Oluştur</>
                                                     )}
