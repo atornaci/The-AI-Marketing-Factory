@@ -21,6 +21,9 @@ import {
     Bot,
     ChevronDown,
     ExternalLink,
+    Users,
+    Plus,
+    Check,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
@@ -83,6 +86,11 @@ function DashboardContent() {
     const [isQuickCreating, setIsQuickCreating] = useState(false);
     const [quickStep, setQuickStep] = useState("");
     const [quickProgress, setQuickProgress] = useState(0);
+
+    /* ─── Influencer Library State ─── */
+    const [influencerLibrary, setInfluencerLibrary] = useState<CreatedInfluencer[]>([]);
+    const [loadingLibrary, setLoadingLibrary] = useState(true);
+    const [showCreateForm, setShowCreateForm] = useState(false);
 
     /* ─── Influencer Result State ─── */
     const [createdInfluencer, setCreatedInfluencer] = useState<CreatedInfluencer | null>(null);
@@ -157,9 +165,35 @@ function DashboardContent() {
         }
     }, [supabase, router]);
 
+    /* ─── Fetch Influencer Library ─── */
+    const fetchInfluencerLibrary = useCallback(async () => {
+        try {
+            setLoadingLibrary(true);
+            const res = await fetch('/api/influencers');
+            if (res.ok) {
+                const data = await res.json();
+                setInfluencerLibrary(
+                    (data.influencers || []).map((inf: Record<string, unknown>) => ({
+                        id: inf.id as string,
+                        name: inf.name as string,
+                        personality: inf.personality as string || undefined,
+                        backstory: inf.backstory as string || undefined,
+                        avatarUrl: inf.avatar_url as string || undefined,
+                        projectId: inf.project_id as string,
+                    }))
+                );
+            }
+        } catch (err) {
+            console.error('Failed to fetch influencer library:', err);
+        } finally {
+            setLoadingLibrary(false);
+        }
+    }, []);
+
     useEffect(() => {
         fetchUser();
-    }, [fetchUser]);
+        fetchInfluencerLibrary();
+    }, [fetchUser, fetchInfluencerLibrary]);
 
     /* ─── Sign Out ─── */
     const handleSignOut = async () => {
@@ -228,15 +262,18 @@ function DashboardContent() {
             setQuickProgress(90);
             setQuickStep("Influencer ready! ✓");
 
-            // Save influencer to state (no redirect!)
-            setCreatedInfluencer({
+            // Save influencer to state and add to library
+            const newInfluencer: CreatedInfluencer = {
                 id: influencer.id,
                 name: influencer.name,
                 personality: influencer.personality,
                 backstory: influencer.backstory,
                 avatarUrl: influencer.avatarUrl,
                 projectId: project.id,
-            });
+            };
+            setCreatedInfluencer(newInfluencer);
+            setInfluencerLibrary(prev => [newInfluencer, ...prev]);
+            setShowCreateForm(false);
 
             await new Promise((r) => setTimeout(r, 600));
             setQuickProgress(100);
@@ -350,6 +387,15 @@ function DashboardContent() {
         setQuickEnergy("");
         setQuickGender("female");
         setGenError("");
+        setShowCreateForm(true);
+    };
+
+    /* ─── Select from Library ─── */
+    const handleSelectInfluencer = (inf: CreatedInfluencer) => {
+        setCreatedInfluencer(inf);
+        setGeneratedVideos([]);
+        setGenError("");
+        setShowCreateForm(false);
     };
 
     /* ─── Loading ─── */
@@ -442,8 +488,86 @@ function DashboardContent() {
                         </div>
                     </motion.div>
 
+                    {/* ═══ Influencer Library ═══ */}
+                    {!createdInfluencer && !showCreateForm && (
+                        <motion.div variants={itemVariants} className="mb-8">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Users className="w-5 h-5 text-violet-500" />
+                                    <h2 className="text-lg font-bold tracking-tight">My Influencers</h2>
+                                    {influencerLibrary.length > 0 && (
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 font-medium">
+                                            {influencerLibrary.length}
+                                        </span>
+                                    )}
+                                </div>
+                                <Button
+                                    onClick={() => setShowCreateForm(true)}
+                                    size="sm"
+                                    className="text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 hover:opacity-90 border-0 shadow-md"
+                                >
+                                    <Plus className="w-3.5 h-3.5 mr-1" />
+                                    Create New
+                                </Button>
+                            </div>
+
+                            {loadingLibrary ? (
+                                <div className="text-center py-12">
+                                    <Loader2 className="w-6 h-6 animate-spin text-violet-400 mx-auto mb-2" />
+                                    <p className="text-xs text-muted-foreground">Loading your influencers...</p>
+                                </div>
+                            ) : influencerLibrary.length === 0 ? (
+                                <div className="text-center py-12 rounded-2xl border border-dashed border-violet-200/50 bg-violet-500/[0.02]">
+                                    <Bot className="w-10 h-10 text-violet-300 mx-auto mb-3" />
+                                    <p className="text-sm font-medium mb-1">No influencers yet</p>
+                                    <p className="text-xs text-muted-foreground mb-4">Create your first AI influencer to get started</p>
+                                    <Button
+                                        onClick={() => setShowCreateForm(true)}
+                                        size="sm"
+                                        className="text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 hover:opacity-90 border-0"
+                                    >
+                                        <Plus className="w-3.5 h-3.5 mr-1" />
+                                        Create Influencer
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                    {influencerLibrary.map((inf) => (
+                                        <button
+                                            key={inf.id}
+                                            onClick={() => handleSelectInfluencer(inf)}
+                                            className="group relative rounded-2xl border border-border/50 bg-card p-4 text-left hover:border-violet-300 hover:shadow-md transition-all"
+                                        >
+                                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-violet-200/30 mx-auto mb-3 shadow-sm">
+                                                {inf.avatarUrl ? (
+                                                    <Image
+                                                        src={inf.avatarUrl}
+                                                        alt={inf.name}
+                                                        width={64}
+                                                        height={64}
+                                                        className="w-full h-full object-cover"
+                                                        unoptimized
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
+                                                        <Bot className="w-6 h-6 text-violet-400" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-sm font-semibold text-center truncate">{inf.name}</p>
+                                            {inf.personality && (
+                                                <p className="text-[10px] text-muted-foreground text-center line-clamp-2 mt-1">{inf.personality.substring(0, 60)}...</p>
+                                            )}
+                                            <div className="absolute inset-0 rounded-2xl ring-2 ring-violet-400/0 group-hover:ring-violet-400/50 transition-all" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+
                     {/* ═══ STEP 1: Create Influencer Form ═══ */}
-                    {!createdInfluencer && (
+                    {!createdInfluencer && (showCreateForm || influencerLibrary.length === 0) && (
                         <motion.div variants={itemVariants} className="mb-10">
                             <div className="relative overflow-hidden rounded-2xl border border-violet-200/50 bg-gradient-to-br from-violet-500/[0.04] via-purple-500/[0.02] to-transparent shadow-sm">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
@@ -678,10 +802,19 @@ function DashboardContent() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
+                                                        onClick={() => { setCreatedInfluencer(null); setGeneratedVideos([]); setGenError(""); setShowCreateForm(false); }}
+                                                        className="text-xs text-muted-foreground hover:text-violet-600 rounded-lg"
+                                                    >
+                                                        <Users className="w-3.5 h-3.5 mr-1" />
+                                                        Change
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
                                                         onClick={handleReset}
                                                         className="text-xs text-muted-foreground hover:text-violet-600 rounded-lg"
                                                     >
-                                                        <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                                                        <Plus className="w-3.5 h-3.5 mr-1" />
                                                         New
                                                     </Button>
                                                 </div>

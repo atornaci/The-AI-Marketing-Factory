@@ -921,7 +921,7 @@ ${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}`
                 prompt: prompt.substring(0, 2500), // Kling supports longer prompts
                 duration: '10', // 10 seconds for marketing content
                 negative_prompt: negativePrompt || 'blur, distort, low quality, cartoon, 3d render, anime, extra fingers, CGI, camera zoom, dolly in, push in, extreme close-up',
-                generate_audio: false, // Disabled — ElevenLabs TTS provides voiceover via ffmpeg merge
+                generate_audio: true, // Kling AI native audio — lip-synced speech generated from prompt
             }
             if (useImageToVideo) {
                 requestBody.start_image_url = avatarUrl  // V2.6 uses start_image_url instead of image_url
