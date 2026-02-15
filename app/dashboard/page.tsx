@@ -43,6 +43,9 @@ import {
     Clapperboard,
     MessageSquareText,
     UserRound,
+    Building2,
+    MapPin,
+    Flame,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -111,10 +114,50 @@ function DashboardContent() {
     /* ─── Quick Video State ─── */
     const [quickGender, setQuickGender] = useState<"female" | "male">("female");
     const [quickScript, setQuickScript] = useState("");
+    const [quickSector, setQuickSector] = useState("");
+    const [quickEnvironment, setQuickEnvironment] = useState("");
+    const [quickEnergy, setQuickEnergy] = useState("");
     const [isQuickCreating, setIsQuickCreating] = useState(false);
     const [quickStep, setQuickStep] = useState("");
     const [quickProgress, setQuickProgress] = useState(0);
-    const SCRIPT_MAX_LENGTH = 150;
+
+    const SECTOR_OPTIONS = [
+        { value: 'fitness', label: '💪 Fitness & Spor' },
+        { value: 'teknoloji', label: '💻 Teknoloji' },
+        { value: 'guzellik', label: '💄 Güzellik & Bakım' },
+        { value: 'egitim', label: '📚 Eğitim' },
+        { value: 'saglik', label: '🏥 Sağlık' },
+        { value: 'eticaret', label: '🛒 E-ticaret' },
+        { value: 'yemek', label: '🍽️ Yemek & Restoran' },
+        { value: 'finans', label: '💰 Finans' },
+        { value: 'gayrimenkul', label: '🏠 Gayrimenkul' },
+        { value: 'seyahat', label: '✈️ Seyahat' },
+        { value: 'moda', label: '👗 Moda' },
+        { value: 'otomotiv', label: '🚗 Otomotiv' },
+    ];
+
+    const ENVIRONMENT_OPTIONS = [
+        { value: 'kafe', label: '☕ Kafe' },
+        { value: 'spor-salonu', label: '🏋️ Spor Salonu' },
+        { value: 'park', label: '🌳 Park' },
+        { value: 'ev', label: '🏠 Ev / Salon' },
+        { value: 'ofis', label: '💼 Ofis' },
+        { value: 'sokak', label: '🚶 Sokak' },
+        { value: 'restoran', label: '🍽️ Restoran' },
+        { value: 'araba', label: '🚗 Araba İçi' },
+        { value: 'yatak-odasi', label: '🛏️ Yatak Odası' },
+        { value: 'mutfak', label: '🍳 Mutfak' },
+        { value: 'balkon', label: '🌆 Balkon' },
+    ];
+
+    const ENERGY_OPTIONS = [
+        { value: 'sakin', label: '😌 Sakin' },
+        { value: 'enerjik', label: '⚡ Enerjik' },
+        { value: 'samimi', label: '🤗 Samimi' },
+        { value: 'ciddi', label: '🎯 Ciddi' },
+        { value: 'coskulu', label: '🔥 Coşkulu' },
+        { value: 'motivasyonel', label: '💪 Motivasyonel' },
+    ];
 
     const timeAgo = (dateStr: string) => {
         const diff = Date.now() - new Date(dateStr).getTime();
@@ -294,18 +337,31 @@ function DashboardContent() {
 
     /* ─── Quick Video Handler ─── */
     const handleQuickVideo = async () => {
-        if (!quickScript.trim()) return;
+        if (!quickScript.trim() || !quickSector) return;
         setIsQuickCreating(true);
         setQuickProgress(10);
         setQuickStep("Proje oluşturuluyor...");
 
         try {
+            // Build rich project description from structured fields
+            const sectorLabel = SECTOR_OPTIONS.find(s => s.value === quickSector)?.label?.replace(/^\S+\s/, '') || quickSector;
+            const envLabel = quickEnvironment ? (ENVIRONMENT_OPTIONS.find(e => e.value === quickEnvironment)?.label?.replace(/^\S+\s/, '') || quickEnvironment) : '';
+            const energyLabel = quickEnergy ? (ENERGY_OPTIONS.find(e => e.value === quickEnergy)?.label?.replace(/^\S+\s/, '') || quickEnergy) : '';
+
+            const projectDescription = [
+                `Sektör: ${sectorLabel}.`,
+                envLabel ? `Ortam: ${envLabel}.` : '',
+                energyLabel ? `Enerji: ${energyLabel}.` : '',
+                quickScript.trim(),
+            ].filter(Boolean).join(' ');
+
+            const projectName = `${sectorLabel} — ${quickScript.trim().substring(0, 30)}`;
+
             // Step 1: Auto-create project
-            const projectName = quickScript.trim().substring(0, 40) + (quickScript.length > 40 ? '...' : '');
             const projRes = await fetch('/api/projects/quick', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: projectName, description: quickScript }),
+                body: JSON.stringify({ name: projectName, description: projectDescription }),
             });
             if (!projRes.ok) {
                 const err = await projRes.json();
@@ -322,8 +378,11 @@ function DashboardContent() {
                 body: JSON.stringify({
                     projectId: project.id,
                     gender: quickGender,
+                    sector: quickSector,
+                    environment: quickEnvironment,
+                    energy: quickEnergy,
                     brandName: projectName,
-                    brandDescription: quickScript,
+                    brandDescription: projectDescription,
                 }),
             });
             if (!infRes.ok) {
@@ -337,7 +396,7 @@ function DashboardContent() {
             setQuickProgress(100);
 
             // Redirect to project page with script as query param
-            router.push(`/project/${project.id}?script=${encodeURIComponent(quickScript)}`);
+            router.push(`/project/${project.id}?script=${encodeURIComponent(quickScript)}&env=${encodeURIComponent(quickEnvironment)}&energy=${encodeURIComponent(quickEnergy)}`);
         } catch (err) {
             setQuickStep(`Hata: ${err instanceof Error ? err.message : 'Bilinmeyen hata'}`);
         } finally {
@@ -616,9 +675,10 @@ function DashboardContent() {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col lg:flex-row gap-4 lg:gap-5 lg:items-end">
+                                {/* Row 1: Gender + Selectors */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
                                     {/* Gender Selector */}
-                                    <div className="shrink-0">
+                                    <div>
                                         <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                             <UserRound className="w-3.5 h-3.5" />
                                             Cinsiyet
@@ -627,59 +687,114 @@ function DashboardContent() {
                                             <button
                                                 onClick={() => setQuickGender("female")}
                                                 disabled={isQuickCreating}
-                                                className={`w-20 p-2.5 rounded-xl border text-center transition-all ${quickGender === "female"
+                                                className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "female"
                                                     ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
                                                     : "border-border/50 hover:border-violet-300/50 bg-background/50"
                                                     }`}
                                             >
-                                                <div className="w-9 h-9 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
-                                                    <Image src="/default-influencer-female.png" alt="Kadın" width={36} height={36} className="w-full h-full object-cover" />
+                                                <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200">
+                                                    <Image src="/default-influencer-female.png" alt="Kadın" width={32} height={32} className="w-full h-full object-cover" />
                                                 </div>
-                                                <span className="text-[11px] font-medium">Kadın</span>
+                                                <span className="text-[10px] font-medium">Kadın</span>
                                             </button>
                                             <button
                                                 onClick={() => setQuickGender("male")}
                                                 disabled={isQuickCreating}
-                                                className={`w-20 p-2.5 rounded-xl border text-center transition-all ${quickGender === "male"
+                                                className={`flex-1 p-2 rounded-xl border text-center transition-all ${quickGender === "male"
                                                     ? "border-violet-400 bg-violet-500/10 ring-2 ring-violet-400/30 shadow-sm"
                                                     : "border-border/50 hover:border-violet-300/50 bg-background/50"
                                                     }`}
                                             >
-                                                <div className="w-9 h-9 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
-                                                    <Image src="/default-influencer-male.png" alt="Erkek" width={36} height={36} className="w-full h-full object-cover" />
+                                                <div className="w-8 h-8 rounded-full mx-auto mb-1 overflow-hidden bg-gradient-to-br from-blue-200 to-indigo-200">
+                                                    <Image src="/default-influencer-male.png" alt="Erkek" width={32} height={32} className="w-full h-full object-cover" />
                                                 </div>
-                                                <span className="text-[11px] font-medium">Erkek</span>
+                                                <span className="text-[10px] font-medium">Erkek</span>
                                             </button>
                                         </div>
                                     </div>
 
+                                    {/* Sektör */}
+                                    <div>
+                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                            <Building2 className="w-3.5 h-3.5" />
+                                            Sektör <span className="text-red-400">*</span>
+                                        </label>
+                                        <select
+                                            value={quickSector}
+                                            onChange={(e) => setQuickSector(e.target.value)}
+                                            disabled={isQuickCreating}
+                                            className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
+                                        >
+                                            <option value="">Sektör seçin...</option>
+                                            {SECTOR_OPTIONS.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Ortam */}
+                                    <div>
+                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                            <MapPin className="w-3.5 h-3.5" />
+                                            Ortam <span className="text-muted-foreground/40 text-[10px]">(opsiyonel)</span>
+                                        </label>
+                                        <select
+                                            value={quickEnvironment}
+                                            onChange={(e) => setQuickEnvironment(e.target.value)}
+                                            disabled={isQuickCreating}
+                                            className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
+                                        >
+                                            <option value="">Otomatik</option>
+                                            {ENVIRONMENT_OPTIONS.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Enerji */}
+                                    <div>
+                                        <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
+                                            <Flame className="w-3.5 h-3.5" />
+                                            Enerji <span className="text-muted-foreground/40 text-[10px]">(opsiyonel)</span>
+                                        </label>
+                                        <select
+                                            value={quickEnergy}
+                                            onChange={(e) => setQuickEnergy(e.target.value)}
+                                            disabled={isQuickCreating}
+                                            className="w-full h-[68px] px-3 rounded-xl border border-border/50 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all appearance-none cursor-pointer"
+                                        >
+                                            <option value="">Otomatik</option>
+                                            {ENERGY_OPTIONS.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Row 2: Script + Generate Button */}
+                                <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mt-4">
                                     {/* Script Input */}
                                     <div className="flex-1 min-w-0">
                                         <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
                                             <MessageSquareText className="w-3.5 h-3.5" />
-                                            Influencer ne söylesin? <span className="text-muted-foreground/50">(10s video · max {SCRIPT_MAX_LENGTH} karakter)</span>
+                                            Influencer ne söylesin? <span className="text-muted-foreground/50">(10s video)</span>
                                         </label>
-                                        <div className="relative">
-                                            <textarea
-                                                placeholder="Örn: Merhaba! Ben yapay zeka ile oluşturulmuş bir influencer'ım. Markanızı tanıtmak için buradayım!"
-                                                value={quickScript}
-                                                onChange={(e) => setQuickScript(e.target.value.slice(0, SCRIPT_MAX_LENGTH))}
-                                                disabled={isQuickCreating}
-                                                rows={2}
-                                                className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all"
-                                            />
-                                            <span className={`absolute bottom-2 right-3 text-[10px] font-medium ${quickScript.length > SCRIPT_MAX_LENGTH * 0.9 ? 'text-red-500' : 'text-muted-foreground/50'}`}>
-                                                {quickScript.length}/{SCRIPT_MAX_LENGTH}
-                                            </span>
-                                        </div>
+                                        <textarea
+                                            placeholder="Örn: Merhaba! Bu kafede oturup size harika bir fitness uygulamasından bahsetmek istiyorum. Spor yapmak artık çok kolay!"
+                                            value={quickScript}
+                                            onChange={(e) => setQuickScript(e.target.value)}
+                                            disabled={isQuickCreating}
+                                            rows={3}
+                                            className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all"
+                                        />
                                     </div>
 
                                     {/* Generate Button */}
-                                    <div className="shrink-0">
+                                    <div className="shrink-0 flex items-end">
                                         <Button
                                             onClick={handleQuickVideo}
-                                            disabled={!quickScript.trim() || isQuickCreating}
-                                            className="h-[60px] px-8 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex items-center gap-2"
+                                            disabled={!quickScript.trim() || !quickSector || isQuickCreating}
+                                            className="h-[72px] px-8 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 border-0 shadow-lg shadow-violet-500/25 text-sm font-semibold flex items-center gap-2 w-full lg:w-auto"
                                         >
                                             {isQuickCreating ? (
                                                 <>

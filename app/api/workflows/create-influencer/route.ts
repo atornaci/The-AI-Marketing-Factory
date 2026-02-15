@@ -48,7 +48,7 @@ const LANGUAGE_CONFIG: Record<Language, {
 
 export async function POST(req: NextRequest) {
     try {
-        const { projectId, gender, language: requestLanguage } = await req.json()
+        const { projectId, gender, language: requestLanguage, sector, environment, energy } = await req.json()
         const language: Language = requestLanguage || 'tr'
 
         if (!projectId) {
@@ -143,6 +143,9 @@ The AI influencer should be a virtual character that:
 - Embodies the brand values
 - Has a distinct personality matching the archetype
 - IMPORTANT: Read the project description carefully. If it mentions a specific LOCATION or SETTING (e.g. café, gym, park, kitchen, studio, beach, restaurant, etc.), use that as the sceneEnvironment. If no specific location is mentioned, choose a setting that fits the project topic.
+${sector ? `- SECTOR/INDUSTRY: ${sector} — tailor the influencer's personality, style and backstory to this specific industry.` : ''}
+${environment ? `- PREFERRED ENVIRONMENT: ${environment} — use this as the primary sceneEnvironment.` : ''}
+${energy ? `- ENERGY LEVEL: ${energy} — match the influencer's personality to this energy (e.g. sakin=calm expert, enerjik=bold challenger, samimi=friendly mentor).` : ''}
 
 Respond with ONLY valid JSON (no markdown formatting):
 {
