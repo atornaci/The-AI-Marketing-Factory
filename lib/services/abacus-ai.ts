@@ -720,8 +720,9 @@ Respond ONLY with valid JSON.`
     }
 
     /**
-     * Build a cinematic video generation prompt
-     * VARIETY SYSTEM: Each call randomly selects different location, outfit, mood, and camera style
+     * Build UGC-style video generation prompt
+     * 2026 MASTER UGC TEMPLATE — Behavioral prompt (not visual prompt)
+     * Key insight: writing behavior directions produces far more realistic AI video
      */
     private buildVideoPrompt(
         script: string,
@@ -740,128 +741,117 @@ Respond ONLY with valid JSON.`
             .trim()
             .substring(0, 500)
 
-        const screenshotContext = screenshotUrls.length > 0
-            ? `\nReference images from the product/app are available.`
-            : ''
-
         const characterRef = influencerProfile
             ? this.buildCharacterReference(influencerProfile)
             : `Character: ${influencerDesc}`
 
-        // ═══ VARIETY SYSTEM: Random visual elements ═══
+        // ═══ UGC VARIETY SYSTEM ═══
         const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
 
-        const locations = [
-            'modern minimalist apartment with floor-to-ceiling windows, city skyline visible, warm afternoon light',
-            'cozy café with exposed brick walls, warm Edison bulb lighting, coffee steam visible',
-            'bright outdoor terrace with green plants, golden hour sunlight, slight breeze in hair',
-            'sleek modern office with a standing desk, large monitor in background, clean workspace',
-            'trendy rooftop with panoramic city view at sunset, warm orange and purple sky',
-            'home studio setup with ring light, bookshelf and plants in background, cozy vibe',
-            'beachside café with ocean view, tropical plants, natural bright light',
-            'library corner with warm wooden shelves, soft ambient lighting',
-            'modern kitchen with marble countertops, morning sunlight streaming through window',
-            'urban street scene, colorful murals in background, natural daylight',
-            'park bench under a tree, dappled sunlight, peaceful green surroundings',
-            'hotel lobby with luxurious interior, elegant furniture, soft warm lighting',
+        // Scene environments (real-life, slightly imperfect, lived-in)
+        const scenes_ugc = [
+            'cozy bedroom in the morning, unmade bed slightly visible behind, warm natural daylight from window, slightly messy but real',
+            'parked car on a quiet street, dashboard partially visible, natural daylight through windshield, realistic car interior',
+            'coffee shop corner table, other customers blurred in background, warm indoor lighting, coffee cup on table',
+            'park bench under trees, dappled sunlight, green foliage softly blurred behind, occasional wind in hair',
+            'home office desk, laptop and coffee mug visible, soft window light, lived-in workspace',
+            'kitchen counter, morning light, breakfast items slightly visible, homey and real',
+            'living room couch, cushions and blanket visible, warm lamp light, relaxed home setting',
+            'balcony with city view, slight breeze, golden hour light, urban background softly blurred',
+            'gym lobby or locker area, fluorescent mixed with natural light, gym bag visible',
+            'walking on a sidewalk, buildings and trees softly blurred, handheld movement, outdoor daylight',
         ]
 
-        const outfits = [
-            'wearing a casual chic white t-shirt and light denim jacket, minimal gold jewelry',
-            'in a professional but relaxed outfit: cream blazer over a simple black top',
-            'dressed in a cozy oversized sweater in earth tones, hair in a natural loose style',
-            'wearing a trendy colorful blouse with statement earrings, confident look',
-            'in a smart-casual look: fitted turtleneck and tailored pants, sophisticated vibe',
-            'dressed casually in a hoodie and clean sneakers, relatable everyday look',
-            'wearing a stylish leather jacket over a simple outfit, edgy but approachable',
-            'in a summer dress with a light cardigan, relaxed and friendly appearance',
-            'wearing a professional shirt with rolled-up sleeves, business casual feel',
-            'dressed in athleisure: sleek joggers and a fitted top, energetic vibe',
+        // Energy levels mapped to performance style
+        const energyLevels = [
+            { energy: 'calm advice', tone: 'sincere', desc: 'calm and measured, like giving honest advice to a friend over coffee' },
+            { energy: 'friendly tip', tone: 'friendly', desc: 'warm and approachable, casually sharing something useful' },
+            { energy: 'wake-up call', tone: 'urgent', desc: 'slightly urgent, like telling a friend they need to hear this RIGHT NOW' },
+            { energy: 'emotional confession', tone: 'sincere', desc: 'vulnerable and real, sharing a genuine personal experience' },
+            { energy: 'secret tip', tone: 'trustworthy', desc: 'leaning in slightly, whispering a secret discovery' },
+            { energy: 'motivational push', tone: 'energetic', desc: 'uplifting and encouraging, genuinely wanting to help' },
+            { energy: 'mentor advice', tone: 'trustworthy', desc: 'confident and wise, like an older sibling giving life advice' },
         ]
 
-        const moods = [
-            'excited and genuinely surprised, like sharing a secret discovery with a best friend',
-            'calm and thoughtful, like giving honest advice over coffee',
-            'energetic and passionate, like telling an amazing story',
-            'warm and empathetic, like comforting someone who shares the same struggle',
-            'confident and inspiring, like a mentor sharing life-changing wisdom',
-            'playful and humorous, cracking a smile while sharing something cool',
-            'serious then suddenly amazed, showing a genuine transformation moment',
-            'reflective and honest, like a real person sharing a vulnerable moment',
+        // Clothing — casual, real, not styled
+        const wardrobes = [
+            'casual everyday clothes: simple t-shirt, no visible branding, natural and unstaged',
+            'cozy hoodie or oversized sweater, hair slightly messy, authentic and relatable',
+            'simple blouse or button-up, slightly wrinkled, real and not overly styled',
+            'athleisure: simple joggers and fitted top, as if just came from a walk',
+            'casual denim jacket over a plain top, minimal accessories, everyday look',
         ]
 
-        const cameraStyles = [
-            'handheld selfie style, slight natural movement, like a real phone video, medium shot framing',
-            'stable tripod shot, static camera, medium shot from chest up',
-            'vlog-style medium shot with person walking and talking naturally',
-            'steady medium shot, person standing and gesturing while speaking to camera',
-            'wide medium shot showing person in environment, natural body language',
-            'steady medium shot with person making subtle hand gestures for emphasis',
-        ]
+        const scene = pick(scenes_ugc)
+        const energyObj = pick(energyLevels)
+        const wardrobe = pick(wardrobes)
 
-        const loc = pick(locations)
-        const outfit = pick(outfits)
-        const mood = pick(moods)
-        const cam = pick(cameraStyles)
+        console.log(`[Video] UGC Template: Scene="${scene.substring(0, 40)}...", Energy="${energyObj.energy}", Tone="${energyObj.tone}"`)
 
-        console.log(`[Video] Variety: Location="${loc.substring(0, 40)}...", Outfit="${outfit.substring(0, 40)}...", Mood="${mood.substring(0, 40)}..."`)
+        return `This should feel like a real TikTok creator video, not an advertisement.
 
-        let sceneBreakdown = ''
-        if (scenes && scenes.length > 0) {
-            sceneBreakdown = '\n\nSCENE-BY-SCENE BREAKDOWN:\n' + scenes.map(scene => {
-                const lens = scene.lens || 'iPhone 15 PRO front-camera (~23mm)'
-                const lighting = scene.lighting || 'natural window light, soft and warm'
-                const performance = scene.performanceDirection || 'warm eye contact with lens'
-                const ugc = (scene.ugcKeywords as string[])?.join(', ') || 'smartphone selfie, handheld realism'
-                return `Scene ${scene.sceneNumber} (${scene.startSecond}s-${scene.endSecond}s):
-  Camera: ${scene.cameraDirection || 'Medium shot'} | Lens: ${lens}
-  Lighting: ${lighting}
-  Performance: ${performance} | Emotion: ${scene.emotion || 'confident'}
-  Visual: ${scene.visualDescription || ''}
-  UGC Feel: ${ugc}`
-            }).join('\n')
-        }
-
-        const ugcStr = UGC_AUTHENTICITY_KEYWORDS.slice(0, 6).join(', ')
-
-        return `Cinematic medium shot of a real person speaking to camera for ${settings.maxDuration} seconds. ${settings.aspectRatio} format. Framed from chest up, at a natural conversational distance.
+Ultra-realistic UGC selfie video, vertical ${settings.aspectRatio}, filmed with an iPhone 15 Pro front camera.
 
 ${characterRef}
 
-SETTING (THIS VIDEO):
-- Location: ${loc}
-- Outfit: ${outfit}
-- Mood: ${mood}
+SCENE:
+${scene}.
+Natural real-life setting, slightly imperfect and lived-in.
+Background softly blurred with realistic depth.
+No studio look.
 
-WHAT THE PERSON IS SAYING (the person speaks this aloud with natural lip movement):
+CHARACTER:
+Real human influencer-style person holding phone at arm's length.
+Natural appearance, minimal makeup, realistic skin texture with pores and imperfections.
+Wardrobe: ${wardrobe}.
+
+PERFORMANCE (CRITICAL — THIS IS THE MOST IMPORTANT PART):
+Speaks naturally as if talking to a close friend.
+Starts speaking immediately with no intro pause.
+Natural micro pauses and breathing between phrases.
+Occasional tiny hesitations — like a real person thinking.
+Subtle eye movement — not constant direct stare, occasional glance away then back.
+Leans slightly closer during key emotional phrases.
+Hands occasionally enter frame with spontaneous gestures.
+Small body shifts and natural posture changes.
+Authenticity prioritized over perfection.
+
+ENERGY LEVEL: ${energyObj.energy}
+Performance mood: ${energyObj.desc}
+
+WHAT THE PERSON IS SAYING (speaks this aloud with natural lip movement):
 "${spokenScript}"
 
-CINEMATIC REALISM (CRITICAL):
-- Highly realistic, photorealistic human, NOT CGI, NOT 3D render, NOT cartoon, NOT anime
-- Natural skin texture, hyper-detailed pores, subtle facial micro-expressions
-- Soft cinematic rim lighting, shallow depth of field, shot on 85mm lens
-- 4K quality, professional color grading
-- Real physical location with natural light and real shadows
+CAMERA BEHAVIOR:
+Handheld smartphone realism.
+Visible micro-shakes from holding phone.
+No cinematic camera movement — NO dolly, NO zoom, NO push-in.
+No stabilization.
+Front-camera perspective only.
+Medium shot: head and shoulders visible, some chest.
+STATIC framing — keep the same distance throughout.
 
-CAMERA (VERY IMPORTANT):
-- STATIC camera — absolutely NO zoom, NO dolly-in, NO push-in, NO camera movement toward face
-- Keep the same framing throughout the entire video
-- Medium shot distance: chest/shoulders and head visible, NOT extreme close-up
+LIGHTING:
+Natural ambient lighting matching the scene.
+Realistic exposure, no dramatic or studio lighting.
+Slight over/under-exposure acceptable for realism.
 
-PERSON MOVEMENT (NATURAL):
-- Person speaks with natural lip sync and facial expressions
-- Natural head movements, eye contact with camera, occasional head tilt
-- Subtle hand gestures allowed — the person can move their hands naturally
-- Person can shift weight, lean slightly, or walk slowly
-- Think: a real human talking in a social media video with natural body language
+STYLE KEYWORDS:
+authentic UGC, social media selfie, raw realism, creator video, unfiltered, believable human presence, TikTok style, real person, not an ad.
+
+REALISM RULES (VERY IMPORTANT):
+Do NOT make it cinematic.
+Avoid studio perfection.
+Allow small framing imperfections.
+Prioritize realism over beauty.
+NO plastic skin, NO perfect lighting, NO beauty filter look.
 
 NEGATIVE (AVOID AT ALL COSTS):
-cartoon, 3d render, anime, blurry, distorted mouth, extra fingers, low quality, glitch, video game, CGI, plastic skin, smooth skin, unnatural eyes, flat lighting, artificial look
+cinematic, studio lighting, beauty filter, smooth skin, plastic look, CGI, 3D render, cartoon, anime, perfect framing, professional camera, DSLR look, shallow depth of field bokeh, extra fingers, distorted face, blurry, low quality
 
 ${visualDna ? `\nVISUAL DNA: ${visualDna}` : ''}
 ${brandPersona ? `\nBRAND PERSONA: ${brandPersona}` : ''}
-${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}
-${screenshotContext}`
+${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}`
     }
 
     /**
