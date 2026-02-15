@@ -589,73 +589,80 @@ function DashboardContent() {
                                     variants={itemVariants}
                                     custom={index}
                                 >
-                                    <Link href={`/project/${project.id}`}>
-                                        <div className={`group p-5 rounded-2xl border border-border bg-card shadow-sm hover:border-violet-300 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 cursor-pointer h-full ${deletingProjectId === project.id ? 'opacity-50 pointer-events-none' : ''}`}>
-                                            {/* Header */}
-                                            <div className="flex items-start justify-between mb-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center text-lg">
-                                                        {project.favicon}
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-semibold text-sm group-hover:text-violet-600 transition-colors">
-                                                            {project.name}
-                                                        </h3>
-                                                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                                            <ExternalLink className="w-2.5 h-2.5" />
-                                                            <span className="truncate max-w-[160px]">
-                                                                {project.url}
-                                                            </span>
-                                                        </p>
-                                                    </div>
+                                    <div
+                                        onClick={() => {
+                                            if (deletingProjectId) return;
+                                            router.push(`/project/${project.id}`);
+                                        }}
+                                        className={`group p-5 rounded-2xl border border-border bg-card shadow-sm hover:border-violet-300 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 cursor-pointer h-full ${deletingProjectId === project.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                    >
+                                        {/* Header */}
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center text-lg">
+                                                    {project.favicon}
                                                 </div>
-                                                <Badge
-                                                    variant="outline"
-                                                    className={`text-[10px] font-medium rounded-lg ${getStatusColor(project.status)}`}
-                                                >
-                                                    {getStatusText(project.status)}
-                                                </Badge>
+                                                <div>
+                                                    <h3 className="font-semibold text-sm group-hover:text-violet-600 transition-colors">
+                                                        {project.name}
+                                                    </h3>
+                                                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                                        <ExternalLink className="w-2.5 h-2.5" />
+                                                        <span className="truncate max-w-[160px]">
+                                                            {project.url}
+                                                        </span>
+                                                    </p>
+                                                </div>
                                             </div>
+                                            <Badge
+                                                variant="outline"
+                                                className={`text-[10px] font-medium rounded-lg ${getStatusColor(project.status)}`}
+                                            >
+                                                {getStatusText(project.status)}
+                                            </Badge>
+                                        </div>
 
-                                            {/* Stats */}
-                                            <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                                        {/* Stats */}
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                                            <span className="flex items-center gap-1.5">
+                                                <Video className="w-3.5 h-3.5" />
+                                                {project.videoCount} video
+                                            </span>
+                                            {project.influencer && (
                                                 <span className="flex items-center gap-1.5">
-                                                    <Video className="w-3.5 h-3.5" />
-                                                    {project.videoCount} video
+                                                    <Bot className="w-3.5 h-3.5" />
+                                                    {project.influencer}
                                                 </span>
-                                                {project.influencer && (
-                                                    <span className="flex items-center gap-1.5">
-                                                        <Bot className="w-3.5 h-3.5" />
-                                                        {project.influencer}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            )}
+                                        </div>
 
-                                            {/* Footer */}
-                                            <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                                        <Clock className="w-3 h-3" />
-                                                        {project.lastActivity}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={(e) => handleDeleteProject(project.id, e)}
-                                                        className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                                                        title="Projeyi Sil"
-                                                    >
-                                                        {deletingProjectId === project.id ? (
-                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                        ) : (
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        )}
-                                                    </button>
-                                                    <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-violet-500 group-hover:translate-x-0.5 transition-all" />
-                                                </div>
+                                        {/* Footer */}
+                                        <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                                            <div className="flex items-center gap-2">
+                                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                                    <Clock className="w-3 h-3" />
+                                                    {project.lastActivity}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteProject(project.id, e);
+                                                    }}
+                                                    className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                                    title="Projeyi Sil"
+                                                >
+                                                    {deletingProjectId === project.id ? (
+                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                    ) : (
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    )}
+                                                </button>
+                                                <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-violet-500 group-hover:translate-x-0.5 transition-all" />
                                             </div>
                                         </div>
-                                    </Link>
+                                    </div>
                                 </motion.div>
                             ))}
 
