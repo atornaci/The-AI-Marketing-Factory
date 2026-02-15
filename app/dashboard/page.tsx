@@ -289,7 +289,7 @@ function DashboardContent() {
     const handleDeleteProject = async (projectId: string, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!confirm('Bu projeyi silmek istediğinize emin misiniz? Tüm videolar, influencer ve görseller de silinecek.')) return;
+        if (!confirm('Bu projeyi silmek istediğinize emin misiniz? Tüm videolar ve influencer de silinecek.')) return;
         setDeletingProjectId(projectId);
         try {
             // Cascade delete: videos, influencers, generated_images, then project

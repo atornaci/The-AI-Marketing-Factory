@@ -154,7 +154,7 @@ const integrations = [
 const trustedBy = [
   { name: "OpenRouter", desc: "Akıllı İçerik Motoru" },
   { name: "ElevenLabs", desc: "Doğal Ses Üretimi" },
-  { name: "fal.ai", desc: "Görsel Üretimi" },
+  { name: "Kling AI", desc: "Sinematik Video Üretimi" },
 ];
 
 /* ─── Section wrapper with useInView ─── */
