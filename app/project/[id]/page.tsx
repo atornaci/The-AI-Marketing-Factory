@@ -46,6 +46,13 @@ import {
     Copy,
     Megaphone,
     Upload,
+    Settings,
+    Clock,
+    Link2,
+    Unlink,
+    Send,
+    Calendar,
+    Power,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -257,6 +264,21 @@ function ProjectDetailPageInner({
     const [isGeneratingAdCopy, setIsGeneratingAdCopy] = useState(false);
     const [copiedAdId, setCopiedAdId] = useState<number | null>(null);
 
+    // Social connections + publish state
+    const [socialConnections, setSocialConnections] = useState<Array<{ id: string; platform: string; account_name: string; connected_at: string }>>([]);
+    const [isPublishing, setIsPublishing] = useState<string | null>(null); // videoId being published
+    const [publishPlatform, setPublishPlatform] = useState<string | null>(null);
+    const [showPublishModal, setShowPublishModal] = useState(false);
+    const [publishVideoId, setPublishVideoId] = useState<string | null>(null);
+    const [publishVideoUrl, setPublishVideoUrl] = useState<string | null>(null);
+
+    // Schedule state
+    const [schedule, setSchedule] = useState<{ is_active: boolean; frequency: string; platforms: string[]; publish_times: string[] } | null>(null);
+    const [scheduleFrequency, setScheduleFrequency] = useState("daily");
+    const [scheduleTimes, setScheduleTimes] = useState(["10:00"]);
+    const [schedulePlatforms, setSchedulePlatforms] = useState<string[]>([]);
+    const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+
 
     /* ─── Fetch project data ─── */
     const fetchData = useCallback(async () => {
@@ -310,6 +332,25 @@ function ProjectDetailPageInner({
 
             setAssets(assetsData || []);
 
+            // Get social connections
+            const connRes = await fetch('/api/social/connections');
+            if (connRes.ok) {
+                const connData = await connRes.json();
+                setSocialConnections(connData.connections || []);
+            }
+
+            // Get schedule
+            const schedRes = await fetch(`/api/social/schedule?projectId=${id}`);
+            if (schedRes.ok) {
+                const schedData = await schedRes.json();
+                if (schedData.schedules?.[0]) {
+                    const s = schedData.schedules[0];
+                    setSchedule(s);
+                    setScheduleFrequency(s.frequency || 'daily');
+                    setScheduleTimes(Array.isArray(s.publish_times) ? s.publish_times : ['10:00']);
+                    setSchedulePlatforms(s.platforms || []);
+                }
+            }
 
         } catch (err) {
             console.error("Fetch error:", err);
@@ -806,6 +847,13 @@ function ProjectDetailPageInner({
                                             {videos.length}
                                         </span>
                                     )}
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="settings"
+                                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm"
+                                >
+                                    <Settings className="w-4 h-4 mr-1.5" />
+                                    Ayarlar
                                 </TabsTrigger>
 
                             </TabsList>
@@ -1782,6 +1830,17 @@ function ProjectDetailPageInner({
                                                                         size="sm"
                                                                         variant="outline"
                                                                         className="flex-1 h-8 text-xs rounded-lg border-border/50"
+                                                                        onClick={() => {
+                                                                            if (video.video_url) {
+                                                                                const a = document.createElement('a');
+                                                                                a.href = video.video_url;
+                                                                                a.download = `${video.title || 'video'}.mp4`;
+                                                                                a.target = '_blank';
+                                                                                document.body.appendChild(a);
+                                                                                a.click();
+                                                                                document.body.removeChild(a);
+                                                                            }
+                                                                        }}
                                                                     >
                                                                         <Download className="w-3 h-3 mr-1" />
                                                                         İndir
@@ -1789,9 +1848,18 @@ function ProjectDetailPageInner({
                                                                     <Button
                                                                         size="sm"
                                                                         className="flex-1 h-8 text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 border-0"
+                                                                        disabled={isPublishing === video.id}
+                                                                        onClick={() => {
+                                                                            setPublishVideoId(video.id);
+                                                                            setPublishVideoUrl(video.video_url ?? null);
+                                                                            setShowPublishModal(true);
+                                                                        }}
                                                                     >
-                                                                        <Share2 className="w-3 h-3 mr-1" />
-                                                                        Yayınla
+                                                                        {isPublishing === video.id ? (
+                                                                            <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Yayınlanıyor...</>
+                                                                        ) : (
+                                                                            <><Share2 className="w-3 h-3 mr-1" /> Yayınla</>
+                                                                        )}
                                                                     </Button>
                                                                 </div>
                                                             )}
@@ -2056,8 +2124,346 @@ function ProjectDetailPageInner({
                             )}
                         </TabsContent>
 
+                        {/* ═══ SETTINGS TAB ═══ */}
+                        <TabsContent value="settings" className="space-y-6">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+
+                                {/* Social Connections */}
+                                <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
+                                    <div className="flex items-center gap-2 text-sm font-semibold mb-4">
+                                        <Link2 className="w-4 h-4 text-violet-500" />
+                                        Bağlı Sosyal Medya Hesapları
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mb-4">
+                                        Hesaplarınızı bağlayın, videoları tek tıkla yayınlayın.
+                                    </p>
+
+                                    {/* Connected accounts */}
+                                    <div className="space-y-3 mb-4">
+                                        {socialConnections.length === 0 ? (
+                                            <div className="text-center py-8 text-muted-foreground text-sm">
+                                                Henüz bağlı hesap yok
+                                            </div>
+                                        ) : (
+                                            socialConnections.map((conn) => (
+                                                <div key={conn.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/30">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${conn.platform === 'instagram' ? 'bg-gradient-to-br from-purple-500 to-pink-500' :
+                                                            conn.platform === 'tiktok' ? 'bg-black' :
+                                                                conn.platform === 'linkedin' ? 'bg-blue-600' :
+                                                                    'bg-sky-500'
+                                                            }`}>
+                                                            {conn.platform === 'instagram' ? 'IG' :
+                                                                conn.platform === 'tiktok' ? 'TT' :
+                                                                    conn.platform === 'linkedin' ? 'IN' : 'X'}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-medium capitalize">{conn.platform}</p>
+                                                            <p className="text-xs text-muted-foreground">{conn.account_name}</p>
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="text-xs text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                                                        onClick={async () => {
+                                                            if (!confirm('Bu hesabı kaldırmak istediğinize emin misiniz?')) return;
+                                                            await fetch('/api/social/connections', {
+                                                                method: 'DELETE',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ connectionId: conn.id }),
+                                                            });
+                                                            setSocialConnections(prev => prev.filter(c => c.id !== conn.id));
+                                                        }}
+                                                    >
+                                                        <Unlink className="w-3 h-3 mr-1" />
+                                                        Kaldır
+                                                    </Button>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    {/* Connect buttons */}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {[
+                                            { key: 'instagram', label: 'Instagram', color: 'from-purple-500 to-pink-500' },
+                                            { key: 'tiktok', label: 'TikTok', color: 'from-gray-800 to-gray-900' },
+                                            { key: 'linkedin', label: 'LinkedIn', color: 'from-blue-600 to-blue-700' },
+                                            { key: 'twitter', label: 'X (Twitter)', color: 'from-sky-500 to-sky-600' },
+                                        ].map(({ key, label, color }) => {
+                                            const isConnected = socialConnections.some(c => c.platform === key);
+                                            return (
+                                                <Button
+                                                    key={key}
+                                                    variant={isConnected ? 'outline' : 'default'}
+                                                    size="sm"
+                                                    className={`text-xs rounded-xl h-10 ${isConnected ? 'border-green-500/30 text-green-500' : `bg-gradient-to-r ${color} text-white border-0`}`}
+                                                    disabled={isConnected}
+                                                    onClick={async () => {
+                                                        try {
+                                                            const res = await fetch('/api/social/connect', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ platform: key, projectId: project.id }),
+                                                            });
+                                                            const data = await res.json();
+                                                            if (data.url) window.location.href = data.url;
+                                                        } catch (err) {
+                                                            console.error('OAuth connect error:', err);
+                                                            alert('Bağlantı başlatılamadı. Lütfen tekrar deneyin.');
+                                                        }
+                                                    }}
+                                                >
+                                                    {isConnected ? (
+                                                        <><CheckCircle2 className="w-3 h-3 mr-1" /> Bağlı</>
+                                                    ) : (
+                                                        <><Link2 className="w-3 h-3 mr-1" /> {label}</>
+                                                    )}
+                                                </Button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Scheduling */}
+                                <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
+                                    <div className="flex items-center gap-2 text-sm font-semibold mb-4">
+                                        <Calendar className="w-4 h-4 text-violet-500" />
+                                        Otomatik Video Üretim & Yayın Zamanlaması
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mb-4">
+                                        Belirlediğiniz saatlerde otomatik video üretilir ve bağlı hesaplarınıza yayınlanır.
+                                    </p>
+
+                                    <div className="space-y-4">
+                                        {/* Frequency */}
+                                        <div>
+                                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Sıklık</label>
+                                            <div className="flex gap-2">
+                                                {[{ key: 'daily', label: 'Her Gün' }, { key: 'weekly', label: 'Haftalık' }].map(({ key, label }) => (
+                                                    <Button
+                                                        key={key}
+                                                        size="sm"
+                                                        variant={scheduleFrequency === key ? 'default' : 'outline'}
+                                                        className={`text-xs rounded-lg ${scheduleFrequency === key ? 'bg-violet-600 text-white' : ''}`}
+                                                        onClick={() => setScheduleFrequency(key)}
+                                                    >
+                                                        {label}
+                                                    </Button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Times */}
+                                        <div>
+                                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Yayın Saatleri</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {['08:00', '10:00', '12:00', '14:00', '17:00', '19:00', '21:00'].map((time) => (
+                                                    <Button
+                                                        key={time}
+                                                        size="sm"
+                                                        variant={scheduleTimes.includes(time) ? 'default' : 'outline'}
+                                                        className={`text-xs rounded-lg h-8 ${scheduleTimes.includes(time) ? 'bg-violet-600 text-white' : ''}`}
+                                                        onClick={() => {
+                                                            setScheduleTimes(prev =>
+                                                                prev.includes(time)
+                                                                    ? prev.filter(t => t !== time)
+                                                                    : [...prev, time].sort()
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Clock className="w-3 h-3 mr-1" />
+                                                        {time}
+                                                    </Button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Platforms */}
+                                        <div>
+                                            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Yayınlanacak Platformlar</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {['instagram', 'tiktok', 'linkedin', 'twitter'].map((p) => {
+                                                    const isConnected = socialConnections.some(c => c.platform === p);
+                                                    const isSelected = schedulePlatforms.includes(p);
+                                                    return (
+                                                        <Button
+                                                            key={p}
+                                                            size="sm"
+                                                            variant={isSelected ? 'default' : 'outline'}
+                                                            className={`text-xs rounded-lg h-8 capitalize ${isSelected ? 'bg-violet-600 text-white' : ''} ${!isConnected ? 'opacity-40' : ''}`}
+                                                            disabled={!isConnected}
+                                                            onClick={() => {
+                                                                setSchedulePlatforms(prev =>
+                                                                    prev.includes(p)
+                                                                        ? prev.filter(x => x !== p)
+                                                                        : [...prev, p]
+                                                                );
+                                                            }}
+                                                        >
+                                                            {p === 'twitter' ? 'X' : p}
+                                                            {!isConnected && ' (bağlı değil)'}
+                                                        </Button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Save */}
+                                        <div className="flex items-center gap-3 pt-2">
+                                            <Button
+                                                className="bg-gradient-to-r from-violet-600 to-purple-500 text-white border-0 rounded-xl"
+                                                disabled={isSavingSchedule || schedulePlatforms.length === 0 || scheduleTimes.length === 0}
+                                                onClick={async () => {
+                                                    setIsSavingSchedule(true);
+                                                    try {
+                                                        const res = await fetch('/api/social/schedule', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({
+                                                                projectId: project.id,
+                                                                platforms: schedulePlatforms,
+                                                                frequency: scheduleFrequency,
+                                                                publishTimes: scheduleTimes,
+                                                                isActive: true,
+                                                            }),
+                                                        });
+                                                        if (res.ok) {
+                                                            const data = await res.json();
+                                                            setSchedule(data.schedule);
+                                                            alert('Zamanlama kaydedildi! Videolar otomatik üretilip yayınlanacak.');
+                                                        } else {
+                                                            alert('Zamanlama kaydedilemedi.');
+                                                        }
+                                                    } catch {
+                                                        alert('Bir hata oluştu.');
+                                                    } finally {
+                                                        setIsSavingSchedule(false);
+                                                    }
+                                                }}
+                                            >
+                                                {isSavingSchedule ? (
+                                                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Kaydediliyor...</>
+                                                ) : (
+                                                    <><Power className="w-4 h-4 mr-2" /> Zamanlamayı Kaydet & Aktifleştir</>
+                                                )}
+                                            </Button>
+
+                                            {schedule?.is_active && (
+                                                <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
+                                                    <Power className="w-3 h-3 mr-1" /> Aktif
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </motion.div>
+                        </TabsContent>
+
 
                     </Tabs>
+
+                    {/* ═══ PUBLISH MODAL ═══ */}
+                    <Dialog open={showPublishModal} onOpenChange={setShowPublishModal}>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                    <Send className="w-5 h-5 text-violet-500" />
+                                    Videoyu Yayınla
+                                </DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-3">
+                                {socialConnections.length === 0 ? (
+                                    <div className="text-center py-6">
+                                        <Share2 className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                                        <p className="text-sm text-muted-foreground mb-3">
+                                            Yayınlamak için önce bir sosyal medya hesabı bağlayın.
+                                        </p>
+                                        <Button
+                                            size="sm"
+                                            className="bg-violet-600 text-white"
+                                            onClick={() => {
+                                                setShowPublishModal(false);
+                                                setActiveTab('settings');
+                                            }}
+                                        >
+                                            <Settings className="w-3 h-3 mr-1" />
+                                            Ayarlar'a Git
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    socialConnections.map((conn) => (
+                                        <button
+                                            key={conn.id}
+                                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${publishPlatform === conn.platform
+                                                ? 'border-violet-500 bg-violet-500/10'
+                                                : 'border-border/50 hover:border-violet-300/50'
+                                                }`}
+                                            onClick={() => setPublishPlatform(conn.platform)}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${conn.platform === 'instagram' ? 'bg-gradient-to-br from-purple-500 to-pink-500' :
+                                                    conn.platform === 'tiktok' ? 'bg-black' :
+                                                        conn.platform === 'linkedin' ? 'bg-blue-600' : 'bg-sky-500'
+                                                    }`}>
+                                                    {conn.platform === 'instagram' ? 'IG' :
+                                                        conn.platform === 'tiktok' ? 'TT' :
+                                                            conn.platform === 'linkedin' ? 'IN' : 'X'}
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="text-sm font-medium capitalize">{conn.platform}</p>
+                                                    <p className="text-xs text-muted-foreground">{conn.account_name}</p>
+                                                </div>
+                                            </div>
+                                            {publishPlatform === conn.platform && (
+                                                <CheckCircle2 className="w-5 h-5 text-violet-500" />
+                                            )}
+                                        </button>
+                                    ))
+                                )}
+
+                                {socialConnections.length > 0 && (
+                                    <Button
+                                        className="w-full bg-gradient-to-r from-violet-600 to-purple-500 text-white border-0 rounded-xl h-11"
+                                        disabled={!publishPlatform || isPublishing !== null}
+                                        onClick={async () => {
+                                            if (!publishVideoId || !publishPlatform) return;
+                                            setIsPublishing(publishVideoId);
+                                            setShowPublishModal(false);
+                                            try {
+                                                const res = await fetch('/api/social/publish', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        videoId: publishVideoId,
+                                                        platform: publishPlatform,
+                                                    }),
+                                                });
+                                                const data = await res.json();
+                                                if (data.success) {
+                                                    alert(`✅ ${publishPlatform} hesabınızda yayınlandı!${data.postUrl ? `\n${data.postUrl}` : ''}`);
+                                                } else {
+                                                    alert(`❌ Yayınlama başarısız: ${data.error}`);
+                                                }
+                                            } catch (err) {
+                                                console.error('Publish error:', err);
+                                                alert('Yayınlama sırasında bir hata oluştu.');
+                                            } finally {
+                                                setIsPublishing(null);
+                                                setPublishPlatform(null);
+                                                setPublishVideoId(null);
+                                            }
+                                        }}
+                                    >
+                                        <Send className="w-4 h-4 mr-2" />
+                                        {publishPlatform ? `${publishPlatform}'a Yayınla` : 'Platform Seçin'}
+                                    </Button>
+                                )}
+                            </div>
+                        </DialogContent>
+                    </Dialog>
 
                 </motion.div >
             </main >
