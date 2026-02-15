@@ -222,7 +222,7 @@ function ProjectDetailPageInner({
     const supabase = createClient();
     const { language } = useLanguage();
 
-    const [activeTab, setActiveTab] = useState("overview");
+    const [activeTab, setActiveTab] = useState("influencer");
     const [project, setProject] = useState<ProjectData | null>(null);
     const [influencer, setInfluencer] = useState<InfluencerData | null>(null);
     const [videos, setVideos] = useState<VideoData[]>([]);
@@ -820,13 +820,7 @@ function ProjectDetailPageInner({
                     >
                         <motion.div variants={itemVariants}>
                             <TabsList className="bg-muted/30 border border-border/50 p-1 rounded-xl">
-                                <TabsTrigger
-                                    value="overview"
-                                    className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm"
-                                >
-                                    <Monitor className="w-4 h-4 mr-1.5" />
-                                    Genel Bakış
-                                </TabsTrigger>
+
                                 <TabsTrigger
                                     value="influencer"
                                     className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm"
@@ -857,138 +851,8 @@ function ProjectDetailPageInner({
                             </TabsList>
                         </motion.div>
 
-                        {/* ═══ OVERVIEW TAB ═══ */}
-                        <TabsContent value="overview" className="space-y-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                                {/* Value Proposition */}
-                                <motion.div variants={itemVariants} className="lg:col-span-2">
-                                    <div className="p-6 rounded-2xl border border-border/50 bg-background/50 h-full">
-                                        <div className="flex items-center gap-2 text-sm font-semibold mb-4">
-                                            <Target className="w-4 h-4 text-violet-500" />
-                                            Değer Önerisi
-                                        </div>
-                                        <p className="text-lg font-semibold leading-relaxed mb-3">
-                                            {project.value_proposition || "Henüz analiz yapılmadı"}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {project.description || project.url}
-                                        </p>
-                                    </div>
-                                </motion.div>
 
-                                {/* Brand Voice */}
-                                <motion.div variants={itemVariants}>
-                                    <div className="p-6 rounded-2xl border border-border/50 bg-background/50 h-full">
-                                        <div className="flex items-center gap-2 text-sm font-semibold mb-4">
-                                            <Shield className="w-4 h-4 text-violet-500" />
-                                            Marka Sesi
-                                        </div>
-                                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                                            {constitution?.brandVoice || "Henüz tanımlanmadı"}
-                                        </p>
-                                        {constitution?.visualGuidelines?.colorPalette && (
-                                            <div className="flex gap-1.5">
-                                                {constitution.visualGuidelines.colorPalette.map(
-                                                    (color) => (
-                                                        <div
-                                                            key={color}
-                                                            className="w-6 h-6 rounded-full border border-border/50"
-                                                            style={{ background: color }}
-                                                        />
-                                                    )
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </motion.div>
 
-                                {/* Target Audience */}
-                                <motion.div variants={itemVariants}>
-                                    <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
-                                        <div className="flex items-center gap-2 text-sm font-semibold mb-4">
-                                            <Users className="w-4 h-4 text-violet-500" />
-                                            Hedef Kitle
-                                        </div>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {(targetAudience?.demographics || []).map((demo) => (
-                                                <Badge
-                                                    key={demo}
-                                                    variant="outline"
-                                                    className="rounded-lg text-xs border-border/50"
-                                                >
-                                                    {demo}
-                                                </Badge>
-                                            ))}
-                                            {(!targetAudience?.demographics ||
-                                                targetAudience.demographics.length === 0) && (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Henüz tanımlanmadı
-                                                    </p>
-                                                )}
-                                        </div>
-                                    </div>
-                                </motion.div>
-
-                                {/* Pain Points */}
-                                <motion.div variants={itemVariants}>
-                                    <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
-                                        <div className="flex items-center gap-2 text-sm font-semibold mb-4">
-                                            <Zap className="w-4 h-4 text-violet-500" />
-                                            Sorun Noktaları
-                                        </div>
-                                        <ul className="space-y-2">
-                                            {(targetAudience?.painPoints || []).map((pain) => (
-                                                <li
-                                                    key={pain}
-                                                    className="text-sm text-muted-foreground flex items-start gap-2"
-                                                >
-                                                    <span className="text-rose-400 mt-0.5">•</span>
-                                                    {pain}
-                                                </li>
-                                            ))}
-                                            {(!targetAudience?.painPoints ||
-                                                targetAudience.painPoints.length === 0) && (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Henüz tanımlanmadı
-                                                    </p>
-                                                )}
-                                        </ul>
-                                    </div>
-                                </motion.div>
-
-                                {/* Content Pillars */}
-                                <motion.div variants={itemVariants}>
-                                    <div className="p-6 rounded-2xl border border-border/50 bg-background/50">
-                                        <div className="flex items-center gap-2 text-sm font-semibold mb-4">
-                                            <FileText className="w-4 h-4 text-violet-500" />
-                                            İçerik Sütunları
-                                        </div>
-                                        <ul className="space-y-2">
-                                            {(constitution?.contentPillars || []).map(
-                                                (pillar, i) => (
-                                                    <li
-                                                        key={pillar}
-                                                        className="text-sm flex items-center gap-2"
-                                                    >
-                                                        <span className="text-violet-500 font-bold text-xs">
-                                                            {String(i + 1).padStart(2, "0")}
-                                                        </span>
-                                                        {pillar}
-                                                    </li>
-                                                )
-                                            )}
-                                            {(!constitution?.contentPillars ||
-                                                constitution.contentPillars.length === 0) && (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Henüz tanımlanmadı
-                                                    </p>
-                                                )}
-                                        </ul>
-                                    </div>
-                                </motion.div>
-
-                            </div>
-                        </TabsContent>
 
                         {/* ═══ INFLUENCER TAB ═══ */}
                         <TabsContent value="influencer" className="space-y-6">
