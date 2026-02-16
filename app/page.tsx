@@ -149,12 +149,12 @@ export default function LandingPage() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/dashboard">
+            <Link href="/auth">
               <Button variant="ghost" size="sm" className="text-sm">
                 Sign In
               </Button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/auth">
               <Button
                 size="sm"
                 className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white rounded-xl text-sm px-5 shadow-lg shadow-violet-500/25"
@@ -218,7 +218,7 @@ export default function LandingPage() {
               variants={itemVariants}
               className="flex flex-col sm:flex-row gap-4 justify-center mb-6"
             >
-              <Link href="/dashboard">
+              <Link href="/auth">
                 <Button className="h-14 px-10 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-base font-semibold shadow-xl shadow-violet-500/25 transition-all hover:shadow-2xl hover:shadow-violet-500/30 w-full sm:w-auto">
                   <Wand2 className="mr-2 w-5 h-5" />
                   Create Your Influencer
@@ -458,7 +458,7 @@ export default function LandingPage() {
                 Create your AI influencer and generate a professional marketing video in minutes. No experience needed.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/dashboard">
+                <Link href="/auth">
                   <Button
                     size="lg"
                     className="h-14 px-10 rounded-2xl bg-white text-violet-700 hover:bg-white/90 text-base font-bold shadow-xl"
@@ -503,10 +503,10 @@ export default function LandingPage() {
 
             {/* Links */}
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <Link href="/dashboard" className="hover:text-foreground transition-colors">
+              <Link href="/auth" className="hover:text-foreground transition-colors">
                 Sign In
               </Link>
-              <Link href="/dashboard" className="hover:text-foreground transition-colors">
+              <Link href="/auth" className="hover:text-foreground transition-colors">
                 Get Started
               </Link>
             </div>
