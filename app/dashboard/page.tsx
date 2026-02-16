@@ -873,16 +873,6 @@ function DashboardContent() {
                                                         <h3 className="text-xl font-bold tracking-tight">{createdInfluencer.name}</h3>
                                                     </div>
                                                     <div className="flex items-center gap-1.5">
-                                                        <Link href={`/project/${createdInfluencer.projectId}`}>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="text-xs rounded-lg border-violet-200/50 text-violet-600 hover:bg-violet-50 hover:text-violet-700"
-                                                            >
-                                                                <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                                                                Project Details
-                                                            </Button>
-                                                        </Link>
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"

@@ -60,10 +60,9 @@ const itemVariants = {
 
 /* ─── Features for side panel ─── */
 const sideFeatures = [
-    { icon: Globe, title: "Project Analysis", desc: "Enter a URL, let AI analyze it" },
-    { icon: Bot, title: "AI Influencer", desc: "Custom character for your brand" },
-    { icon: Video, title: "Video Production", desc: "Platform-specific content" },
-    { icon: Share2, title: "Auto Distribution", desc: "Automated publishing" },
+    { icon: Bot, title: "AI Influencer", desc: "Create your own AI character" },
+    { icon: Video, title: "Video Generation", desc: "Cinematic AI-powered videos" },
+    { icon: Globe, title: "Multi-Platform", desc: "TikTok, Instagram, YouTube, LinkedIn" },
 ];
 
 /* ─── Dark Input ─── */
