@@ -141,11 +141,11 @@ export default function LandingPage() {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
-              <Sparkles className="w-4.5 h-4.5 text-white" />
+            <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0">
+              <img src="/logo.png" alt="CreatorPersonaAI" className="w-full h-full object-contain" />
             </div>
             <span className="text-lg font-bold tracking-tight">
-              Vid<span className="gradient-text">Forge</span>
+              Creator<span className="gradient-text">Persona</span><span className="text-violet-400">AI</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
@@ -385,7 +385,7 @@ export default function LandingPage() {
             <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
               Why{" "}
               <span className="relative whitespace-nowrap">
-                <span className="relative gradient-text">VidForge</span>
+                <span className="relative gradient-text">CreatorPersonaAI</span>
                 <SquiggleUnderline />
               </span>
             </h2>
@@ -643,7 +643,7 @@ export default function LandingPage() {
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <span className="text-sm font-bold tracking-tight">
-                Vid<span className="gradient-text">Forge</span>
+                Creator<span className="gradient-text">Persona</span><span className="text-violet-400">AI</span>
               </span>
             </div>
 
@@ -659,7 +659,7 @@ export default function LandingPage() {
 
             {/* Copyright */}
             <div className="text-xs text-muted-foreground/50">
-              © {new Date().getFullYear()} VidForge. All rights reserved.
+              © {new Date().getFullYear()} CreatorPersonaAI. All rights reserved.
             </div>
           </div>
         </div>

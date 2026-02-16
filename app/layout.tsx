@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "VidForge | AI Influencer & Video Generator",
+  title: "CreatorPersonaAI | AI Influencer & Video Generator",
   description:
     "Create AI Influencers, write scripts, and generate professional marketing videos for TikTok, Instagram, YouTube, and LinkedIn.",
   keywords: [
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     "AI video generator",
     "video marketing",
     "AI creator",
-    "VidForge",
+    "CreatorPersonaAI",
     "social media marketing",
   ],
 };
