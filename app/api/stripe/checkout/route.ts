@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        const origin = req.headers.get('origin') || 'http://localhost:3000'
+        const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://creatorpersonaai.com'
 
         const checkoutUrl = await createCheckoutSession(
             user.id,

@@ -2,11 +2,24 @@
 # Caddy Reverse Proxy — Auto SSL
 # ═══════════════════════════════════════
 
+# ── WWW → Non-WWW Redirect ──
+www.creatorpersonaai.com {
+    redir https://creatorpersonaai.com{uri} permanent
+}
+
 # ── FRONTEND (Next.js) ──
-# Şimdilik VPS IP:80 üzerinden çalışıyor
-# Domain alındığında: app.yourdomain.com olarak değişecek
-:80 {
+creatorpersonaai.com {
     reverse_proxy frontend:3000
+
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy strict-origin-when-cross-origin
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        -Server
+    }
 }
 
 # ── n8n API + Webhooks ──
@@ -23,13 +36,13 @@ n8n.srv1140504.hstgr.cloud {
     }
 
     # CORS — Frontend'den gelen webhook çağrıları
-    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Origin "https://creatorpersonaai.com"
     header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
     header Access-Control-Allow-Headers "Content-Type, Authorization"
 
     @cors_preflight method OPTIONS
     handle @cors_preflight {
-        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Origin "https://creatorpersonaai.com"
         header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         header Access-Control-Allow-Headers "Content-Type, Authorization"
         header Access-Control-Max-Age "3600"
