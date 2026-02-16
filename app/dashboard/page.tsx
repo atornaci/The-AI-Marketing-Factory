@@ -842,25 +842,8 @@ function DashboardContent() {
                                                 </div>
                                             </div>
 
-                                            {/* Row 2: Script + Generate Button */}
-                                            <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mt-4">
-                                                {/* Script Input */}
-                                                <div className="flex-1 min-w-0">
-                                                    <label className="text-xs font-medium text-muted-foreground mb-2 block flex items-center gap-1.5">
-                                                        <MessageSquareText className="w-3.5 h-3.5" />
-                                                        Custom script <span className="text-muted-foreground/40 text-[10px]">(optional — AI writes it if left empty)</span>
-                                                    </label>
-                                                    <textarea
-                                                        placeholder="Leave empty for AI-generated script, or write your own: e.g. 'Hey! Let me tell you about this amazing app...'"
-                                                        value={quickScript}
-                                                        onChange={(e) => setQuickScript(e.target.value)}
-                                                        disabled={isQuickCreating}
-                                                        rows={3}
-                                                        className="w-full px-4 py-3 rounded-xl border border-border/50 bg-background/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all"
-                                                    />
-                                                </div>
-
-                                                {/* Generate Button */}
+                                            {/* Create Button */}
+                                            <div className="flex justify-end mt-4">
                                                 <div className="shrink-0 flex items-end">
                                                     <Button
                                                         onClick={handleQuickVideo}
