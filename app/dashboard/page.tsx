@@ -571,7 +571,7 @@ function DashboardContent() {
                                 animate={{ opacity: 1, x: 0 }}
                                 className="text-lg font-bold tracking-tight whitespace-nowrap"
                             >
-                                Creator<span className="gradient-text">Forge</span>
+                                Vid<span className="gradient-text">Forge</span>
                             </motion.span>
                         )}
                     </Link>
@@ -1312,7 +1312,7 @@ function DashboardContent() {
                                 <div className="rounded-2xl border border-border/60 bg-background/80 backdrop-blur-sm p-6">
                                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                                         <Sparkles className="w-5 h-5 text-violet-500" />
-                                        About CreatorForge
+                                        About VidForge
                                     </h3>
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between py-3 border-b border-border/40">

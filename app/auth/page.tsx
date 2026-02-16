@@ -218,7 +218,7 @@ export default function AuthPage() {
                                     <Sparkles className="w-5 h-5 text-white" />
                                 </div>
                                 <span className="text-xl font-bold tracking-tight">
-                                    Creator<span className="gradient-text">Forge</span>
+                                    Vid<span className="gradient-text">Forge</span>
                                 </span>
                             </Link>
                         </motion.div>
@@ -287,7 +287,7 @@ export default function AuthPage() {
                             <Sparkles className="w-4 h-4 text-white" />
                         </div>
                         <span className="text-base font-bold tracking-tight">
-                            Creator<span className="gradient-text">Forge</span>
+                            Vid<span className="gradient-text">Forge</span>
                         </span>
                     </Link>
                 </motion.div>
@@ -391,7 +391,7 @@ export default function AuthPage() {
                                         transition={{ delay: 0.3 }}
                                         className="text-muted-foreground text-xs"
                                     >
-                                        CreatorForge{" "}
+                                        VidForge{" "}
                                         {isLogin ? "sign in" : isForgotPassword ? "password reset" : "sign up"}
                                     </motion.p>
                                 </div>

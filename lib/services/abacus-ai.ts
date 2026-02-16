@@ -810,7 +810,7 @@ Respond ONLY with valid JSON.`
 
 This should feel like a real TikTok creator video, not an advertisement.
 
-Ultra-realistic UGC selfie video, vertical ${settings.aspectRatio}, front-facing camera perspective, 4K quality.
+Ultra-realistic UGC selfie video, vertical ${settings.aspectRatio}, raw camera footage, 4K quality. This is NOT a phone screen recording — it is direct camera output with NO user interface elements.
 
 ${characterRef}
 
@@ -819,6 +819,7 @@ ${scene}.
 Natural real-life setting, slightly imperfect and lived-in.
 Background softly blurred with realistic depth.
 No studio look.
+SCENE MUST REMAIN THE SAME THROUGHOUT THE ENTIRE VIDEO — do NOT change location, do NOT transition between different backgrounds. The person stays in the EXACT SAME place from start to finish.
 
 CHARACTER:
 Real human influencer-style person looking directly into camera, close-up selfie framing.
@@ -861,10 +862,15 @@ CAMERA BEHAVIOR:
 Handheld realism with subtle natural shake.
 No cinematic camera movement — NO dolly, NO zoom, NO push-in.
 No stabilization.
-Front-facing selfie perspective.
+Direct camera output — NOT a screen recording.
 Medium shot: head and shoulders visible, some chest.
 STATIC framing — keep the same distance throughout.
-NO phone frame, NO device bezel, NO screen overlay — shoot directly without any device visible.
+
+CRITICAL — NO PHONE UI ELEMENTS:
+NO status bar, NO time display, NO battery icon, NO signal bars, NO WiFi icon.
+NO phone notch, NO Dynamic Island, NO rounded screen corners.
+NO phone frame, NO device bezel, NO screen border.
+This must look like RAW CAMERA FOOTAGE, not a phone screen capture or mockup.
 
 LIGHTING:
 Natural ambient lighting matching the scene.
@@ -882,7 +888,7 @@ Prioritize realism over beauty.
 NO plastic skin, NO perfect lighting, NO beauty filter look.
 
 NEGATIVE (AVOID AT ALL COSTS):
-cinematic, studio lighting, beauty filter, smooth skin, plastic look, CGI, 3D render, cartoon, anime, perfect framing, professional camera, DSLR look, shallow depth of field bokeh, extra fingers, distorted face, blurry, low quality, phone frame, device frame, phone bezel, phone mockup, screen border, device border
+cinematic, studio lighting, beauty filter, smooth skin, plastic look, CGI, 3D render, cartoon, anime, perfect framing, professional camera, DSLR look, shallow depth of field bokeh, extra fingers, distorted face, blurry, low quality, phone frame, device frame, phone bezel, phone mockup, screen border, device border, status bar, notification bar, battery icon, signal bars, WiFi icon, time display, phone notch, Dynamic Island, rounded corners overlay, screen recording, phone UI, iOS interface, Android interface, scene transition, location change, background change
 
 ${visualDna ? `\nVISUAL DNA: ${visualDna}` : ''}
 ${brandPersona ? `\nBRAND PERSONA: ${brandPersona}` : ''}
@@ -922,7 +928,7 @@ ${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}`
             const requestBody: Record<string, unknown> = {
                 prompt: prompt.substring(0, 2500), // Kling supports longer prompts
                 duration: '10', // 10 seconds for marketing content
-                negative_prompt: negativePrompt || 'blur, distort, low quality, cartoon, 3d render, anime, extra fingers, CGI, camera zoom, dolly in, push in, extreme close-up, phone frame, device frame, phone bezel, phone mockup, screen border',
+                negative_prompt: negativePrompt || 'blur, distort, low quality, cartoon, 3d render, anime, extra fingers, CGI, camera zoom, dolly in, push in, extreme close-up, phone frame, device frame, phone bezel, phone mockup, screen border, status bar, battery icon, signal bars, WiFi icon, phone notch, Dynamic Island, phone UI, scene transition, location change',
                 generate_audio: true, // Kling AI native audio — lip-synced speech generated from prompt
             }
             if (useImageToVideo) {
