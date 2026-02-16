@@ -428,10 +428,54 @@ Respond with ONLY valid JSON (no markdown formatting):
         const sectorKey = sector?.toLowerCase() || ''
         const sectorConfig = sectorStyles[sectorKey]
         const sectorStyle = sectorConfig?.style || 'stylish, modern, approachable look'
-        const sectorOutfits = sectorConfig?.outfits || defaultOutfits
+        let sectorOutfits = sectorConfig?.outfits || defaultOutfits
 
         // Use user-selected environment if available, otherwise use defaults per photo type
         const userEnvLabel = environment || ''
+
+        // ─── ENVIRONMENT-AWARE OUTFIT OVERRIDES ───
+        // When user selects a specific environment, override outfits to match that setting
+        // This prevents mismatches like "satin blouse in a gym"
+        const envKey = environment?.toLowerCase() || ''
+        const environmentOutfitOverrides: Record<string, Record<string, string>> = {
+            'gym': {
+                portrait: 'sports bra or fitted athletic tank top, high ponytail, fitness watch, toned arms visible',
+                sitting: 'performance tank top, towel around neck, water bottle nearby, workout gloves',
+                standing: 'matching workout set (sports bra + high-waist leggings), cross-training shoes',
+                walking: 'running shorts and breathable mesh top, running sneakers, fitness tracker',
+                office: 'athletic zip-up hoodie over sports top, clean joggers, smart fitness watch',
+                outdoor: 'lightweight windbreaker over sports tank, running shoes, sweatband',
+            },
+            'park': {
+                portrait: 'casual athleisure outfit, comfortable sneakers, crossbody bag',
+                sitting: 'relaxed sundress or casual shorts with fitted tee, sunglasses',
+                standing: 'breezy casual wear: linen top, comfortable pants, clean sneakers',
+                walking: 'activewear leggings and lightweight hoodie, running shoes',
+                office: 'smart casual with nature-inspired accessories',
+                outdoor: 'casual outdoor wear, comfortable walking shoes, light layers',
+            },
+            'restaurant': {
+                portrait: 'elegant blouse or smart dress, delicate jewelry, polished look',
+                sitting: 'chic dinner outfit, statement necklace, well-styled hair',
+                standing: 'cocktail-appropriate dress or tailored outfit, heels',
+                walking: 'smart casual evening wear, clutch bag, styled hair',
+                office: 'business dinner attire, structured blazer, elegant accessories',
+                outdoor: 'upscale casual: silk top, tailored pants, designer sandals',
+            },
+            'cafe': {
+                portrait: 'cozy knit sweater or casual blouse, minimal jewelry, warm aesthetic',
+                sitting: 'relaxed chic: oversized cardigan, delicate necklace, coffee in hand',
+                standing: 'casual layered look: fitted tee under open shirt, jeans',
+                walking: 'casual weekend look: light jacket, crossbody bag, comfortable shoes',
+                office: 'smart casual: cotton shirt, clean pants, modern watch',
+                outdoor: 'relaxed outdoor café look: sunglasses, linen top, straw bag',
+            },
+        }
+
+        // If environment matches an override, use it instead of sector outfits
+        if (envKey && environmentOutfitOverrides[envKey]) {
+            sectorOutfits = environmentOutfitOverrides[envKey]
+        }
 
         // ═══ PHOTO CONFIGS ═══
         // 6 reference photos with different postures + SECTOR-SPECIFIC outfits
