@@ -343,7 +343,7 @@ promptları üretmektir.
 
 VIDEO PROMPT YAPISI (Kling AI için):
 - Subject: Kim, nasıl görünüyor, ne giyiyor
-- Action: Ne yapıyor (kameraya konuşma, baş sallama, gülümseme)
+- Action: Ne yapıyor (kameraya konuşma, yürüme, ayakta durma, masada oturma, ürünü gösterme — HER VİDEODA FARKLI POZ)
 - Scene: Mekan, atmosfer, detaylar
 - Camera: Çekim tipi, hareket (static, slow zoom, push-in)
 - Lighting: Işık kalitesi (soft, rim, golden hour, natural window)
@@ -360,7 +360,17 @@ KULLANICI SCRIPT UYARLAMA:
 - Kullanıcının iletmek istediği temel fikri her zaman öncelikle koru.
 - Eğer kullanıcı scripti zaten kısaysa veya yoksa, projeye uygun yeni script yaz.
 
-JSON FORMATI ile yanıt ver.`
+JSON FORMATI ile yanıt ver.
+
+POZ ÇEŞİTLİLİĞİ (ÇOK ÖNEMLİ):
+- Influencer HER ZAMAN oturmamalı. Duruma ve konuya göre farklı pozisyonlar kullan:
+  * Ayakta durma (standing, leaning against wall)
+  * Yürüme (walking towards camera, walking in street)
+  * Oturma (sadece uygun bağlamlarda: ofis, kafe, ev)
+  * Hareket halinde (gesturing, showing product, pointing)
+  * Yarım boy veya tam boy çekim (medium shot, full body shot)
+- Önceki videolardaki pozları tekrar ETME
+- Mekan ve konu ile uyumlu poz seç (örn: spor→yürüme/ayakta, teknoloji→masada, moda→yürüme)`
 }
 
 /**

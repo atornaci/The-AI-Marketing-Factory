@@ -607,7 +607,7 @@ function DashboardContent() {
                                     AI Video Creator 🎬
                                 </h1>
                                 <p className="text-muted-foreground text-sm mt-1">
-                                    Create an influencer, write a script, generate video — all on one page
+                                    Create an influencer, then write a script and generate a 10-second video
                                 </p>
                             </div>
                         </motion.div>

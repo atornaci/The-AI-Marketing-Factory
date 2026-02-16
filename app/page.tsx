@@ -69,21 +69,21 @@ const steps = [
     icon: Bot,
     title: "Create Your AI Influencer",
     description:
-      "Design a unique AI character with a photorealistic avatar, custom personality, and backstory. Your brand's digital face — consistent across all content.",
+      "Pick a gender, choose an industry, and AI creates a unique influencer with a photorealistic avatar, custom personality, and backstory.",
     gradient: "from-violet-500 to-purple-500",
   },
   {
     icon: FileText,
-    title: "Write or Generate Script",
+    title: "Write Your Script",
     description:
-      "Write your marketing script or let AI generate one for you. Tailored to your product, audience, and chosen platform.",
+      "Tell your influencer what to say. Write any length — AI automatically adapts it to fit a 10-second video format.",
     gradient: "from-blue-500 to-cyan-500",
   },
   {
     icon: Clapperboard,
-    title: "Generate Professional Video",
+    title: "Generate Video",
     description:
-      "One click and Kling AI produces a cinematic video with your influencer speaking your script. Ready for any platform.",
+      "Pick a platform, click generate, and Kling AI produces a 10-second video with your influencer speaking your script with lip-sync.",
     gradient: "from-pink-500 to-rose-500",
   },
 ];
@@ -208,9 +208,9 @@ export default function LandingPage() {
               variants={itemVariants}
               className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
             >
-              Build your AI influencer, write a script, and generate professional marketing videos
-              for TikTok, Instagram, YouTube & LinkedIn.{" "}
-              <strong className="text-foreground">All in one place, in minutes.</strong>
+              Build your AI influencer, write a script, and generate a 10-second marketing video
+              with lip-sync for TikTok, Instagram, YouTube & LinkedIn.{" "}
+              <strong className="text-foreground">All in one place.</strong>
             </motion.p>
 
             {/* CTA Buttons */}
@@ -395,8 +395,8 @@ export default function LandingPage() {
               },
               {
                 icon: Video,
-                title: "Cinematic Video Quality",
-                desc: "Powered by Kling AI Pro for professional-grade video production. Your influencer speaks, moves, and engages.",
+                title: "10-Second AI Videos",
+                desc: "Powered by Kling AI — your influencer speaks your script with realistic lip-sync in a 10-second video.",
               },
               {
                 icon: Users,
@@ -405,13 +405,13 @@ export default function LandingPage() {
               },
               {
                 icon: FileText,
-                title: "Smart Script Editor",
-                desc: "Write your own scripts or let AI generate platform-optimized content for your product.",
+                title: "Script Adaptation",
+                desc: "Write any length script — AI automatically condenses it to fit a 10-second video while preserving your message.",
               },
               {
                 icon: Zap,
-                title: "One-Click Generation",
-                desc: "Select your influencer, pick a platform, click generate. Professional video ready in minutes.",
+                title: "Reusable Influencers",
+                desc: "Create an influencer once, use them for unlimited videos. Change the script each time for fresh content.",
               },
               {
                 icon: Wand2,
