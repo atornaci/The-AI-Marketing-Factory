@@ -1265,6 +1265,7 @@ function DashboardContent() {
                                                                 <video
                                                                     src={video.videoUrl}
                                                                     controls
+                                                                    preload="none"
                                                                     className="w-full h-full object-contain"
                                                                     poster={video.thumbnailUrl || undefined}
                                                                 />
