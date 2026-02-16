@@ -92,7 +92,7 @@ function DashboardContent() {
     /* ─── Influencer Library State ─── */
     const [influencerLibrary, setInfluencerLibrary] = useState<CreatedInfluencer[]>([]);
     const [loadingLibrary, setLoadingLibrary] = useState(true);
-    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [showCreateForm, setShowCreateForm] = useState(true);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
     /* ─── Influencer Result State ─── */
