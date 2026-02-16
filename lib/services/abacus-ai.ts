@@ -766,17 +766,20 @@ Respond ONLY with valid JSON.`
         const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
 
         // Scene environments (real-life, slightly imperfect, lived-in)
+        // Each scene includes its own posture for natural variety
         const scenes_ugc = [
-            'cozy bedroom in the morning, unmade bed slightly visible behind, warm natural daylight from window, slightly messy but real',
-            'parked car on a quiet street, dashboard partially visible, natural daylight through windshield, realistic car interior',
-            'coffee shop corner table, other customers blurred in background, warm indoor lighting, coffee cup on table',
-            'park bench under trees, dappled sunlight, green foliage softly blurred behind, occasional wind in hair',
-            'home office desk, laptop and coffee mug visible, soft window light, lived-in workspace',
-            'kitchen counter, morning light, breakfast items slightly visible, homey and real',
-            'living room couch, cushions and blanket visible, warm lamp light, relaxed home setting',
-            'balcony with city view, slight breeze, golden hour light, urban background softly blurred',
-            'gym lobby or locker area, fluorescent mixed with natural light, gym bag visible',
-            'walking on a sidewalk, buildings and trees softly blurred, handheld movement, outdoor daylight',
+            { scene: 'cozy bedroom in the morning, unmade bed slightly visible behind, warm natural daylight from window, slightly messy but real', posture: 'sitting on the edge of the bed' },
+            { scene: 'parked car on a quiet street, dashboard partially visible, natural daylight through windshield, realistic car interior', posture: 'sitting in the driver seat of a car' },
+            { scene: 'coffee shop corner table, other customers blurred in background, warm indoor lighting, coffee cup on table', posture: 'sitting at a small café table, leaning slightly forward' },
+            { scene: 'park bench under trees, dappled sunlight, green foliage softly blurred behind, occasional wind in hair', posture: 'sitting on a park bench, relaxed posture' },
+            { scene: 'home office desk, laptop and coffee mug visible, soft window light, lived-in workspace', posture: 'sitting at a desk in an office chair' },
+            { scene: 'kitchen counter, morning light, breakfast items slightly visible, homey and real', posture: 'standing at a kitchen counter, leaning casually against it' },
+            { scene: 'living room couch, cushions and blanket visible, warm lamp light, relaxed home setting', posture: 'sitting comfortably on a couch, legs relaxed' },
+            { scene: 'balcony with city view, slight breeze, golden hour light, urban background softly blurred', posture: 'standing on a balcony, leaning on the railing' },
+            { scene: 'gym lobby or locker area, fluorescent mixed with natural light, gym bag visible', posture: 'standing casually, gym bag over one shoulder' },
+            { scene: 'walking on a sidewalk, buildings and trees softly blurred, handheld movement, outdoor daylight', posture: 'walking slowly along a sidewalk, gentle movement' },
+            { scene: 'outdoor café terrace, tables and umbrellas visible, warm afternoon light, street life blurred behind', posture: 'sitting at an outdoor café table with crossed legs' },
+            { scene: 'rooftop terrace, skyline visible in background, golden hour warm light, slight breeze', posture: 'standing on a rooftop, looking at camera' },
         ]
 
         // Energy levels mapped to performance style
@@ -799,7 +802,9 @@ Respond ONLY with valid JSON.`
             'casual denim jacket over a plain top, minimal accessories, everyday look',
         ]
 
-        const scene = pick(scenes_ugc)
+        const sceneObj = pick(scenes_ugc)
+        const scene = sceneObj.scene
+        const posture = sceneObj.posture
         const energyObj = pick(energyLevels)
         const wardrobe = pick(wardrobes)
 
@@ -822,7 +827,9 @@ No studio look.
 SCENE MUST REMAIN THE SAME THROUGHOUT THE ENTIRE VIDEO — do NOT change location, do NOT transition between different backgrounds. The person stays in the EXACT SAME place from start to finish.
 
 CHARACTER:
-Real human influencer-style person looking directly into camera, close-up selfie framing.
+Real human influencer-style person looking directly into camera.
+Body position: ${posture}.
+Camera frames the person from HEAD TO WAIST — this is a MEDIUM SHOT, NOT a close-up. The person's upper body, arms, and hands must be clearly visible.
 Natural appearance, minimal makeup, realistic skin texture with pores and imperfections.
 Wardrobe: ${wardrobe}.
 
@@ -863,8 +870,9 @@ Handheld realism with subtle natural shake.
 No cinematic camera movement — NO dolly, NO zoom, NO push-in.
 No stabilization.
 Direct camera output — NOT a screen recording.
-Medium shot: head and shoulders visible, some chest.
+MEDIUM-WIDE SHOT (CRITICAL): Frame the person from HEAD TO WAIST. Show the full upper body including arms, hands, and torso. Do NOT crop tightly on the face. The person should occupy about 60-70% of the vertical frame height.
 STATIC framing — keep the same distance throughout.
+Do NOT zoom in on the face. Keep the camera at arm's length or slightly further.
 
 CRITICAL — NO PHONE UI ELEMENTS:
 NO status bar, NO time display, NO battery icon, NO signal bars, NO WiFi icon.
@@ -888,7 +896,7 @@ Prioritize realism over beauty.
 NO plastic skin, NO perfect lighting, NO beauty filter look.
 
 NEGATIVE (AVOID AT ALL COSTS):
-cinematic, studio lighting, beauty filter, smooth skin, plastic look, CGI, 3D render, cartoon, anime, perfect framing, professional camera, DSLR look, shallow depth of field bokeh, extra fingers, distorted face, blurry, low quality, phone frame, device frame, phone bezel, phone mockup, screen border, device border, status bar, notification bar, battery icon, signal bars, WiFi icon, time display, phone notch, Dynamic Island, rounded corners overlay, screen recording, phone UI, iOS interface, Android interface, scene transition, location change, background change
+cinematic, studio lighting, beauty filter, smooth skin, plastic look, CGI, 3D render, cartoon, anime, perfect framing, professional camera, DSLR look, shallow depth of field bokeh, extra fingers, distorted face, blurry, low quality, phone frame, device frame, phone bezel, phone mockup, screen border, device border, status bar, notification bar, battery icon, signal bars, WiFi icon, time display, phone notch, Dynamic Island, rounded corners overlay, screen recording, phone UI, iOS interface, Android interface, scene transition, location change, background change, extreme close-up, face-only shot, tight crop on face, head-only framing
 
 ${visualDna ? `\nVISUAL DNA: ${visualDna}` : ''}
 ${brandPersona ? `\nBRAND PERSONA: ${brandPersona}` : ''}
