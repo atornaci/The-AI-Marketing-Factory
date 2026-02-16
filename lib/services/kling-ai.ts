@@ -358,9 +358,9 @@ SCRIPT YAPISI (10 saniye, 3 parça):
 
 KULLANICI SCRIPT UYARLAMA:
 - Kullanıcı kendi scriptini yazmış olabilir (USER_SCRIPT alanı). 
-- Eğer kullanıcı scripti çok uzunsa, ANLAMINI ve ANA MESAJINI koruyarak 10 saniyelik formata (30-40 kelime) KISA ve ÖZLÜ hale getir.
-- Kullanıcının iletmek istediği temel fikri her zaman öncelikle koru.
-- Eğer kullanıcı scripti zaten kısaysa veya yoksa, projeye uygun yeni script yaz.
+- Kullanıcı scriptini OLDUĞU GİBİ KULLAN. Çok uzunsa sadece hafifçe kısalt ama ANA MESAJI ve TÜM ÖNEMLİ CÜMLELERİ koru.
+- Kullanıcının yazdığı scripti ASLA tek cümleye indirme. Tüm içeriği korumaya çalış.
+- Eğer kullanıcı scripti yoksa, projeye uygun yeni script yaz.
 
 JSON FORMATI ile yanıt ver.
 

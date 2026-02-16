@@ -805,9 +805,12 @@ Respond ONLY with valid JSON.`
 
         console.log(`[Video] UGC Template: Scene="${scene.substring(0, 40)}...", Energy="${energyObj.energy}", Tone="${energyObj.tone}"`)
 
-        return `This should feel like a real TikTok creator video, not an advertisement.
+        return `DIALOGUE (the person speaks this aloud with natural lip movement throughout the entire video):
+"${spokenScript}"
 
-Ultra-realistic UGC selfie video, vertical ${settings.aspectRatio}, filmed with an iPhone 15 Pro front camera.
+This should feel like a real TikTok creator video, not an advertisement.
+
+Ultra-realistic UGC selfie video, vertical ${settings.aspectRatio}, front-facing camera perspective, 4K quality.
 
 ${characterRef}
 
@@ -818,7 +821,7 @@ Background softly blurred with realistic depth.
 No studio look.
 
 CHARACTER:
-Real human influencer-style person holding phone at arm's length.
+Real human influencer-style person looking directly into camera, close-up selfie framing.
 Natural appearance, minimal makeup, realistic skin texture with pores and imperfections.
 Wardrobe: ${wardrobe}.
 
@@ -846,8 +849,7 @@ Breathing movement visible in chest/shoulders.
 ENERGY LEVEL: ${energyObj.energy}
 Performance mood: ${energyObj.desc}
 
-WHAT THE PERSON IS SAYING (speaks this aloud with natural lip movement):
-"${spokenScript}"
+The person speaks the DIALOGUE shown above throughout the entire video with natural lip movement.
 
 AUDIO CONTEXT (natural speech rhythm):
 Natural pauses between sentences — not robotic continuous speech.
@@ -856,13 +858,13 @@ Occasional "um" or "hmm" micro-hesitations (subtle, not exaggerated).
 Voice energy matches the scene — intimate settings = softer voice, outdoor = slightly projected.
 
 CAMERA BEHAVIOR:
-Handheld smartphone realism.
-Visible micro-shakes from holding phone.
+Handheld realism with subtle natural shake.
 No cinematic camera movement — NO dolly, NO zoom, NO push-in.
 No stabilization.
-Front-camera perspective only.
+Front-facing selfie perspective.
 Medium shot: head and shoulders visible, some chest.
 STATIC framing — keep the same distance throughout.
+NO phone frame, NO device bezel, NO screen overlay — shoot directly without any device visible.
 
 LIGHTING:
 Natural ambient lighting matching the scene.
@@ -880,7 +882,7 @@ Prioritize realism over beauty.
 NO plastic skin, NO perfect lighting, NO beauty filter look.
 
 NEGATIVE (AVOID AT ALL COSTS):
-cinematic, studio lighting, beauty filter, smooth skin, plastic look, CGI, 3D render, cartoon, anime, perfect framing, professional camera, DSLR look, shallow depth of field bokeh, extra fingers, distorted face, blurry, low quality
+cinematic, studio lighting, beauty filter, smooth skin, plastic look, CGI, 3D render, cartoon, anime, perfect framing, professional camera, DSLR look, shallow depth of field bokeh, extra fingers, distorted face, blurry, low quality, phone frame, device frame, phone bezel, phone mockup, screen border, device border
 
 ${visualDna ? `\nVISUAL DNA: ${visualDna}` : ''}
 ${brandPersona ? `\nBRAND PERSONA: ${brandPersona}` : ''}
@@ -920,7 +922,7 @@ ${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}`
             const requestBody: Record<string, unknown> = {
                 prompt: prompt.substring(0, 2500), // Kling supports longer prompts
                 duration: '10', // 10 seconds for marketing content
-                negative_prompt: negativePrompt || 'blur, distort, low quality, cartoon, 3d render, anime, extra fingers, CGI, camera zoom, dolly in, push in, extreme close-up',
+                negative_prompt: negativePrompt || 'blur, distort, low quality, cartoon, 3d render, anime, extra fingers, CGI, camera zoom, dolly in, push in, extreme close-up, phone frame, device frame, phone bezel, phone mockup, screen border',
                 generate_audio: true, // Kling AI native audio — lip-synced speech generated from prompt
             }
             if (useImageToVideo) {
