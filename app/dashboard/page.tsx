@@ -491,6 +491,7 @@ function DashboardContent() {
         setQuickGender("female");
         setGenError("");
         setShowCreateForm(true);
+        setActiveView('create');
     };
 
     /* ─── Select from Library ─── */
