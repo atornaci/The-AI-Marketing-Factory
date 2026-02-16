@@ -351,6 +351,14 @@ VIDEO PROMPT YAPISI (Kling AI için):
 - Lighting: Işık kalitesi (soft, rim, golden hour, natural window)
 - Style: Muted colors, cinematic, shallow depth of field
 
+SAHNE TUTARLILIĞI (ÇOK KRİTİK!):
+- Video boyunca AYNI MEKAN kullanılmalı — arka plan ASLA değişmemeli!
+- Promptta TEK BİR MEKAN belirt (örn: sadece 'modern office' VEYA sadece 'coffee shop')
+- 'transitions', 'scene change', 'multiple locations' gibi ifadeler KULLANMA
+- Kamera hareketi minimal olmalı: static shot, slight push-in, veya slow zoom ONLY
+- Karakter konumunu değiştirmemeli — aynı yerde durmalı/oturmalı
+- Prompta 'consistent background throughout, single static location, no scene transitions' MUTLAKA ekle
+
 SCRIPT YAPISI (10 saniye, 3 parça):
 - Hook (0-3s): Dikkat çekici açılış, soru veya şaşırtıcı ifade
 - Problem (3-6s): Hedef kitlenin yaşadığı sorunu tanımla
@@ -412,8 +420,8 @@ ${previousThemes}
 
 JSON formatında yanıt ver:
 {
-  "video_prompt": "Kling AI video prompt (İngilizce, 150-250 kelime, Subject/Action/Scene/Camera/Lighting)",
-  "negative_prompt": "Negatif prompt (İngilizce, virgülle ayrılmış)",
+  "video_prompt": "Kling AI video prompt (İngilizce, 150-250 kelime, Subject/Action/Scene/Camera/Lighting — MUTLAKA 'consistent background throughout, single static location, no scene transitions' ekle)",
+  "negative_prompt": "Negatif prompt (İngilizce, virgülle ayrılmış — MUTLAKA 'scene change, location change, background transition, multiple locations, jump cut' ekle)",
   "video_script": "${input.userScript ? 'KULLANICININ SCRIPTİNİ AYNEN KOPYALA, HİÇBİR ŞEY DEĞİŞTİRME: ' + input.userScript : '10 saniyelik script (' + input.language + ' dilinde, 30-40 kelime, Hook|Problem|CTA formatı)'}",
   "image_prompt": "Thumbnail/banner görseli için prompt (İngilizce, 50-100 kelime)",
   "audio_mood_tags": ["mood1", "mood2", "mood3"],
@@ -448,7 +456,7 @@ export function parseMasterPromptResponse(response: string): MasterPromptOutput 
 
         return {
             videoPrompt: parsed.video_prompt || '',
-            negativePrompt: parsed.negative_prompt || 'cartoon, 3d render, anime, blurry, distorted, low quality, glitch, extra fingers, CGI, plastic skin',
+            negativePrompt: parsed.negative_prompt || 'cartoon, 3d render, anime, blurry, distorted, low quality, glitch, extra fingers, CGI, plastic skin, scene change, location change, background transition, multiple locations, jump cut',
             videoScript: parsed.video_script || '',
             imagePrompt: parsed.image_prompt || '',
             audioMoodTags: parsed.audio_mood_tags || ['confident', 'professional'],
