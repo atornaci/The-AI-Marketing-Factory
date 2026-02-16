@@ -827,14 +827,62 @@ Respond ONLY with valid JSON.`
             { energy: 'mentor advice', tone: 'trustworthy', desc: 'confident and wise, like an older sibling giving life advice' },
         ]
 
-        // Clothing — casual, real, not styled
-        const wardrobes = [
-            'casual everyday clothes: simple t-shirt, no visible branding, natural and unstaged',
-            'cozy hoodie or oversized sweater, hair slightly messy, authentic and relatable',
-            'simple blouse or button-up, slightly wrinkled, real and not overly styled',
-            'athleisure: simple joggers and fitted top, as if just came from a walk',
-            'casual denim jacket over a plain top, minimal accessories, everyday look',
-        ]
+        // Clothing — derived from influencer profile when available, otherwise generic fallback
+        const profileStyle = (influencerProfile?.visualProfile as Record<string, string> | undefined)?.style || ''
+        const profileAppearance = (influencerProfile?.appearanceDescription as string || '').toLowerCase()
+
+        // Map influencer style to appropriate wardrobe descriptions
+        const styleWardrobes: Record<string, string[]> = {
+            'sporty': [
+                'fitted compression top, sports watch, toned arms visible, athletic look',
+                'performance tank top or breathable training shirt, sporty and energetic',
+                'matching workout set, cross-training shoes, fitness tracker on wrist',
+            ],
+            'formal': [
+                'tailored blazer over crisp dress shirt, luxury watch, power dressing',
+                'fitted suit jacket, no tie, top button open, polished professional look',
+                'structured blazer, dress pants, Oxford shoes, authoritative presence',
+            ],
+            'business casual': [
+                'slim-fit henley or button-down with rolled sleeves, minimalist watch',
+                'modern quarter-zip pullover with dark chinos, clean white sneakers',
+                'fitted crew-neck sweater over collared shirt, smart and approachable',
+            ],
+            'casual': [
+                'casual everyday clothes: simple t-shirt, no visible branding, natural look',
+                'light jacket over plain tee, well-fitted pants, clean sneakers',
+                'casual button-down shirt, comfortable jeans, unpretentious and real',
+            ],
+            'streetwear': [
+                'oversized graphic hoodie, cargo pants, chunky sneakers, urban style',
+                'bomber jacket over graphic tee, slim jeans, street fashion',
+                'tech-wear: utility vest, joggers, futuristic sneakers, edgy look',
+            ],
+            'fashion': [
+                'designer structured blazer with statement accessories, editorial feel',
+                'runway-inspired: oversized coat over fitted turtleneck, leather boots',
+                'street-style: trench coat, designer sunglasses, curated chic look',
+            ],
+            'wellness': [
+                'soft earth-tone linen top, crystal pendant, serene and calming',
+                'flowy bamboo-fabric wrap top, comfortable wide-leg pants, natural',
+                'light activewear, yoga-inspired outfit, calm and centered energy',
+            ],
+        }
+
+        // Detect style category
+        let detectedStyle = profileStyle.toLowerCase()
+        if (!styleWardrobes[detectedStyle]) {
+            // Try to detect from appearance description
+            if (profileAppearance.includes('athletic') || profileAppearance.includes('sport') || profileAppearance.includes('fitness')) detectedStyle = 'sporty'
+            else if (profileAppearance.includes('suit') || profileAppearance.includes('formal') || profileAppearance.includes('executive')) detectedStyle = 'formal'
+            else if (profileAppearance.includes('fashion') || profileAppearance.includes('designer') || profileAppearance.includes('editorial')) detectedStyle = 'fashion'
+            else if (profileAppearance.includes('wellness') || profileAppearance.includes('yoga') || profileAppearance.includes('zen')) detectedStyle = 'wellness'
+            else if (profileAppearance.includes('street') || profileAppearance.includes('urban') || profileAppearance.includes('hoodie')) detectedStyle = 'streetwear'
+            else detectedStyle = 'casual'
+        }
+
+        const wardrobes = styleWardrobes[detectedStyle] || styleWardrobes['casual']
 
         const sceneObj = pick(scenes_ugc)
         const scene = sceneObj.scene

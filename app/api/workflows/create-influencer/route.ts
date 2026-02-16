@@ -279,71 +279,204 @@ Respond with ONLY valid JSON (no markdown formatting):
         const dnaKeywords = visualDna ? `, ${visualDna}` : ''
 
         // ─── SECTOR-AWARE STYLING ───
-        // Adjust appearance emphasis based on industry
-        const sectorStyles: Record<string, string> = {
-            'beauty': 'glowing healthy skin, well-groomed, subtle natural makeup, radiant complexion, photogenic',
-            'fitness': 'athletic build, healthy glow, sporty energy, strong posture, confident expression',
-            'technology': 'smart casual style, clean-cut, modern and professional, approachable',
-            'fashion': 'stylish and trendy, fashion-forward, well-coordinated outfit, editorial feel',
-            'food': 'warm and inviting, homey apron or casual chef style, friendly smile',
-            'travel': 'adventurous look, sun-kissed skin, relaxed and happy, traveler aesthetic',
-            'gaming': 'trendy streetwear, expressive, youthful energy, gamer culture aesthetic',
-            'music': 'edgy artistic style, bold accessories, creative expressive look',
-            'education': 'approachable and friendly, smart casual, trustworthy appearance',
-            'health': 'clean and healthy look, natural glow, calming presence, wellness aesthetic',
-            'lifestyle': 'effortlessly stylish, warm and relatable, aspirational but achievable look',
-            'automotive': 'modern casual, confident stance, clean-cut appearance',
+        // Adjust appearance emphasis AND clothing based on industry
+        const sectorStyles: Record<string, { style: string; outfits: Record<string, string> }> = {
+            'beauty': {
+                style: 'glowing healthy skin, well-groomed, subtle natural makeup, radiant complexion, photogenic',
+                outfits: {
+                    portrait: 'elegant satin blouse with delicate gold necklace, fresh dewy makeup look',
+                    sitting: 'chic wrap dress or silk camisole, pearl earrings, polished nails',
+                    standing: 'tailored midi skirt with fitted knit top, layered bracelets',
+                    walking: 'flowy sundress with strappy sandals, oversized sunglasses',
+                    office: 'structured blazer over lace-trimmed camisole, statement ring',
+                    outdoor: 'wide-brim hat, linen shirt dress, minimal gold jewelry',
+                },
+            },
+            'fitness': {
+                style: 'athletic build, healthy glow, sporty energy, strong posture, confident expression, toned physique',
+                outfits: {
+                    portrait: 'fitted compression top with zip-up collar, sports watch, toned arms visible',
+                    sitting: 'performance tank top, towel around neck, water bottle nearby',
+                    standing: 'matching workout set (sports bra + high-waist leggings), cross-training shoes',
+                    walking: 'running shorts and breathable mesh top, running sneakers, fitness tracker',
+                    office: 'athletic polo shirt, clean sporty joggers, smart fitness watch',
+                    outdoor: 'lightweight windbreaker over sports tank, running shoes, sweatband',
+                },
+            },
+            'technology': {
+                style: 'smart casual style, clean-cut, modern and professional, tech-savvy vibe',
+                outfits: {
+                    portrait: 'slim-fit henley shirt, premium headphones around neck, smart watch',
+                    sitting: 'crisp button-down with rolled-up sleeves, minimalist watch, laptop visible',
+                    standing: 'modern quarter-zip pullover, dark chinos, clean white sneakers',
+                    walking: 'bomber jacket over graphic tee, slim jeans, AirPods in ear',
+                    office: 'fitted crew-neck sweater over collared shirt, glasses, clean desk setup',
+                    outdoor: 'tech-wear jacket with hidden pockets, dark joggers, futuristic sneakers',
+                },
+            },
+            'fashion': {
+                style: 'stylish and trendy, fashion-forward, well-coordinated outfit, editorial feel, haute couture inspired',
+                outfits: {
+                    portrait: 'designer structured blazer with statement brooch, silk scarf draped elegantly',
+                    sitting: 'tailored co-ord set in bold color, designer bag visible, layered gold chains',
+                    standing: 'runway-inspired outfit: oversized coat over fitted turtleneck, leather boots',
+                    walking: 'street-style look: trench coat, designer sunglasses, crossbody bag, pointed heels',
+                    office: 'power suit in unexpected color (burgundy, emerald), statement earrings',
+                    outdoor: 'curated casual: cashmere cardigan, wide-leg trousers, luxury loafers',
+                },
+            },
+            'food': {
+                style: 'warm and inviting, homey chef style, friendly smile, food-lover energy',
+                outfits: {
+                    portrait: 'clean chef coat slightly open over plain t-shirt, warm smile, flour dusting on hands',
+                    sitting: 'linen apron over casual shirt, wooden table with ingredients visible',
+                    standing: 'rolled-sleeve chambray shirt, canvas apron, cooking utensil in hand',
+                    walking: 'casual flannel shirt, jeans, carrying a basket of fresh produce',
+                    office: 'smart casual — fitted V-neck sweater, clean apron hanging nearby',
+                    outdoor: 'casual chef look: henley shirt, outdoor BBQ or garden setting',
+                },
+            },
+            'travel': {
+                style: 'adventurous look, sun-kissed skin, relaxed and happy, explorer aesthetic',
+                outfits: {
+                    portrait: 'safari-style linen shirt, adventure watch, slight sunburn, travel-worn look',
+                    sitting: 'relaxed tropical shirt, woven bracelet, passport/map visible on table',
+                    standing: 'cargo vest over fitted tee, hiking boots, backpack slung over one shoulder',
+                    walking: 'lightweight travel jacket, comfortable walking shoes, crossbody travel bag',
+                    office: 'smart casual — linen blazer, earth tones, world map in background',
+                    outdoor: 'adventure gear: windbreaker, hiking pants, sunglasses on head, scenic backdrop',
+                },
+            },
+            'gaming': {
+                style: 'trendy streetwear, expressive, youthful energy, gamer culture aesthetic',
+                outfits: {
+                    portrait: 'oversized graphic hoodie with gaming art, RGB headset around neck',
+                    sitting: 'vintage band tee, gaming chair visible, LED-lit desk setup background',
+                    standing: 'streetwear: oversized bomber jacket, cargo pants, chunky sneakers',
+                    walking: 'tech-wear: black utility vest, joggers, futuristic sneakers',
+                    office: 'casual gamer: comfortable hoodie, gaming peripherals on desk',
+                    outdoor: 'urban streetwear: puffer jacket, beanie, high-top sneakers',
+                },
+            },
+            'music': {
+                style: 'edgy artistic style, bold accessories, creative expressive look, musician energy',
+                outfits: {
+                    portrait: 'vintage leather jacket, layered necklaces, tousled hair, concert vibes',
+                    sitting: 'band tee or silk shirt, rings on multiple fingers, guitar visible',
+                    standing: 'stage-ready: custom jacket with patches, boots, statement belt',
+                    walking: 'rock-inspired: distressed denim, vintage boots, headphones around neck',
+                    office: 'creative studio: open flannel over band tee, vinyl records in background',
+                    outdoor: 'festival look: oversized sunglasses, layered jewelry, leather boots',
+                },
+            },
+            'education': {
+                style: 'approachable and friendly, smart casual, trustworthy and intellectual appearance',
+                outfits: {
+                    portrait: 'clean Oxford shirt with subtle pattern, reading glasses, warm smile',
+                    sitting: 'cardigan over collared shirt, books and notebook on table',
+                    standing: 'blazer with elbow patches, dress pants, comfortable loafers',
+                    walking: 'smart casual: polo shirt, messenger bag, corduroys',
+                    office: 'professional teacher: button-up, tie loosened, whiteboard behind',
+                    outdoor: 'campus casual: cable knit sweater, khakis, comfortable walking shoes',
+                },
+            },
+            'health': {
+                style: 'clean and healthy look, natural glow, calming presence, wellness aesthetic',
+                outfits: {
+                    portrait: 'soft earth-tone linen top, jade or crystal pendant, serene expression',
+                    sitting: 'comfortable yoga-inspired outfit, meditation cushion, candles nearby',
+                    standing: 'flowy bamboo-fabric wrap top, comfortable wide-leg pants, barefoot or sandals',
+                    walking: 'light activewear, walking shoes, yoga mat carrier bag',
+                    office: 'wellness professional: clean white coat or soft pastel blouse, calming decor',
+                    outdoor: 'nature wellness: organic cotton outfit, garden or nature setting',
+                },
+            },
+            'finance': {
+                style: 'polished and authoritative, sharp grooming, confidence and trust',
+                outfits: {
+                    portrait: 'tailored navy suit jacket, crisp white shirt, luxury watch, power tie loosened',
+                    sitting: 'sharp dress shirt with French cuffs, cufflinks, leather portfolio on table',
+                    standing: 'full three-piece suit, polished Oxford shoes, confident power pose',
+                    walking: 'business formal: topcoat over suit, leather briefcase in hand',
+                    office: 'executive look: fitted blazer, dress shirt no tie, corner office setting',
+                    outdoor: 'weekend banker: cashmere sweater, chinos, premium leather shoes',
+                },
+            },
+            'lifestyle': {
+                style: 'effortlessly stylish, warm and relatable, aspirational but achievable look',
+                outfits: {
+                    portrait: 'cozy oversized cardigan with delicate necklace, warm coffee in hand',
+                    sitting: 'casual linen shirt and tailored shorts, woven hat nearby',
+                    standing: 'breezy maxi dress or fitted jeans with tucked-in white tee',
+                    walking: 'boho-chic: flowy kimono over tank top, crossbody bag, sandals',
+                    office: 'elevated casual: silk blouse, high-waist trousers, minimal jewelry',
+                    outdoor: 'weekend vibes: knit sweater, boyfriend jeans, canvas sneakers',
+                },
+            },
         }
 
-        const sectorStyle = sectorStyles[sector?.toLowerCase() || ''] || 'stylish, modern, approachable look'
+        // Default outfits for unknown sectors — diverse and varied
+        const defaultOutfits: Record<string, string> = {
+            portrait: 'fitted crew-neck top in solid color, minimal accessories, clean modern look',
+            sitting: 'casual button-down shirt, watch, relaxed but put-together',
+            standing: 'light jacket over plain tee, well-fitted pants, clean sneakers',
+            walking: 'casual layered outfit, comfortable shoes, crossbody bag',
+            office: 'smart casual blazer, clean shirt, professional but approachable',
+            outdoor: 'weather-appropriate casual wear, comfortable shoes, natural look',
+        }
+
+        const sectorKey = sector?.toLowerCase() || ''
+        const sectorConfig = sectorStyles[sectorKey]
+        const sectorStyle = sectorConfig?.style || 'stylish, modern, approachable look'
+        const sectorOutfits = sectorConfig?.outfits || defaultOutfits
 
         // Use user-selected environment if available, otherwise use defaults per photo type
         const userEnvLabel = environment || ''
 
         // ═══ PHOTO CONFIGS ═══
-        // 6 reference photos with different postures + outfits for diverse video generation
+        // 6 reference photos with different postures + SECTOR-SPECIFIC outfits
         const photoConfigs = [
             {
                 type: 'portrait' as const,
                 scene: userEnvLabel || 'modern, well-lit indoor space',
                 posture: 'standing, facing camera, slight head tilt',
                 framing: 'Medium shot from waist up. Full arms and torso visible. Background visible.',
-                outfit: 'cozy sweater or casual blouse, accessories like a watch or bracelet',
+                outfit: sectorOutfits.portrait || defaultOutfits.portrait,
             },
             {
                 type: 'sitting' as const,
                 scene: userEnvLabel || 'stylish café with soft lighting',
                 posture: 'sitting comfortably, leaning slightly forward, engaged expression',
                 framing: 'Medium shot from waist up. Table and surroundings visible.',
-                outfit: 'casual smart outfit, light jewelry',
+                outfit: sectorOutfits.sitting || defaultOutfits.sitting,
             },
             {
                 type: 'standing' as const,
                 scene: userEnvLabel || 'urban street or park',
                 posture: 'standing naturally, one hand relaxed, confident posture',
                 framing: 'Full body or 3/4 shot. Environment clearly visible.',
-                outfit: 'trendy streetwear or smart casual outfit',
+                outfit: sectorOutfits.standing || defaultOutfits.standing,
             },
             {
                 type: 'walking' as const,
                 scene: userEnvLabel || 'tree-lined sidewalk or waterfront',
                 posture: 'mid-stride walking, looking at camera with a smile',
                 framing: 'Full body shot. Motion and environment visible.',
-                outfit: 'athleisure or casual outfit with sneakers',
+                outfit: sectorOutfits.walking || defaultOutfits.walking,
             },
             {
                 type: 'office' as const,
                 scene: 'modern office or co-working space with clean desk',
                 posture: 'sitting at desk or standing near whiteboard, professional pose',
                 framing: 'Medium shot. Desk/workspace visible in background.',
-                outfit: 'business casual — blazer or smart shirt, minimal accessories',
+                outfit: sectorOutfits.office || defaultOutfits.office,
             },
             {
                 type: 'outdoor' as const,
                 scene: 'rooftop, garden, or scenic outdoor location',
                 posture: 'standing relaxed, arms crossed or hands in pockets, wind-swept look',
                 framing: '3/4 shot. Sky and scenery visible behind.',
-                outfit: 'casual outfit — jacket, jeans, sunglasses on head',
+                outfit: sectorOutfits.outdoor || defaultOutfits.outdoor,
             },
         ]
 
