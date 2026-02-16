@@ -900,93 +900,24 @@ Respond ONLY with valid JSON.`
 
         console.log(`[Video] UGC Template: Scene="${scene.substring(0, 40)}...", Energy="${energyObj.energy}", Posture Type="${scenePostureType}"`)
 
-        const prompt = `DIALOGUE (the person speaks this aloud with natural lip movement throughout the entire video):
+        const prompt = `The person in this video speaks the following dialogue aloud with natural lip sync:
 "${spokenScript}"
 
-This should feel like a real TikTok creator video, not an advertisement.
+IMPORTANT: The person ONLY speaks the dialogue text quoted above. Do NOT vocalize any other text from this prompt.
 
-Ultra-realistic UGC selfie video, vertical ${settings.aspectRatio}, raw camera footage, 4K quality. This is NOT a phone screen recording — it is direct camera output with NO user interface elements.
-
+[VISUAL DIRECTION - DO NOT SPEAK]
+UGC selfie video, vertical ${settings.aspectRatio}, 4K, raw camera footage.
 ${characterRef}
-
-SCENE:
-${scene}.
-Natural real-life setting, slightly imperfect and lived-in.
-Background softly blurred with realistic depth.
-No studio look.
-SCENE MUST REMAIN THE SAME THROUGHOUT THE ENTIRE VIDEO — do NOT change location, do NOT transition between different backgrounds. The person stays in the EXACT SAME place from start to finish.
-
-CHARACTER:
-Real human influencer-style person looking directly into camera.
-Body position: ${posture}.
-Camera frames the person from HEAD TO WAIST — this is a MEDIUM SHOT, NOT a close-up. The person's upper body, arms, and hands must be clearly visible.
-Attractive, well-groomed, naturally photogenic. Confident and approachable expression.
+Scene: ${scene}. Same location throughout, no scene changes.
+Posture: ${posture}. Medium shot head to waist, not close-up.
 Wardrobe: ${wardrobe}.
-
-PERFORMANCE (CRITICAL — THIS IS THE MOST IMPORTANT PART):
-Speaks naturally as if talking to a close friend.
-Starts speaking immediately with no intro pause.
-Natural micro pauses and breathing between phrases.
-Occasional tiny hesitations — like a real person thinking mid-sentence.
-Subtle eye darts — not constant direct stare, occasional quick glance away then back to camera.
-Licking lips briefly between sentences — natural nervous habit.
-Leaning slightly into the lens during key emotional phrases, then settling back.
-Hands occasionally enter frame with spontaneous conversational gestures.
-Small body shifts in seat or stance, natural fidgeting.
-Authenticity prioritized over perfection.
-
-NATURAL PRESENCE:
-Natural realistic skin texture — not plastic or CGI.
-Natural occasional blink.
-Breathing movement visible in chest/shoulders.
-
-ENERGY LEVEL: ${energyObj.energy}
-Performance mood: ${energyObj.desc}
-
-The person speaks the DIALOGUE shown above throughout the entire video with natural lip movement.
-
-AUDIO CONTEXT (natural speech rhythm):
-Natural pauses between sentences — not robotic continuous speech.
-Breathing audible between longer phrases.
-Occasional "um" or "hmm" micro-hesitations (subtle, not exaggerated).
-Voice energy matches the scene — intimate settings = softer voice, outdoor = slightly projected.
-
-CAMERA BEHAVIOR:
-Handheld realism with subtle natural shake.
-No cinematic camera movement — NO dolly, NO zoom, NO push-in.
-No stabilization.
-Direct camera output — NOT a screen recording.
-MEDIUM-WIDE SHOT (CRITICAL): Frame the person from HEAD TO WAIST. Show the full upper body including arms, hands, and torso. Do NOT crop tightly on the face. The person should occupy about 60-70% of the vertical frame height.
-STATIC framing — keep the same distance throughout.
-Do NOT zoom in on the face. Keep the camera at arm's length or slightly further.
-
-CRITICAL — NO PHONE UI ELEMENTS:
-NO status bar, NO time display, NO battery icon, NO signal bars, NO WiFi icon.
-NO phone notch, NO Dynamic Island, NO rounded screen corners.
-NO phone frame, NO device bezel, NO screen border.
-This must look like RAW CAMERA FOOTAGE, not a phone screen capture or mockup.
-
-LIGHTING:
-Natural ambient lighting matching the scene.
-Realistic exposure, no dramatic or studio lighting.
-Slight over/under-exposure acceptable for realism.
-
-STYLE KEYWORDS:
-authentic UGC, social media selfie, raw realism, creator video, unfiltered, believable human presence, TikTok style, real person, not an ad.
-
-REALISM RULES (VERY IMPORTANT):
-Do NOT make it cinematic.
-Avoid studio perfection.
-Allow small framing imperfections.
-Prioritize realism over beauty.
-NO plastic skin, NO perfect lighting, NO beauty filter look.
-
-NEGATIVE (AVOID AT ALL COSTS):
-cinematic, studio lighting, beauty filter, smooth skin, plastic look, CGI, 3D render, cartoon, anime, perfect framing, professional camera, DSLR look, shallow depth of field bokeh, extra fingers, distorted face, blurry, low quality, phone frame, device frame, phone bezel, phone mockup, screen border, device border, status bar, notification bar, battery icon, signal bars, WiFi icon, time display, phone notch, Dynamic Island, rounded corners overlay, screen recording, phone UI, iOS interface, Android interface, scene transition, location change, background change, extreme close-up, face-only shot, tight crop on face, head-only framing
-
-${visualDna ? `\nVISUAL DNA: ${visualDna}` : ''}
-${brandPersona ? `\nBRAND PERSONA: ${brandPersona}` : ''}
-${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}`
+Natural speech with micro pauses, eye contact, hand gestures, slight body movement.
+Handheld camera, no zoom, no dolly, static distance.
+Natural ambient lighting, no studio look.
+No phone UI, no status bar, no device frame.
+${visualDna ? `Visual DNA: ${visualDna}` : ''}
+${brandPersona ? `Brand: ${brandPersona}` : ''}
+${brandColors ? `Colors: ${brandColors}` : ''}`
 
         return { prompt, scenePostureType }
     }
