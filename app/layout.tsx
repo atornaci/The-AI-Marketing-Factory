@@ -11,15 +11,15 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "The AI Marketing Factory | Autonomous AI Video Marketing",
+  title: "CreatorForge | AI Influencer & Video Generator",
   description:
-    "Create AI Influencers for your brand, produce professional marketing videos for Instagram, TikTok, YouTube, and LinkedIn automatically.",
+    "Create AI Influencers, write scripts, and generate professional marketing videos for TikTok, Instagram, YouTube, and LinkedIn.",
   keywords: [
-    "AI marketing",
     "AI influencer",
+    "AI video generator",
     "video marketing",
-    "autonomous marketing",
-    "AI video generation",
+    "AI creator",
+    "CreatorForge",
     "social media marketing",
   ],
 };

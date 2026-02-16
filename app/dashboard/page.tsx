@@ -481,7 +481,7 @@ function DashboardContent() {
                                 <Sparkles className="w-4.5 h-4.5 text-white" />
                             </div>
                             <span className="text-lg font-bold tracking-tight hidden sm:block">
-                                AI Marketing <span className="gradient-text">Factory</span>
+                                Creator<span className="gradient-text">Forge</span>
                             </span>
                         </Link>
                     </div>
@@ -589,8 +589,8 @@ function DashboardContent() {
                                             <div
                                                 key={inf.id}
                                                 className={`group relative rounded-2xl border bg-card p-4 text-left hover:shadow-md transition-all cursor-pointer ${deletingId === inf.id
-                                                        ? 'border-red-300 bg-red-50/30'
-                                                        : 'border-border/50 hover:border-violet-300'
+                                                    ? 'border-red-300 bg-red-50/30'
+                                                    : 'border-border/50 hover:border-violet-300'
                                                     }`}
                                                 onClick={() => deletingId === inf.id ? setDeletingId(null) : handleSelectInfluencer(inf)}
                                             >
@@ -599,8 +599,8 @@ function DashboardContent() {
                                                     type="button"
                                                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteInfluencer(e, inf); }}
                                                     className={`absolute top-2 right-2 z-20 rounded-lg flex items-center justify-center transition-all ${deletingId === inf.id
-                                                            ? 'px-2.5 py-1 bg-red-500 text-white text-[10px] font-bold opacity-100'
-                                                            : 'w-7 h-7 bg-background/80 hover:bg-red-50 border border-transparent hover:border-red-200 opacity-0 group-hover:opacity-100'
+                                                        ? 'px-2.5 py-1 bg-red-500 text-white text-[10px] font-bold opacity-100'
+                                                        : 'w-7 h-7 bg-background/80 hover:bg-red-50 border border-transparent hover:border-red-200 opacity-0 group-hover:opacity-100'
                                                         }`}
                                                     title={deletingId === inf.id ? 'Click again to confirm delete' : 'Delete influencer'}
                                                 >

@@ -145,7 +145,7 @@ export default function LandingPage() {
               <Sparkles className="w-4.5 h-4.5 text-white" />
             </div>
             <span className="text-lg font-bold tracking-tight">
-              AI Marketing <span className="gradient-text">Factory</span>
+              Creator<span className="gradient-text">Forge</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
@@ -378,9 +378,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6">
           <motion.div variants={itemVariants} className="text-center mb-16">
             <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
-              Why AI Marketing{" "}
+              Why{" "}
               <span className="relative whitespace-nowrap">
-                <span className="relative gradient-text">Factory</span>
+                <span className="relative gradient-text">CreatorForge</span>
                 <SquiggleUnderline />
               </span>
             </h2>
@@ -497,7 +497,7 @@ export default function LandingPage() {
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <span className="text-sm font-bold tracking-tight">
-                AI Marketing <span className="gradient-text">Factory</span>
+                Creator<span className="gradient-text">Forge</span>
               </span>
             </div>
 
@@ -513,7 +513,7 @@ export default function LandingPage() {
 
             {/* Copyright */}
             <div className="text-xs text-muted-foreground/50">
-              © {new Date().getFullYear()} AI Marketing Factory. All rights reserved.
+              © {new Date().getFullYear()} CreatorForge. All rights reserved.
             </div>
           </div>
         </div>

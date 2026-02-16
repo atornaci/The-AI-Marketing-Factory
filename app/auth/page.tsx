@@ -219,8 +219,7 @@ export default function AuthPage() {
                                     <Sparkles className="w-5 h-5 text-white" />
                                 </div>
                                 <span className="text-xl font-bold tracking-tight">
-                                    AI Marketing{" "}
-                                    <span className="gradient-text">Factory</span>
+                                    Creator<span className="gradient-text">Forge</span>
                                 </span>
                             </Link>
                         </motion.div>
@@ -228,11 +227,11 @@ export default function AuthPage() {
                         {/* Title */}
                         <motion.div variants={itemVariants} className="mb-6">
                             <h1 className="text-4xl xl:text-5xl font-bold tracking-tight leading-[1.1]">
-                                Automate Your
+                                Create AI
                                 <br />
                                 <span className="relative whitespace-nowrap">
                                     <span className="relative gradient-text">
-                                        Marketing
+                                        Influencers
                                     </span>
                                     <SquiggleUnderline />
                                 </span>
@@ -243,8 +242,8 @@ export default function AuthPage() {
                             variants={itemVariants}
                             className="text-muted-foreground text-lg mb-12 max-w-md leading-relaxed"
                         >
-                            Create AI Influencers with a single URL, produce professional videos,
-                            and auto-publish across all platforms.
+                            Build AI influencers, write scripts, and generate professional
+                            marketing videos for every platform.
                         </motion.p>
 
                         {/* Feature list */}
@@ -289,7 +288,7 @@ export default function AuthPage() {
                             <Sparkles className="w-4 h-4 text-white" />
                         </div>
                         <span className="text-base font-bold tracking-tight">
-                            AI Marketing <span className="gradient-text">Factory</span>
+                            Creator<span className="gradient-text">Forge</span>
                         </span>
                     </Link>
                 </motion.div>
@@ -393,7 +392,7 @@ export default function AuthPage() {
                                         transition={{ delay: 0.3 }}
                                         className="text-muted-foreground text-xs"
                                     >
-                                        AI Marketing Factory&apos;s{" "}
+                                        CreatorForge{" "}
                                         {isLogin ? "sign in" : isForgotPassword ? "password reset" : "sign up"}
                                     </motion.p>
                                 </div>
