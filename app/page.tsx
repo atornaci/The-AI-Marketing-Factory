@@ -530,7 +530,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/auth" className="w-full">
+              <Link href="/auth?plan=starter" className="w-full">
                 <Button className="w-full rounded-xl h-12 font-semibold bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white shadow-lg shadow-violet-500/25">
                   Start Creating
                   <ArrowRight className="ml-1.5 w-4 h-4" />
@@ -570,7 +570,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/auth" className="w-full">
+              <Link href="/auth?plan=creator" className="w-full">
                 <Button variant="outline" className="w-full rounded-xl h-12 font-semibold border-violet-500/30 hover:bg-violet-500/5">
                   Start Creating
                   <ArrowRight className="ml-1.5 w-4 h-4" />

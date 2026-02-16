@@ -132,6 +132,14 @@ function DashboardContent() {
     const [selectedPlatform, setSelectedPlatform] = useState<"tiktok" | "instagram" | "youtube">("tiktok");
     const [showPlatformMenu, setShowPlatformMenu] = useState(false);
 
+    /* ─── Subscription State ─── */
+    const [subscription, setSubscription] = useState<{
+        plan: string;
+        videoLimit: number;
+        videosUsed: number;
+        videosRemaining: number;
+    }>({ plan: 'free', videoLimit: 2, videosUsed: 0, videosRemaining: 2 });
+
     const SECTOR_OPTIONS = [
         { value: 'fitness', label: '💪 Fitness & Sports' },
         { value: 'technology', label: '💻 Technology' },
@@ -221,7 +229,46 @@ function DashboardContent() {
     useEffect(() => {
         fetchUser();
         fetchInfluencerLibrary();
+        fetchSubscription();
+        // Handle plan redirect from pricing page
+        const params = new URLSearchParams(window.location.search);
+        const plan = params.get('plan');
+        if (plan && ['starter', 'creator'].includes(plan)) {
+            handleUpgrade(plan);
+            // Clean URL
+            window.history.replaceState({}, '', '/dashboard');
+        }
     }, [fetchUser, fetchInfluencerLibrary]);
+
+    /* ─── Fetch Subscription ─── */
+    const fetchSubscription = async () => {
+        try {
+            const res = await fetch('/api/subscription');
+            if (res.ok) {
+                const data = await res.json();
+                setSubscription(data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch subscription:', err);
+        }
+    };
+
+    /* ─── Handle Upgrade ─── */
+    const handleUpgrade = async (plan: string) => {
+        try {
+            const res = await fetch('/api/stripe/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan }),
+            });
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+            }
+        } catch (err) {
+            console.error('Checkout error:', err);
+        }
+    };
 
     /* ─── Sign Out ─── */
     const handleSignOut = async () => {
@@ -566,6 +613,37 @@ function DashboardContent() {
 
                 {/* Sidebar Footer */}
                 <div className="border-t border-border/50 px-2 py-3">
+                    {/* Plan Badge */}
+                    {sidebarOpen && (
+                        <div className="mb-2 mx-1 p-2.5 rounded-xl bg-muted/50 border border-border/30">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className={`text-[10px] font-bold uppercase tracking-wider ${subscription.plan === 'creator' ? 'text-violet-400' :
+                                        subscription.plan === 'starter' ? 'text-blue-400' : 'text-muted-foreground'
+                                    }`}>
+                                    {subscription.plan === 'free' ? '🆓 Free' : subscription.plan === 'starter' ? '⚡ Starter' : '👑 Creator'}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                    <div
+                                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all"
+                                        style={{ width: `${Math.min(100, (subscription.videosUsed / subscription.videoLimit) * 100)}%` }}
+                                    />
+                                </div>
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                    {subscription.videosUsed}/{subscription.videoLimit}
+                                </span>
+                            </div>
+                            {subscription.plan === 'free' && (
+                                <button
+                                    onClick={() => handleUpgrade('starter')}
+                                    className="w-full mt-2 text-[10px] font-semibold py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 text-white hover:from-violet-700 hover:to-purple-600 transition-all"
+                                >
+                                    ⚡ Upgrade
+                                </button>
+                            )}
+                        </div>
+                    )}
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
                         className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"

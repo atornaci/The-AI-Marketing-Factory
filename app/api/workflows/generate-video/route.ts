@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { generateVideo } from '@/lib/workflows/autonomous-marketing'
 import type { ProjectAnalysis, MarketingConstitution } from '@/lib/services/abacus-ai'
+import { PLAN_CONFIG } from '@/lib/services/stripe'
 import type { Language } from '@/lib/i18n/translations'
 
 // Allow up to 5 minutes for video generation pipeline
@@ -34,6 +35,31 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(
                 { error: 'Authentication required' },
                 { status: 401 }
+            )
+        }
+
+        // ═══ VIDEO LIMIT CHECK ═══
+        const serviceClient = await createServiceRoleClient()
+        const { data: subscription } = await serviceClient
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+
+        const videoLimit = subscription?.video_limit ?? PLAN_CONFIG.free.videoLimit
+        const videosUsed = subscription?.videos_used_this_month ?? 0
+        const currentPlan = subscription?.plan ?? 'free'
+
+        if (videosUsed >= videoLimit) {
+            return NextResponse.json(
+                {
+                    error: `Video limit reached. Your ${currentPlan} plan allows ${videoLimit} videos/month. Upgrade your plan for more videos.`,
+                    code: 'VIDEO_LIMIT_REACHED',
+                    plan: currentPlan,
+                    limit: videoLimit,
+                    used: videosUsed,
+                },
+                { status: 403 }
             )
         }
 
@@ -183,6 +209,29 @@ export async function POST(req: NextRequest) {
                 .eq('id', videoRecord.id)
 
             console.log(`[API] ✅ Video pipeline complete for ${videoRecord.id}`)
+
+            // ═══ INCREMENT VIDEO USAGE ═══
+            if (subscription) {
+                await serviceClient
+                    .from('subscriptions')
+                    .update({
+                        videos_used_this_month: (subscription.videos_used_this_month || 0) + 1,
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('user_id', user.id)
+            } else {
+                // Create free subscription record for tracking
+                await serviceClient
+                    .from('subscriptions')
+                    .upsert({
+                        user_id: user.id,
+                        plan: 'free',
+                        status: 'active',
+                        video_limit: PLAN_CONFIG.free.videoLimit,
+                        influencer_limit: PLAN_CONFIG.free.influencerLimit,
+                        videos_used_this_month: 1,
+                    }, { onConflict: 'user_id' })
+            }
 
             return NextResponse.json({
                 success: true,
