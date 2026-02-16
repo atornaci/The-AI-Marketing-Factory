@@ -247,7 +247,25 @@ Respond with ONLY valid JSON (no markdown formatting):
         const constitution = project.marketing_constitution as Record<string, unknown> | undefined
         const visualDna = (constitution?.visualDna as string) || ''
 
-        const appearance = (profile.appearanceDescription || '').substring(0, 300)
+        // ═══ IDENTITY-FIRST APPEARANCE ═══
+        // Extract key identity markers from visual profile and put them FIRST in the prompt
+        // This prevents the image model from defaulting to a single ethnicity
+        const ethnicity = vp.ethnicity || ''
+        const eyeColor = vp.eyeColor || ''
+        const hairDesc = vp.hairDescription || ''
+        const facialMarkers = vp.facialMarkers || ''
+
+        // Build identity string: ethnicity + hair + eyes (most visually impactful features)
+        const identityParts = [
+            ethnicity,
+            hairDesc,
+            eyeColor ? `${eyeColor} eyes` : '',
+            facialMarkers,
+        ].filter(Boolean)
+        const identityString = identityParts.length > 0
+            ? identityParts.join(', ')
+            : (profile.appearanceDescription || '').substring(0, 300)
+
         const dnaKeywords = visualDna ? `, ${visualDna}` : ''
 
         // ─── SECTOR-AWARE STYLING ───
@@ -258,63 +276,64 @@ Respond with ONLY valid JSON (no markdown formatting):
             'technology': 'smart casual style, clean-cut, modern and professional, approachable',
             'fashion': 'stylish and trendy, fashion-forward, well-coordinated outfit, editorial feel',
             'food': 'warm and inviting, homey apron or casual chef style, friendly smile',
-            'health': 'clean and healthy look, warm calming presence, trustworthy expression',
-            'education': 'approachable and intelligent, smart casual, warm and friendly',
-            'ecommerce': 'modern lifestyle look, aspirational but relatable, casual chic',
-            'finance': 'professional and polished, business casual, confident and trustworthy',
-            'realestate': 'polished professional, business attire, confident smile',
-            'travel': 'adventurous casual look, sun-kissed, relaxed and happy',
+            'travel': 'adventurous look, sun-kissed skin, relaxed and happy, traveler aesthetic',
+            'gaming': 'trendy streetwear, expressive, youthful energy, gamer culture aesthetic',
+            'music': 'edgy artistic style, bold accessories, creative expressive look',
+            'education': 'approachable and friendly, smart casual, trustworthy appearance',
+            'health': 'clean and healthy look, natural glow, calming presence, wellness aesthetic',
+            'lifestyle': 'effortlessly stylish, warm and relatable, aspirational but achievable look',
             'automotive': 'modern casual, confident stance, clean-cut appearance',
         }
-        const sectorStyle = sector ? (sectorStyles[sector] || 'attractive, well-groomed, photogenic') : 'attractive, well-groomed, photogenic'
+
+        const sectorStyle = sectorStyles[sector?.toLowerCase() || ''] || 'stylish, modern, approachable look'
 
         // Use user-selected environment if available, otherwise use defaults per photo type
         const userEnvLabel = environment || ''
 
-        // ─── Reference Photo Configurations ───
-        // Each config creates a DISTINCTLY DIFFERENT photo: different body position, different environment, different outfit
+        // ═══ PHOTO CONFIGS ═══
+        // 6 reference photos with different postures + outfits for diverse video generation
         const photoConfigs = [
             {
                 type: 'portrait' as const,
-                scene: userEnvLabel || 'bright airy room with soft natural window light, clean minimal background',
-                posture: 'standing straight facing camera, arms relaxed at sides, confident open body language, warm genuine smile, eyes wide open looking directly into lens',
-                framing: 'IMPORTANT: Show from HEAD to WAIST. Upper body portrait. NOT just face. Arms and hands must be visible',
-                outfit: 'casual stylish top, well-fitted',
-            },
-            {
-                type: 'sitting' as const,
-                scene: 'cozy café interior, warm amber lighting, wooden table with coffee cup and pastry, other customers softly blurred behind',
-                posture: 'sitting at a café table, both hands wrapped around a coffee cup, leaning slightly forward with elbows on table, relaxed friendly smile, looking at camera',
-                framing: 'IMPORTANT: Show from HEAD to WAIST. Table and hands clearly visible. NOT just face',
+                scene: userEnvLabel || 'modern, well-lit indoor space',
+                posture: 'standing, facing camera, slight head tilt',
+                framing: 'Medium shot from waist up. Full arms and torso visible. Background visible.',
                 outfit: 'cozy sweater or casual blouse, accessories like a watch or bracelet',
             },
             {
+                type: 'sitting' as const,
+                scene: userEnvLabel || 'stylish café with soft lighting',
+                posture: 'sitting comfortably, leaning slightly forward, engaged expression',
+                framing: 'Medium shot from waist up. Table and surroundings visible.',
+                outfit: 'casual smart outfit, light jewelry',
+            },
+            {
                 type: 'standing' as const,
-                scene: 'bright modern kitchen with white countertop, morning sunlight streaming through window, fresh fruit and plants visible',
-                posture: 'standing behind kitchen counter, one hand resting on countertop, other hand holding a glass, body turned slightly at 3/4 angle, warm smile',
-                framing: 'IMPORTANT: Show from HEAD to HIPS. Full upper body with counter visible. Wide framing. NOT close-up',
-                outfit: 'casual comfortable home clothes, simple t-shirt or blouse',
+                scene: userEnvLabel || 'urban street or park',
+                posture: 'standing naturally, one hand relaxed, confident posture',
+                framing: 'Full body or 3/4 shot. Environment clearly visible.',
+                outfit: 'trendy streetwear or smart casual outfit',
             },
             {
                 type: 'walking' as const,
-                scene: 'sunny tree-lined city sidewalk, buildings and shops softly blurred behind, golden afternoon light, urban atmosphere',
-                posture: 'walking toward camera on sidewalk, mid-stride with one foot forward, bag over shoulder, looking at camera with natural candid smile, hair slightly moving',
-                framing: 'IMPORTANT: Show from HEAD to KNEES. Full walking pose visible. Wide shot showing street behind. NOT just face',
-                outfit: 'casual street style outfit, denim jacket or light coat, sunglasses on head',
+                scene: userEnvLabel || 'tree-lined sidewalk or waterfront',
+                posture: 'mid-stride walking, looking at camera with a smile',
+                framing: 'Full body shot. Motion and environment visible.',
+                outfit: 'athleisure or casual outfit with sneakers',
             },
             {
                 type: 'office' as const,
-                scene: 'modern home office with MacBook on desk, desk lamp, coffee mug, bookshelf in background, soft daylight from window',
-                posture: 'sitting at desk in an office chair, one hand on laptop keyboard, turned toward camera, professional confident expression, slight smile',
-                framing: 'IMPORTANT: Show from HEAD to WAIST. Desk, laptop, and hands clearly visible. NOT just face',
-                outfit: 'business casual, neat blouse or button-up shirt',
+                scene: 'modern office or co-working space with clean desk',
+                posture: 'sitting at desk or standing near whiteboard, professional pose',
+                framing: 'Medium shot. Desk/workspace visible in background.',
+                outfit: 'business casual — blazer or smart shirt, minimal accessories',
             },
             {
                 type: 'outdoor' as const,
-                scene: 'green park with trees and grass, warm golden hour sunlight, nature background with soft bokeh, peaceful atmosphere',
-                posture: 'sitting on a wooden park bench, legs crossed, one arm resting on bench back, relaxed and happy expression, looking at camera',
-                framing: 'IMPORTANT: Show from HEAD to KNEES. Full seated pose on bench visible. Park setting clearly shown. NOT just face',
-                outfit: 'relaxed weekend outfit, light jacket or casual dress',
+                scene: 'rooftop, garden, or scenic outdoor location',
+                posture: 'standing relaxed, arms crossed or hands in pockets, wind-swept look',
+                framing: '3/4 shot. Sky and scenery visible behind.',
+                outfit: 'casual outfit — jacket, jeans, sunglasses on head',
             },
         ]
 
@@ -323,7 +342,7 @@ Respond with ONLY valid JSON (no markdown formatting):
             type: config.type,
             scene: config.scene,
             posture: config.posture,
-            prompt: `Photo of an attractive ${genderWord} aged ${age}. ${sectorStyle}. ${appearance || 'naturally beautiful'}. Wearing ${config.outfit}.
+            prompt: `Photo of an attractive ${ethnicity ? ethnicity + ' ' : ''}${genderWord} aged ${age}. ${identityString}. ${sectorStyle}. Wearing ${config.outfit}.
 
 BODY POSITION: ${config.posture}.
 ENVIRONMENT: ${config.scene}.
