@@ -485,7 +485,9 @@ Respond with ONLY valid JSON (no markdown formatting):
             type: config.type,
             scene: config.scene,
             posture: config.posture,
-            prompt: `Photo of an attractive ${ethnicity ? ethnicity + ' ' : ''}${genderWord} aged ${age}. ${identityString}. ${sectorStyle}. Wearing ${config.outfit}.
+            prompt: `Photo of an attractive ${ethnicity ? ethnicity + ' ' : ''}${genderWord} aged ${age}, wearing ${config.outfit}. ${identityString}. ${sectorStyle}.
+
+CLOTHING (CRITICAL — MUST MATCH EXACTLY): ${config.outfit}. The outfit MUST be clearly visible and match this description precisely. Do NOT substitute with different clothing.
 
 BODY POSITION: ${config.posture}.
 ENVIRONMENT: ${config.scene}.
@@ -497,7 +499,7 @@ CRITICAL FRAMING RULE: This is a MEDIUM-WIDE shot. The person's FULL UPPER BODY 
 
 Style: social media influencer photo, Instagram aesthetic, natural lighting, candid but polished, aspirational lifestyle${dnaKeywords}.
 
-AVOID: extreme close-up, face-only, headshot, cropped at neck, ugly, unflattering, closed eyes, sleeping, frowning, blurry, cartoon, CGI, 3D render, watermark, text, deformed, extra limbs, bad anatomy`,
+AVOID: wrong clothing, mismatched outfit, formal wear in gym, casual blouse in athletic setting, extreme close-up, face-only, headshot, cropped at neck, ugly, unflattering, closed eyes, sleeping, frowning, blurry, cartoon, CGI, 3D render, watermark, text, deformed, extra limbs, bad anatomy`,
         }))
 
         // Generate all 6 photos in parallel for speed
