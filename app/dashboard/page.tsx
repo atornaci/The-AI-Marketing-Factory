@@ -1037,7 +1037,7 @@ function DashboardContent() {
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                onClick={() => { setCreatedInfluencer(null); setGeneratedVideos([]); setGenError(""); setShowCreateForm(false); }}
+                                                                onClick={() => { setCreatedInfluencer(null); setGeneratedVideos([]); setGenError(""); setShowCreateForm(false); setActiveView('library'); }}
                                                                 className="text-xs text-muted-foreground hover:text-violet-600 rounded-lg"
                                                             >
                                                                 <Users className="w-3.5 h-3.5 mr-1" />
