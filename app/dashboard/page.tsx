@@ -1004,6 +1004,23 @@ function DashboardContent() {
                                             </div>
 
                                             {/* Platform + Generate */}
+
+                                            {/* Script Input */}
+                                            <div className="mb-4">
+                                                <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                                                    What should {createdInfluencer.name} say?
+                                                </label>
+                                                <textarea
+                                                    value={quickScript}
+                                                    onChange={(e) => setQuickScript(e.target.value)}
+                                                    placeholder={`Write what you want ${createdInfluencer.name} to say in the video... You can write as long as you want — AI will adapt it to fit a 10-second video.`}
+                                                    className="w-full h-24 rounded-xl border border-border/50 bg-background/50 px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:border-violet-300 focus:ring-1 focus:ring-violet-300 transition-all resize-none"
+                                                />
+                                                <p className="text-[10px] text-muted-foreground/60 mt-1">
+                                                    ✨ AI will automatically adapt your text to fit a 10-second video format
+                                                </p>
+                                            </div>
+
                                             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
                                                 {/* Platform Selector */}
                                                 <div className="relative">
