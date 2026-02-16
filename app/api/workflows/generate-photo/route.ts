@@ -111,20 +111,38 @@ export async function POST(req: NextRequest) {
 
         const genderWord = influencer.gender === 'male' ? 'man' : 'woman'
         const vp = influencer.visual_profile || {}
-        const age = (vp as Record<string, unknown>).ageRange || '28'
-        const appearance = (influencer.appearance_description || '').substring(0, 200)
+        const vpData = vp as Record<string, unknown>
+        const age = vpData.ageRange || '28'
 
-        const prompt = `Photo of an attractive ${genderWord} aged ${age}. ${appearance}. ${outfitDesc}. ${hairstyleDesc ? hairstyleDesc + '.' : ''}
+        // ═══ IDENTITY-FIRST: Extract ethnicity/hair/eyes from visual profile ═══
+        const ethnicity = (vpData.ethnicity as string) || ''
+        const eyeColor = (vpData.eyeColor as string) || ''
+        const hairDesc = (vpData.hairDescription as string) || ''
+        const facialMarkers = (vpData.facialMarkers as string) || ''
 
-${poseConfig.posture} in ${locationDesc}.
+        const identityParts = [
+            ethnicity,
+            hairDesc,
+            eyeColor ? `${eyeColor} eyes` : '',
+            facialMarkers,
+        ].filter(Boolean)
+        const identityString = identityParts.length > 0
+            ? identityParts.join(', ')
+            : (influencer.appearance_description || '').substring(0, 300)
 
-${poseConfig.framing}. The person looks confident, approachable, and camera-ready. Eyes OPEN, looking at camera. Warm genuine expression.
+        const prompt = `Photo of an attractive ${ethnicity ? ethnicity + ' ' : ''}${genderWord} aged ${age}. ${identityString}. ${outfitDesc}. ${hairstyleDesc ? hairstyleDesc + '.' : ''}
 
-CRITICAL: This is a MEDIUM-WIDE shot. Full upper body visible including arms and hands. Do NOT crop on just the face. Environment clearly visible around the person.
+BODY POSITION: ${poseConfig.posture}.
+ENVIRONMENT: ${locationDesc}.
+FRAMING: ${poseConfig.framing}.
 
-Style: high-quality Instagram influencer photo, natural lighting, candid but polished, aspirational lifestyle.
+The photo should look like a high-quality Instagram photo taken by a friend on an iPhone. Natural lighting from the environment. The person looks confident, approachable, and camera-ready. Eyes are OPEN and looking at the camera. Warm, genuine expression.
 
-AVOID: extreme close-up, face-only headshot, ugly, unflattering, closed eyes, blurry, cartoon, CGI, watermark, deformed`
+CRITICAL FRAMING RULE: This is a MEDIUM-WIDE shot. The person's FULL UPPER BODY must be visible including arms, hands, and torso. Do NOT crop tightly on the face. The person should occupy 50-60% of the frame, with the environment clearly visible around them.
+
+Style: social media influencer photo, Instagram aesthetic, natural lighting, candid but polished, aspirational lifestyle.
+
+AVOID: extreme close-up, face-only, headshot, cropped at neck, ugly, unflattering, closed eyes, sleeping, frowning, blurry, cartoon, CGI, 3D render, anime, illustration, painting, watermark, text, deformed, extra limbs, bad anatomy`
 
         console.log(`[PhotoStudio] Generating photo for influencer ${influencer.name}`)
         console.log(`[PhotoStudio] Location: ${location}, Outfit: ${outfit}, Hair: ${hairstyle}, Pose: ${pose}`)
@@ -139,10 +157,10 @@ AVOID: extreme close-up, face-only headshot, ugly, unflattering, closed eyes, bl
             body: JSON.stringify({
                 reference_images: [{ image_url: avatarUrl }],
                 prompt,
-                negative_prompt: 'flaws in the eyes, flaws in the face, lowres, low quality, worst quality, artifacts, text, watermark, deformed, mutated, ugly, disfigured, blurry, cropped face, extreme close-up, face only, headshot only',
+                negative_prompt: 'flaws in the eyes, flaws in the face, lowres, low quality, worst quality, artifacts, text, watermark, deformed, mutated, ugly, disfigured, blurry, cropped face, extreme close-up, face only, headshot only, cartoon, CGI, 3D render, anime, illustration, painting, digital art, unrealistic, plastic skin',
                 num_images: 1,
-                guidance_scale: 1.2,
-                num_inference_steps: 4,
+                guidance_scale: 4.0,
+                num_inference_steps: 20,
                 image_size: { width: 768, height: 1024 }, // Portrait 3:4
                 id_scale: 0.8,
                 mode: 'fidelity',
