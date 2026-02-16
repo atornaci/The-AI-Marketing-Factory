@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { createCheckoutSession, PLAN_CONFIG } from '@/lib/services/stripe'
+import { createCheckoutSession, getPlanConfig } from '@/lib/services/stripe'
 
 export async function POST(req: NextRequest) {
     try {
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Check if price ID is configured
-        const planConfig = PLAN_CONFIG[plan as keyof typeof PLAN_CONFIG]
+        const planConfig = getPlanConfig()[plan as 'starter' | 'creator']
         if (!planConfig.priceId) {
             return NextResponse.json(
                 { error: 'Stripe price not configured for this plan' },

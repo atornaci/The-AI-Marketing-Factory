@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
-import { PLAN_CONFIG } from '@/lib/services/stripe'
+import { getPlanConfig } from '@/lib/services/stripe'
 
 export async function GET() {
     try {
@@ -27,10 +27,10 @@ export async function GET() {
             return NextResponse.json({
                 plan: 'free',
                 status: 'active',
-                videoLimit: PLAN_CONFIG.free.videoLimit,
-                influencerLimit: PLAN_CONFIG.free.influencerLimit,
+                videoLimit: getPlanConfig().free.videoLimit,
+                influencerLimit: getPlanConfig().free.influencerLimit,
                 videosUsed: 0,
-                videosRemaining: PLAN_CONFIG.free.videoLimit,
+                videosRemaining: getPlanConfig().free.videoLimit,
             })
         }
 

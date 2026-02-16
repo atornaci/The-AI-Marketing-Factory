@@ -19,31 +19,34 @@ function getStripe(): Stripe {
 // =========================================
 // Plan Configuration
 // =========================================
-export const PLAN_CONFIG = {
-    free: {
-        name: 'Free',
-        videoLimit: 2,
-        influencerLimit: 1,
-        priceId: null,
-        price: 0,
-    },
-    starter: {
-        name: 'Starter',
-        videoLimit: 10,
-        influencerLimit: 5,
-        priceId: process.env.STRIPE_STARTER_PRICE_ID || '',
-        price: 39,
-    },
-    creator: {
-        name: 'Creator',
-        videoLimit: 30,
-        influencerLimit: 999, // unlimited
-        priceId: process.env.STRIPE_CREATOR_PRICE_ID || '',
-        price: 99,
-    },
-} as const
+export function getPlanConfig() {
+    return {
+        free: {
+            name: 'Free',
+            videoLimit: 2,
+            influencerLimit: 1,
+            priceId: null as string | null,
+            price: 0,
+        },
+        starter: {
+            name: 'Starter',
+            videoLimit: 10,
+            influencerLimit: 5,
+            priceId: process.env.STRIPE_STARTER_PRICE_ID || '',
+            price: 39,
+        },
+        creator: {
+            name: 'Creator',
+            videoLimit: 30,
+            influencerLimit: 999, // unlimited
+            priceId: process.env.STRIPE_CREATOR_PRICE_ID || '',
+            price: 99,
+        },
+    }
+}
 
-export type PlanType = keyof typeof PLAN_CONFIG
+export type PlanConfig = ReturnType<typeof getPlanConfig>
+export type PlanType = keyof PlanConfig
 
 // =========================================
 // Checkout Session
@@ -55,7 +58,7 @@ export async function createCheckoutSession(
     successUrl: string,
     cancelUrl: string,
 ): Promise<string> {
-    const planConfig = PLAN_CONFIG[plan]
+    const planConfig = getPlanConfig()[plan]
 
     if (!planConfig.priceId) {
         throw new Error(`No price ID configured for plan: ${plan}`)

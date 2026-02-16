@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { generateVideo } from '@/lib/workflows/autonomous-marketing'
 import type { ProjectAnalysis, MarketingConstitution } from '@/lib/services/abacus-ai'
-import { PLAN_CONFIG } from '@/lib/services/stripe'
+import { getPlanConfig } from '@/lib/services/stripe'
 import type { Language } from '@/lib/i18n/translations'
 
 // Allow up to 5 minutes for video generation pipeline
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
             .eq('user_id', user.id)
             .single()
 
-        const videoLimit = subscription?.video_limit ?? PLAN_CONFIG.free.videoLimit
+        const videoLimit = subscription?.video_limit ?? getPlanConfig().free.videoLimit
         const videosUsed = subscription?.videos_used_this_month ?? 0
         const currentPlan = subscription?.plan ?? 'free'
 
@@ -227,8 +227,8 @@ export async function POST(req: NextRequest) {
                         user_id: user.id,
                         plan: 'free',
                         status: 'active',
-                        video_limit: PLAN_CONFIG.free.videoLimit,
-                        influencer_limit: PLAN_CONFIG.free.influencerLimit,
+                        video_limit: getPlanConfig().free.videoLimit,
+                        influencer_limit: getPlanConfig().free.influencerLimit,
                         videos_used_this_month: 1,
                     }, { onConflict: 'user_id' })
             }

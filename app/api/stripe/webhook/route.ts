@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { constructWebhookEvent, PLAN_CONFIG, PlanType } from '@/lib/services/stripe'
+import { constructWebhookEvent, getPlanConfig, PlanType } from '@/lib/services/stripe'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import Stripe from 'stripe'
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
                     break
                 }
 
-                const planConfig = PLAN_CONFIG[plan]
+                const planConfig = getPlanConfig()[plan]
                 const customerId = session.customer as string
                 const subscriptionId = session.subscription as string
 
@@ -101,8 +101,8 @@ export async function POST(req: NextRequest) {
                     .update({
                         plan: 'free',
                         status: 'canceled',
-                        video_limit: PLAN_CONFIG.free.videoLimit,
-                        influencer_limit: PLAN_CONFIG.free.influencerLimit,
+                        video_limit: getPlanConfig().free.videoLimit,
+                        influencer_limit: getPlanConfig().free.influencerLimit,
                         stripe_subscription_id: null,
                         updated_at: new Date().toISOString(),
                     })
