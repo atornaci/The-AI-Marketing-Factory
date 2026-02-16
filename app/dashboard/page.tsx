@@ -618,7 +618,7 @@ function DashboardContent() {
                         <div className="mb-2 mx-1 p-2.5 rounded-xl bg-muted/50 border border-border/30">
                             <div className="flex items-center justify-between mb-1">
                                 <span className={`text-[10px] font-bold uppercase tracking-wider ${subscription.plan === 'creator' ? 'text-violet-400' :
-                                        subscription.plan === 'starter' ? 'text-blue-400' : 'text-muted-foreground'
+                                    subscription.plan === 'starter' ? 'text-blue-400' : 'text-muted-foreground'
                                     }`}>
                                     {subscription.plan === 'free' ? '🆓 Free' : subscription.plan === 'starter' ? '⚡ Starter' : '👑 Creator'}
                                 </span>
@@ -733,7 +733,7 @@ function DashboardContent() {
                                             )}
                                         </div>
                                         <Button
-                                            onClick={() => setShowCreateForm(true)}
+                                            onClick={() => handleNavClick('create')}
                                             size="sm"
                                             className="text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 hover:opacity-90 border-0 shadow-md"
                                         >
@@ -753,7 +753,7 @@ function DashboardContent() {
                                             <p className="text-sm font-medium mb-1">No influencers yet</p>
                                             <p className="text-xs text-muted-foreground mb-4">Create your first AI influencer to get started</p>
                                             <Button
-                                                onClick={() => setShowCreateForm(true)}
+                                                onClick={() => handleNavClick('create')}
                                                 size="sm"
                                                 className="text-xs rounded-lg bg-gradient-to-r from-violet-600 to-purple-500 hover:opacity-90 border-0"
                                             >
