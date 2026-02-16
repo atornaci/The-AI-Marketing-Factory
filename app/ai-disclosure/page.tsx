@@ -13,7 +13,7 @@ export default function AIDisclosurePage() {
             {/* Header */}
             <header className="border-b border-border/30 bg-muted/10">
                 <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-3">
-                    <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+                    <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
                     <h1 className="text-lg font-semibold">AI Transparency & Disclosure</h1>
@@ -191,7 +191,7 @@ export default function AIDisclosurePage() {
                 <div className="mt-16 pt-8 border-t border-border/30 flex items-center gap-6 text-sm text-muted-foreground">
                     <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
                     <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-                    <Link href="/" className="hover:text-foreground transition-colors">Back to Home</Link>
+                    <Link href="/dashboard" className="hover:text-foreground transition-colors">Back to Dashboard</Link>
                 </div>
             </main>
         </div>
