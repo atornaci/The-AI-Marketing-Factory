@@ -169,8 +169,8 @@ AVOID: extreme close-up, face-only, headshot, cropped at neck, ugly, unflatterin
                 prompt,
                 negative_prompt: 'flaws in the eyes, flaws in the face, lowres, low quality, worst quality, artifacts, text, watermark, deformed, mutated, ugly, disfigured, blurry, cropped face, extreme close-up, face only, headshot only, cartoon, CGI, 3D render, anime, illustration, painting, digital art, unrealistic, plastic skin',
                 num_images: 1,
-                guidance_scale: 4.0,
-                num_inference_steps: 20,
+                guidance_scale: 1.2,
+                num_inference_steps: 10,
                 image_size: { width: 768, height: 1024 }, // Portrait 3:4
                 id_scale: 0.8,
                 mode: 'fidelity',
