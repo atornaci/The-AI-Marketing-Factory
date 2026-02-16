@@ -149,6 +149,11 @@ export default function LandingPage() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link href="#pricing">
+              <Button variant="ghost" size="sm" className="text-sm">
+                Pricing
+              </Button>
+            </Link>
             <Link href="/auth">
               <Button variant="ghost" size="sm" className="text-sm">
                 Sign In
@@ -431,6 +436,147 @@ export default function LandingPage() {
                 <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </AnimatedSection>
+
+      {/* ═══ PRICING SECTION ═══ */}
+      <AnimatedSection className="py-24 lg:py-32 bg-muted/20" >
+        <div id="pricing" className="max-w-7xl mx-auto px-6">
+          <motion.div variants={itemVariants} className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-background/50 text-xs mb-4">
+              <Zap className="w-3.5 h-3.5 text-violet-400" />
+              <span className="text-muted-foreground">Simple, transparent pricing</span>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
+              Choose Your{" "}
+              <span className="relative whitespace-nowrap">
+                <span className="relative gradient-text">Plan</span>
+                <SquiggleUnderline />
+              </span>
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Start free, upgrade as you grow. Every plan includes AI-generated captions and hashtags.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* Free */}
+            <motion.div
+              variants={itemVariants}
+              className="relative p-8 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/20 transition-all flex flex-col"
+            >
+              <div className="mb-6">
+                <h3 className="text-xl font-bold mb-1">Free</h3>
+                <p className="text-sm text-muted-foreground">Try it out</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold">$0</span>
+                <span className="text-muted-foreground text-sm">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  "1 AI Influencer",
+                  "2 videos / month",
+                  "TikTok platform",
+                  "Post caption & hashtags",
+                  "Watermarked videos",
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-violet-400 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/auth" className="w-full">
+                <Button variant="outline" className="w-full rounded-xl h-12 font-semibold">
+                  Get Started Free
+                </Button>
+              </Link>
+            </motion.div>
+
+            {/* Starter — Highlighted */}
+            <motion.div
+              variants={itemVariants}
+              className="relative p-8 rounded-2xl border-2 border-violet-500/50 bg-background/80 shadow-xl shadow-violet-500/10 flex flex-col"
+            >
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <span className="px-4 py-1 rounded-full bg-gradient-to-r from-violet-600 to-purple-500 text-white text-xs font-bold shadow-lg">
+                  Most Popular
+                </span>
+              </div>
+              <div className="mb-6">
+                <h3 className="text-xl font-bold mb-1">Starter</h3>
+                <p className="text-sm text-muted-foreground">For content creators</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold">$39</span>
+                <span className="text-muted-foreground text-sm">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  "5 AI Influencers",
+                  "10 videos / month",
+                  "All platforms (TikTok, IG, YT, LinkedIn)",
+                  "Post caption & hashtags",
+                  "No watermark",
+                  "Custom scripts",
+                  "Priority generation",
+                  "Extra videos at $3.50/each",
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-violet-500 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/auth" className="w-full">
+                <Button className="w-full rounded-xl h-12 font-semibold bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white shadow-lg shadow-violet-500/25">
+                  Start Creating
+                  <ArrowRight className="ml-1.5 w-4 h-4" />
+                </Button>
+              </Link>
+            </motion.div>
+
+            {/* Creator */}
+            <motion.div
+              variants={itemVariants}
+              className="relative p-8 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/20 transition-all flex flex-col"
+            >
+              <div className="mb-6">
+                <h3 className="text-xl font-bold mb-1">Creator</h3>
+                <p className="text-sm text-muted-foreground">For teams & agencies</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold">$99</span>
+                <span className="text-muted-foreground text-sm">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8 flex-1">
+                {[
+                  "Unlimited AI Influencers",
+                  "30 videos / month",
+                  "All platforms",
+                  "Post caption & hashtags",
+                  "No watermark",
+                  "Custom scripts",
+                  "Priority generation",
+                  "HD export",
+                  "Video history & library",
+                  "Extra videos at $3/each",
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-violet-500 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/auth" className="w-full">
+                <Button variant="outline" className="w-full rounded-xl h-12 font-semibold border-violet-500/30 hover:bg-violet-500/5">
+                  Start Creating
+                  <ArrowRight className="ml-1.5 w-4 h-4" />
+                </Button>
+              </Link>
+            </motion.div>
           </div>
         </div>
       </AnimatedSection>
