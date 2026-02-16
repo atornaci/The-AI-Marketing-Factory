@@ -173,9 +173,10 @@ export async function POST(req: NextRequest) {
                     duration_seconds: result.script?.estimatedDuration || 30,
                     status: result.videoUrl ? 'ready' : 'script_ready',
                     metadata: {
-                        hashtags: result.script?.hashtags || [],
+                        hashtags: result.hashtags || result.script?.hashtags || [],
                         hook: result.script?.hook || '',
                         cta: result.script?.cta || '',
+                        postCaption: result.postCaption || '',
                         storyboard: result.storyboard ? { sceneCount: result.storyboard.scenes?.length } : null,
                     },
                 })
@@ -191,9 +192,10 @@ export async function POST(req: NextRequest) {
                     script: result.script?.fullScript || '',
                     videoUrl: result.videoUrl || '',
                     thumbnailUrl: result.thumbnailUrl || '',
-                    hashtags: result.script?.hashtags || [],
+                    hashtags: result.hashtags || result.script?.hashtags || [],
                     hook: result.script?.hook || '',
                     cta: result.script?.cta || '',
+                    postCaption: result.postCaption || '',
                 },
             })
         } catch (pipelineError) {

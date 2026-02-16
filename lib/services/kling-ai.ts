@@ -147,6 +147,8 @@ export interface MasterPromptOutput {
     imagePrompt: string
     audioMoodTags: string[]
     themeTag: string // For tracking previous themes
+    postCaption: string // Platform-specific post description
+    hashtags: string[] // Platform-specific hashtags
 }
 
 // =========================================
@@ -414,8 +416,18 @@ JSON formatında yanıt ver:
   "video_script": "10 saniyelik script (${input.language} dilinde, 30-40 kelime, Hook|Problem|CTA formatı)${input.userScript ? ' — kullanıcının mesajını uyarla' : ''}",
   "image_prompt": "Thumbnail/banner görseli için prompt (İngilizce, 50-100 kelime)",
   "audio_mood_tags": ["mood1", "mood2", "mood3"],
-  "theme_tag": "Bu videonun tema etiketi (kısa, İngilizce, örn: 'modern-cafe-casual')"
+  "theme_tag": "Bu videonun tema etiketi (kısa, İngilizce, örn: 'modern-cafe-casual')",
+  "post_caption": "${input.platform} platformu için hazır paylaşım açıklaması (${input.language} dilinde, platforma uygun ton ve uzunlukta, emoji kullan, CTA içersin)",
+  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"]
 }
+
+POST CAPTION KURALLARI:
+- ${input.platform === 'tiktok' ? 'TikTok: Kısa, eğlenceli, viral ton. Emoji bol kullan. 150 karakter civarı.' : ''}
+- ${input.platform === 'instagram' ? 'Instagram: Orta uzunlukta, ilgi çekici açılış satırı, satır arası boşluklar. 200-300 karakter.' : ''}
+- ${input.platform === 'youtube' ? 'YouTube Shorts: Açıklayıcı, SEO uyumlu, anahtar kelimeler içersin. 200-400 karakter.' : ''}
+- ${input.platform === 'linkedin' ? 'LinkedIn: Profesyonel ton, değer odaklı, hikaye anlatımı. 300-500 karakter.' : ''}
+- Hashtag sayısı: ${input.platform === 'instagram' ? '15-20 hashtag' : input.platform === 'tiktok' ? '5-8 hashtag' : input.platform === 'linkedin' ? '3-5 hashtag' : '8-12 hashtag'}
+- Hashtag'ler hem genel hem niş olmalı
 
 Respond ONLY with valid JSON.`
 }
@@ -440,6 +452,8 @@ export function parseMasterPromptResponse(response: string): MasterPromptOutput 
             imagePrompt: parsed.image_prompt || '',
             audioMoodTags: parsed.audio_mood_tags || ['confident', 'professional'],
             themeTag: parsed.theme_tag || `theme-${Date.now()}`,
+            postCaption: parsed.post_caption || '',
+            hashtags: parsed.hashtags || [],
         }
     } catch (error) {
         console.error('[MasterPrompt] Failed to parse Claude response:', error)
@@ -451,6 +465,8 @@ export function parseMasterPromptResponse(response: string): MasterPromptOutput 
             imagePrompt: 'Professional person in modern setting, holding tablet, warm smile, magazine quality photo',
             audioMoodTags: ['confident', 'professional'],
             themeTag: `fallback-${Date.now()}`,
+            postCaption: '',
+            hashtags: [],
         }
     }
 }

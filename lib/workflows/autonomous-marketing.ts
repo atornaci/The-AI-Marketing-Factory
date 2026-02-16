@@ -42,6 +42,8 @@ export interface VideoResult {
     thumbnailUrl: string
     script: VideoScript
     storyboard?: Storyboard
+    postCaption?: string
+    hashtags?: string[]
 }
 
 // =========================================
@@ -373,6 +375,8 @@ export async function generateVideo(
         thumbnailUrl,
         script,
         storyboard,
+        postCaption: masterPrompt?.postCaption || '',
+        hashtags: masterPrompt?.hashtags || [],
     }
 }
 

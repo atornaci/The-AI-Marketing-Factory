@@ -30,6 +30,8 @@ import {
     Settings,
     PanelLeft,
     Library,
+    Copy,
+    ClipboardCheck,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
@@ -55,6 +57,23 @@ interface GeneratedVideo {
     thumbnailUrl?: string;
     platform: string;
     script?: string;
+    postCaption?: string;
+    hashtags?: string[];
+}
+
+/* ─── Copy Button ─── */
+function CopyButton({ text }: { text: string }) {
+    const [copied, setCopied] = useState(false);
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+    return (
+        <button onClick={handleCopy} className="flex items-center gap-1 text-[10px] text-muted-foreground/60 hover:text-violet-500 transition-colors">
+            {copied ? <><ClipboardCheck className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+        </button>
+    );
 }
 
 /* ─── Animation variants ─── */
@@ -371,6 +390,8 @@ function DashboardContent() {
                 thumbnailUrl: video.thumbnailUrl,
                 platform: selectedPlatform,
                 script: video.script,
+                postCaption: video.postCaption,
+                hashtags: video.hashtags,
             }, ...prev]);
 
         } catch (err) {
@@ -1140,6 +1161,32 @@ function DashboardContent() {
                                                                     </a>
                                                                 )}
                                                             </div>
+
+                                                            {/* Post Caption */}
+                                                            {video.postCaption && (
+                                                                <div className="mt-3 pt-3 border-t border-border/30">
+                                                                    <div className="flex items-center justify-between mb-1.5">
+                                                                        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">📝 Post Caption</p>
+                                                                        <CopyButton text={video.postCaption + (video.hashtags?.length ? '\n\n' + video.hashtags.join(' ') : '')} />
+                                                                    </div>
+                                                                    <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-line">{video.postCaption}</p>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Hashtags */}
+                                                            {video.hashtags && video.hashtags.length > 0 && (
+                                                                <div className="mt-2 pt-2 border-t border-border/20">
+                                                                    <div className="flex items-center justify-between mb-1.5">
+                                                                        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70"># Hashtags</p>
+                                                                        <CopyButton text={video.hashtags.join(' ')} />
+                                                                    </div>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {video.hashtags.map((tag, i) => (
+                                                                            <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 font-medium">{tag}</span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ))}
