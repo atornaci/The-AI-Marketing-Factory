@@ -60,7 +60,11 @@ export async function POST(req: NextRequest) {
         const videosUsed = subscription?.videos_used_this_month ?? 0
         const currentPlan = subscription?.plan ?? 'free'
 
-        if (videosUsed >= videoLimit) {
+        // ═══ ADMIN BYPASS ═══
+        const ADMIN_EMAILS = ['atornaci91@gmail.com']
+        const isAdmin = ADMIN_EMAILS.includes(user.email || '')
+
+        if (!isAdmin && videosUsed >= videoLimit) {
             return NextResponse.json(
                 {
                     error: `Video limit reached. Your ${currentPlan} plan allows ${videoLimit} videos/month. Upgrade your plan for more videos.`,

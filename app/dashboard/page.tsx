@@ -1360,9 +1360,16 @@ function DashboardContent() {
                                         </div>
                                         <div className="flex items-center justify-between py-3 border-b border-border/40">
                                             <span className="text-sm text-muted-foreground">Plan</span>
-                                            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-violet-500/10 text-violet-500 border border-violet-200/30">
-                                                Free
+                                            <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${subscription.plan === 'creator' ? 'bg-violet-500/10 text-violet-500 border-violet-200/30' :
+                                                    subscription.plan === 'starter' ? 'bg-blue-500/10 text-blue-500 border-blue-200/30' :
+                                                        'bg-emerald-500/10 text-emerald-500 border-emerald-200/30'
+                                                }`}>
+                                                {subscription.plan === 'free' ? 'Free' : subscription.plan === 'starter' ? 'Starter' : 'Creator'}
                                             </span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-3 border-b border-border/40">
+                                            <span className="text-sm text-muted-foreground">Videos Used</span>
+                                            <span className="text-sm font-medium">{subscription.videosUsed} / {subscription.videoLimit}</span>
                                         </div>
                                         <div className="flex items-center justify-between py-3">
                                             <span className="text-sm text-muted-foreground">Influencers Created</span>

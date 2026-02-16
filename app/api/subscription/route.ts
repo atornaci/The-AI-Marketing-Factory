@@ -34,6 +34,21 @@ export async function GET() {
             })
         }
 
+        // ═══ ADMIN OVERRIDE ═══
+        const ADMIN_EMAILS = ['atornaci91@gmail.com']
+        const isAdmin = ADMIN_EMAILS.includes(user.email || '')
+
+        if (isAdmin) {
+            return NextResponse.json({
+                plan: 'creator',
+                status: 'active',
+                videoLimit: 999,
+                influencerLimit: 999,
+                videosUsed: subscription?.videos_used_this_month ?? 0,
+                videosRemaining: 999,
+            })
+        }
+
         return NextResponse.json({
             plan: subscription.plan,
             status: subscription.status,
