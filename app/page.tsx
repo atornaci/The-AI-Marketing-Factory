@@ -652,8 +652,14 @@ export default function LandingPage() {
               <Link href="/auth" className="hover:text-foreground transition-colors">
                 Sign In
               </Link>
-              <Link href="/auth" className="hover:text-foreground transition-colors">
-                Get Started
+              <Link href="/terms" className="hover:text-foreground transition-colors">
+                Terms
+              </Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">
+                Privacy
+              </Link>
+              <Link href="/ai-disclosure" className="hover:text-foreground transition-colors">
+                AI Disclosure
               </Link>
             </div>
 

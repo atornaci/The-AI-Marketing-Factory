@@ -1150,6 +1150,16 @@ function DashboardContent() {
                                         </div>
                                     </div>
 
+                                    {/* ─── AI Content Notice ─── */}
+                                    <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-500/[0.06] border border-amber-300/20">
+                                        <span className="text-amber-500 text-base mt-0.5">⚠️</span>
+                                        <p className="text-xs text-amber-700 dark:text-amber-300/70 leading-relaxed">
+                                            <strong className="text-amber-800 dark:text-amber-200">AI-Generated Content:</strong> This influencer, photos, and videos are created by AI.
+                                            When sharing on social media, use <code className="bg-amber-500/10 px-1 py-0.5 rounded text-[10px]">#AIGenerated</code> and enable platform AI disclosure labels.{" "}
+                                            <a href="/ai-disclosure" target="_blank" className="underline hover:text-amber-600 dark:hover:text-amber-100">Learn more</a>
+                                        </p>
+                                    </div>
+
                                     {/* ─── Photo Studio Section ─── */}
                                     <div className="relative rounded-2xl border border-amber-200/50 bg-gradient-to-br from-amber-500/[0.04] via-orange-500/[0.02] to-transparent shadow-sm">
                                         <div className="relative p-6 lg:p-8">
