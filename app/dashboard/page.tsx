@@ -485,12 +485,25 @@ function DashboardContent() {
         setActiveView('create');
     };
 
+    /* ─── Fetch Videos for Influencer ─── */
+    const fetchInfluencerVideos = async (influencerId: string) => {
+        try {
+            const res = await fetch(`/api/videos?influencerId=${influencerId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setGeneratedVideos(data.videos || []);
+            }
+        } catch (err) {
+            console.error('Failed to fetch videos:', err);
+        }
+    };
+
     /* ─── Select from Library ─── */
     const handleSelectInfluencer = (inf: CreatedInfluencer) => {
         setCreatedInfluencer(inf);
-        setGeneratedVideos([]);
         setGenError("");
         setShowCreateForm(false);
+        fetchInfluencerVideos(inf.id);
     };
 
 
@@ -556,7 +569,7 @@ function DashboardContent() {
             setGeneratedVideos([]);
         } else if (view === 'library') {
             setShowCreateForm(false);
-            setCreatedInfluencer(null);
+            // Don't clear createdInfluencer or videos when going to library
         }
     };
 
