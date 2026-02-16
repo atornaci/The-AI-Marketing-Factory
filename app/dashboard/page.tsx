@@ -1461,8 +1461,27 @@ function DashboardContent() {
 
                                             {/* Error */}
                                             {genError && !isGeneratingVideo && (
-                                                <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200/50 text-sm text-red-600">
-                                                    ⚠️ {genError}
+                                                <div className={`mt-4 p-4 rounded-xl border text-sm ${genError.includes('Too many requests')
+                                                        ? 'bg-amber-50 border-amber-200/50 text-amber-700'
+                                                        : genError.includes('limit') || genError.includes('Limit')
+                                                            ? 'bg-blue-50 border-blue-200/50 text-blue-700'
+                                                            : 'bg-red-50 border-red-200/50 text-red-600'
+                                                    }`}>
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="text-base mt-0.5">
+                                                            {genError.includes('Too many requests') ? '⏳' : genError.includes('limit') || genError.includes('Limit') ? '📊' : '⚠️'}
+                                                        </span>
+                                                        <div>
+                                                            <p className="font-medium">
+                                                                {genError.includes('Too many requests')
+                                                                    ? 'Rate Limit Reached'
+                                                                    : genError.includes('limit') || genError.includes('Limit')
+                                                                        ? 'Plan Limit Reached'
+                                                                        : 'Generation Error'}
+                                                            </p>
+                                                            <p className="mt-1 opacity-80">{genError}</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

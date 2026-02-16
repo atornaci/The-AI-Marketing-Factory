@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { checkRateLimit, rateLimitHeaders, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * POST /api/workflows/generate-photo
@@ -80,6 +81,15 @@ export async function POST(req: NextRequest) {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        // ═══ RATE LIMITING ═══
+        const rateCheck = checkRateLimit(user.id, 'generate-photo', RATE_LIMITS.PHOTO_GENERATION)
+        if (!rateCheck.allowed) {
+            return NextResponse.json(
+                { error: `Too many requests. Please try again in ${rateCheck.retryAfterSeconds} seconds.` },
+                { status: 429, headers: rateLimitHeaders(rateCheck) }
+            )
         }
 
         // Get influencer data

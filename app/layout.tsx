@@ -23,6 +23,33 @@ export const metadata: Metadata = {
     "CreatorPersonaAI",
     "social media marketing",
   ],
+  metadataBase: new URL("https://creatorpersonaai.com"),
+  openGraph: {
+    title: "CreatorPersonaAI | AI Influencer & Video Generator",
+    description:
+      "Create AI influencers, write scripts, and generate professional marketing videos in minutes. No camera, no crew — just AI.",
+    url: "https://creatorpersonaai.com",
+    siteName: "CreatorPersonaAI",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CreatorPersonaAI | AI Influencer & Video Generator",
+    description:
+      "Create AI influencers, write scripts, and generate professional marketing videos in minutes.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({

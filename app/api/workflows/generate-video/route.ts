@@ -3,6 +3,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { generateVideo } from '@/lib/workflows/autonomous-marketing'
 import type { ProjectAnalysis, MarketingConstitution } from '@/lib/services/abacus-ai'
 import { getPlanConfig } from '@/lib/services/stripe'
+import { checkRateLimit, rateLimitHeaders, RATE_LIMITS } from '@/lib/rate-limit'
 import type { Language } from '@/lib/i18n/translations'
 
 // Allow up to 5 minutes for video generation pipeline
@@ -35,6 +36,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(
                 { error: 'Authentication required' },
                 { status: 401 }
+            )
+        }
+
+        // ═══ RATE LIMITING ═══
+        const rateCheck = checkRateLimit(user.id, 'generate-video', RATE_LIMITS.AI_GENERATION)
+        if (!rateCheck.allowed) {
+            return NextResponse.json(
+                { error: `Too many requests. Please try again in ${rateCheck.retryAfterSeconds} seconds.` },
+                { status: 429, headers: rateLimitHeaders(rateCheck) }
             )
         }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { checkRateLimit, rateLimitHeaders, RATE_LIMITS } from '@/lib/rate-limit'
 import type { Language } from '@/lib/i18n/translations'
 
 // Allow up to 2 minutes for influencer creation
@@ -78,6 +79,15 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(
                 { error: 'Authentication required' },
                 { status: 401 }
+            )
+        }
+
+        // ═══ RATE LIMITING ═══
+        const rateCheck = checkRateLimit(user.id, 'create-influencer', RATE_LIMITS.AI_GENERATION)
+        if (!rateCheck.allowed) {
+            return NextResponse.json(
+                { error: `Too many requests. Please try again in ${rateCheck.retryAfterSeconds} seconds.` },
+                { status: 429, headers: rateLimitHeaders(rateCheck) }
             )
         }
 
