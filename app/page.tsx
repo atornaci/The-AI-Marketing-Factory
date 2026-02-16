@@ -1,32 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Sparkles,
   Video,
   Zap,
-  Globe,
   ArrowRight,
   Bot,
-  Share2,
   ChevronRight,
   PlayCircle,
-  Target,
-  TrendingUp,
-  Star,
   CheckCircle2,
   Shield,
-  Clock,
-  DollarSign,
   Users,
-  BarChart3,
-  Quote,
+  Wand2,
+  FileText,
+  Clapperboard,
 } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
 
 /* ─── Squiggle SVG underline ─── */
 const SquiggleUnderline = () => (
@@ -72,89 +64,41 @@ const fadeInUp = {
 };
 
 /* ─── Data ─── */
-const stats = [
-  { value: "90%", label: "Cost Savings", icon: DollarSign },
-  { value: "10x", label: "Faster Content", icon: Zap },
-  { value: "4+", label: "Platform Support", icon: Globe },
-  { value: "24/7", label: "Autonomous Operation", icon: Clock },
-];
-
-const features = [
-  {
-    icon: Target,
-    title: "Enter URL, AI Analyzes",
-    description:
-      "Enter your website URL and get your project analyzed in 30 seconds. Value proposition, target audience, and competitor analysis ready.",
-    benefit: "Instant results instead of manual analysis",
-    gradient: "from-blue-500 to-cyan-500",
-  },
+const steps = [
   {
     icon: Bot,
-    title: "Create AI Influencer",
+    title: "Create Your AI Influencer",
     description:
-      "Create a custom AI character for your brand — same face, same voice, same identity in every video.",
-    benefit: "Brand face without influencer costs",
+      "Design a unique AI character with a photorealistic avatar, custom personality, and backstory. Your brand's digital face — consistent across all content.",
     gradient: "from-violet-500 to-purple-500",
   },
   {
-    icon: Video,
-    title: "Produce Professional Videos",
+    icon: FileText,
+    title: "Write or Generate Script",
     description:
-      "Platform-specific professional videos for Instagram, TikTok, YouTube, and LinkedIn are automatically produced.",
-    benefit: "No video team required",
+      "Write your marketing script or let AI generate one for you. Tailored to your product, audience, and chosen platform.",
+    gradient: "from-blue-500 to-cyan-500",
+  },
+  {
+    icon: Clapperboard,
+    title: "Generate Professional Video",
+    description:
+      "One click and Kling AI produces a cinematic video with your influencer speaking your script. Ready for any platform.",
     gradient: "from-pink-500 to-rose-500",
   },
-  {
-    icon: Share2,
-    title: "Auto Distribution",
-    description:
-      "Generated videos are automatically published across all social media platforms. Just sit back and watch.",
-    benefit: "Save time and effort",
-    gradient: "from-orange-500 to-amber-500",
-  },
 ];
 
-const testimonials = [
-  {
-    name: "Sarah Mitchell",
-    role: "Founder, TechStart",
-    avatar: "SM",
-    content:
-      "We cut our video content costs by 90%. We used to pay $3,000 per video, now we produce professional videos with AI in minutes.",
-    stat: "90% cost reduction",
-    stars: 5,
-  },
-  {
-    name: "James Wilson",
-    role: "Digital Marketing Director",
-    avatar: "JW",
-    content:
-      "We reduced the 20 hours per week we spent on social media content production down to 2 hours. The AI Influencer feature also improved our brand consistency.",
-    stat: "10x time savings",
-    stars: 5,
-  },
-  {
-    name: "Emily Chen",
-    role: "E-commerce Entrepreneur",
-    avatar: "EC",
-    content:
-      "We're a small team but we can produce videos at the quality level of big brands. Publishing on 4 platforms simultaneously is incredible.",
-    stat: "4 platforms, one click",
-    stars: 5,
-  },
-];
-
-const integrations = [
-  { name: "Instagram", desc: "Reels & Stories", color: "from-pink-500 to-rose-500" },
-  { name: "TikTok", desc: "Viral Videos", color: "from-cyan-400 to-teal-500" },
-  { name: "YouTube", desc: "Shorts & Video", color: "from-red-500 to-red-600" },
-  { name: "LinkedIn", desc: "Professional Content", color: "from-blue-600 to-blue-700" },
+const platforms = [
+  { name: "TikTok", desc: "Viral Short Videos", color: "from-cyan-400 to-teal-500", emoji: "🎵" },
+  { name: "Instagram", desc: "Reels & Stories", color: "from-pink-500 to-rose-500", emoji: "📸" },
+  { name: "YouTube", desc: "Shorts & Clips", color: "from-red-500 to-red-600", emoji: "▶️" },
+  { name: "LinkedIn", desc: "Professional Content", color: "from-blue-600 to-blue-700", emoji: "💼" },
 ];
 
 const trustedBy = [
-  { name: "OpenRouter", desc: "Smart Content Engine" },
-  { name: "ElevenLabs", desc: "Natural Voice Generation" },
   { name: "Kling AI", desc: "Cinematic Video Production" },
+  { name: "OpenRouter", desc: "Smart AI Engine" },
+  { name: "fal.ai", desc: "Avatar Generation" },
 ];
 
 /* ─── Section wrapper with useInView ─── */
@@ -176,7 +120,6 @@ function AnimatedSection({ children, className = "" }: { children: React.ReactNo
 
 /* ─── Main Component ─── */
 export default function LandingPage() {
-  const [url, setUrl] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -187,9 +130,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      {/* ═══════════════════════════════════════════ */}
-      {/* NAVBAR                                      */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══ NAVBAR ═══ */}
       <motion.nav
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -218,7 +159,7 @@ export default function LandingPage() {
                 size="sm"
                 className="bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-white rounded-xl text-sm px-5 shadow-lg shadow-violet-500/25"
               >
-                Try Free
+                Get Started
                 <ArrowRight className="ml-1.5 w-3.5 h-3.5" />
               </Button>
             </Link>
@@ -226,9 +167,7 @@ export default function LandingPage() {
         </div>
       </motion.nav>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* HERO SECTION                                */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══ HERO SECTION ═══ */}
       <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden">
         {/* Background decorations */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.08),transparent_60%)]" />
@@ -246,7 +185,7 @@ export default function LandingPage() {
             <motion.div variants={itemVariants} className="mb-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-violet-500/20 bg-violet-500/5 text-sm">
                 <Sparkles className="w-4 h-4 text-violet-500" />
-                <span className="text-muted-foreground">The World&apos;s First Autonomous AI Marketing Engine</span>
+                <span className="text-muted-foreground">AI-Powered Video Marketing</span>
                 <ChevronRight className="w-3.5 h-3.5 text-violet-400" />
               </div>
             </motion.div>
@@ -256,10 +195,10 @@ export default function LandingPage() {
               variants={itemVariants}
               className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6"
             >
-              Fully Automate Your
+              Create AI Influencers,
               <br />
               <span className="relative whitespace-nowrap">
-                <span className="relative gradient-text">Video Marketing</span>
+                <span className="relative gradient-text">Generate Videos</span>
                 <SquiggleUnderline />
               </span>
             </motion.h1>
@@ -269,30 +208,20 @@ export default function LandingPage() {
               variants={itemVariants}
               className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed"
             >
-              Enter your URL → Let AI analyze → Professional videos produced for 4 platforms.
-              <br />
-              <strong className="text-foreground">No team needed, no agency required, in minutes.</strong>
+              Build your AI influencer, write a script, and generate professional marketing videos
+              for TikTok, Instagram, YouTube & LinkedIn.{" "}
+              <strong className="text-foreground">All in one place, in minutes.</strong>
             </motion.p>
 
-            {/* URL Input + CTA */}
+            {/* CTA Buttons */}
             <motion.div
               variants={itemVariants}
-              className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto mb-6"
+              className="flex flex-col sm:flex-row gap-4 justify-center mb-6"
             >
-              <div className="flex-1 relative">
-                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50" />
-                <Input
-                  type="url"
-                  placeholder="https://yourproject.com"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  className="pl-12 h-14 rounded-2xl text-base border-border/50 bg-background/80 backdrop-blur-sm focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20"
-                />
-              </div>
-              <Link href={url ? `/auth?url=${encodeURIComponent(url)}` : "/dashboard"}>
-                <Button className="h-14 px-8 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-base font-semibold shadow-xl shadow-violet-500/25 transition-all hover:shadow-2xl hover:shadow-violet-500/30 w-full sm:w-auto">
-                  Try Free
-                  <ArrowRight className="ml-2 w-5 h-5" />
+              <Link href="/dashboard">
+                <Button className="h-14 px-10 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-700 hover:to-purple-600 text-base font-semibold shadow-xl shadow-violet-500/25 transition-all hover:shadow-2xl hover:shadow-violet-500/30 w-full sm:w-auto">
+                  <Wand2 className="mr-2 w-5 h-5" />
+                  Create Your Influencer
                 </Button>
               </Link>
             </motion.div>
@@ -303,19 +232,23 @@ export default function LandingPage() {
               className="flex items-center justify-center gap-2 text-sm text-muted-foreground/60"
             >
               <Shield className="w-4 h-4" />
-              No credit card required · Start in 30 seconds
+              Free to start · No credit card required
             </motion.p>
           </motion.div>
 
-          {/* Stats bar */}
+          {/* Quick Stats */}
           <motion.div
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
-            className="mt-16 max-w-3xl mx-auto"
+            className="mt-16 max-w-2xl mx-auto"
           >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {stats.map((s) => (
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { value: "3 Steps", label: "To Your First Video", icon: Zap },
+                { value: "4+", label: "Platform Support", icon: Video },
+                { value: "AI", label: "Generated Avatars", icon: Bot },
+              ].map((s) => (
                 <div
                   key={s.label}
                   className="flex flex-col items-center p-5 rounded-2xl border border-border/40 bg-background/60 backdrop-blur-sm hover:border-violet-500/30 transition-colors"
@@ -330,14 +263,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* POWERED BY / TRUST LOGOS                    */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══ POWERED BY ═══ */}
       <AnimatedSection className="py-12 border-y border-border/30 bg-muted/20">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div variants={itemVariants} className="text-center mb-8">
             <p className="text-sm text-muted-foreground/60 uppercase tracking-widest font-medium">
-              Powered By Leading Technology
+              Powered By Leading AI Technology
             </p>
           </motion.div>
           <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-8 md:gap-16">
@@ -356,15 +287,13 @@ export default function LandingPage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* HOW IT WORKS — Result-Oriented              */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══ HOW IT WORKS ═══ */}
       <AnimatedSection className="py-24 lg:py-32">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div variants={itemVariants} className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-background/50 text-xs mb-4">
               <PlayCircle className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-muted-foreground">Just 3 steps</span>
+              <span className="text-muted-foreground">Simple 3-step process</span>
             </div>
             <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
               How It{" "}
@@ -374,142 +303,139 @@ export default function LandingPage() {
               </span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              A fully autonomous AI marketing engine. Enter your URL, we handle the rest.
+              From influencer creation to professional video — everything happens on one page.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((f, i) => (
+          <div className="grid md:grid-cols-3 gap-8">
+            {steps.map((step, i) => (
               <motion.div
-                key={f.title}
+                key={step.title}
                 variants={itemVariants}
-                className="group relative p-6 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-300"
+                className="group relative p-8 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-300"
               >
-                <div className="mb-4">
-                  <div
-                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.gradient} flex items-center justify-center shadow-lg`}
-                  >
-                    <f.icon className="w-6 h-6 text-white" />
+                {/* Step number connector */}
+                <div className="absolute -top-4 left-8">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+                    {i + 1}
                   </div>
                 </div>
-                <div className="text-xs font-bold text-muted-foreground/40 mb-2">
-                  STEP {String(i + 1).padStart(2, "0")}
+                <div className="mt-4 mb-5">
+                  <div
+                    className={`w-14 h-14 rounded-xl bg-gradient-to-br ${step.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
+                  >
+                    <step.icon className="w-7 h-7 text-white" />
+                  </div>
                 </div>
-                <h3 className="text-lg font-bold mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                  {f.description}
+                <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {step.description}
                 </p>
-                <div className="flex items-center gap-1.5 text-xs text-violet-500 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {f.benefit}
-                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </AnimatedSection>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* PLATFORM SUPPORT                            */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══ PLATFORM SUPPORT ═══ */}
       <AnimatedSection className="py-24 lg:py-32 bg-muted/20">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div variants={itemVariants} className="text-center mb-16">
             <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
-              Integrated With All{" "}
+              One Video, Every{" "}
               <span className="relative whitespace-nowrap">
-                <span className="relative gradient-text">Platforms</span>
+                <span className="relative gradient-text">Platform</span>
                 <SquiggleUnderline />
               </span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Videos automatically produced to match each platform's format, size, and trends.
+              Create videos optimized for each platform&apos;s format, audience, and trends.
             </p>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {integrations.map((int) => (
+            {platforms.map((p) => (
               <motion.div
-                key={int.name}
+                key={p.name}
                 variants={itemVariants}
                 className="group p-6 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/30 transition-all duration-300 text-center"
               >
                 <div
-                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${int.color} flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform`}
+                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${p.color} flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform`}
                 >
-                  <Video className="w-7 h-7 text-white" />
+                  <span className="text-2xl">{p.emoji}</span>
                 </div>
-                <h3 className="font-bold text-lg mb-1">{int.name}</h3>
-                <p className="text-sm text-muted-foreground">{int.desc}</p>
+                <h3 className="font-bold text-lg mb-1">{p.name}</h3>
+                <p className="text-sm text-muted-foreground">{p.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </AnimatedSection>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* TESTIMONIALS                                */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══ FEATURES HIGHLIGHT ═══ */}
       <AnimatedSection className="py-24 lg:py-32">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div variants={itemVariants} className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 bg-background/50 text-xs mb-4">
-              <Users className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-muted-foreground">User Reviews</span>
-            </div>
             <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
-              What Our Users{" "}
+              Why AI Marketing{" "}
               <span className="relative whitespace-nowrap">
-                <span className="relative gradient-text">Are Saying</span>
+                <span className="relative gradient-text">Factory</span>
                 <SquiggleUnderline />
               </span>
             </h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: Bot,
+                title: "AI-Generated Avatars",
+                desc: "Photorealistic AI avatars generated from your character description. Unique, consistent, and brand-aligned.",
+              },
+              {
+                icon: Video,
+                title: "Cinematic Video Quality",
+                desc: "Powered by Kling AI Pro for professional-grade video production. Your influencer speaks, moves, and engages.",
+              },
+              {
+                icon: Users,
+                title: "Influencer Library",
+                desc: "Build and manage multiple AI influencers. Each with their own look, personality, and backstory.",
+              },
+              {
+                icon: FileText,
+                title: "Smart Script Editor",
+                desc: "Write your own scripts or let AI generate platform-optimized content for your product.",
+              },
+              {
+                icon: Zap,
+                title: "One-Click Generation",
+                desc: "Select your influencer, pick a platform, click generate. Professional video ready in minutes.",
+              },
+              {
+                icon: Wand2,
+                title: "All-in-One Dashboard",
+                desc: "Create influencers, write scripts, generate videos, and manage your library — all from a single page.",
+              },
+            ].map((f) => (
               <motion.div
-                key={t.name}
+                key={f.title}
                 variants={itemVariants}
-                className="relative p-6 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/20 transition-all"
+                className="p-6 rounded-2xl border border-border/40 bg-background/60 hover:border-violet-500/20 hover:shadow-md transition-all"
               >
-                <Quote className="w-8 h-8 text-violet-500/20 mb-4" />
-                {/* Stars */}
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.stars }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-4 h-4 text-amber-400 fill-amber-400"
-                    />
-                  ))}
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center mb-4">
+                  <f.icon className="w-5 h-5 text-violet-500" />
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                  &ldquo;{t.content}&rdquo;
-                </p>
-                {/* Stat badge */}
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 text-violet-500 text-xs font-semibold mb-4">
-                  <TrendingUp className="w-3 h-3" />
-                  {t.stat}
-                </div>
-                {/* Author */}
-                <div className="flex items-center gap-3 pt-4 border-t border-border/30">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                    {t.avatar}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold">{t.name}</div>
-                    <div className="text-xs text-muted-foreground">{t.role}</div>
-                  </div>
-                </div>
+                <h3 className="font-bold text-base mb-2">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </AnimatedSection>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* CTA SECTION                                 */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══ CTA SECTION ═══ */}
       <AnimatedSection className="py-24 lg:py-32">
         <div className="max-w-4xl mx-auto px-6">
           <motion.div
@@ -523,14 +449,13 @@ export default function LandingPage() {
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 text-sm mb-8">
                 <Zap className="w-4 h-4" />
-                Start Now
+                Start Creating Now
               </div>
               <h2 className="text-3xl lg:text-5xl font-bold tracking-tight mb-4">
-                Produce Your First Video Now
+                Your First AI Video Awaits
               </h2>
               <p className="text-lg text-white/80 max-w-xl mx-auto mb-8">
-                No credit card required. Sign up in 30 seconds, enter your URL and
-                watch the AI magic.
+                Create your AI influencer and generate a professional marketing video in minutes. No experience needed.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/dashboard">
@@ -538,23 +463,23 @@ export default function LandingPage() {
                     size="lg"
                     className="h-14 px-10 rounded-2xl bg-white text-violet-700 hover:bg-white/90 text-base font-bold shadow-xl"
                   >
-                    Try Free
-                    <ArrowRight className="ml-2 w-5 h-5" />
+                    <Wand2 className="mr-2 w-5 h-5" />
+                    Create Your Influencer
                   </Button>
                 </Link>
               </div>
               <div className="flex items-center justify-center gap-6 mt-8 text-sm text-white/60">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  No credit card required
+                  Free to start
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  Instant setup
+                  No credit card
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
-                  Cancel anytime
+                  Ready in minutes
                 </span>
               </div>
             </div>
@@ -562,9 +487,7 @@ export default function LandingPage() {
         </div>
       </AnimatedSection>
 
-      {/* ═══════════════════════════════════════════ */}
-      {/* FOOTER                                      */}
-      {/* ═══════════════════════════════════════════ */}
+      {/* ═══ FOOTER ═══ */}
       <footer className="border-t border-border/30 bg-muted/10">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -584,29 +507,13 @@ export default function LandingPage() {
                 Sign In
               </Link>
               <Link href="/dashboard" className="hover:text-foreground transition-colors">
-                Sign Up
+                Get Started
               </Link>
             </div>
 
             {/* Copyright */}
             <div className="text-xs text-muted-foreground/50">
               © {new Date().getFullYear()} AI Marketing Factory. All rights reserved.
-            </div>
-          </div>
-
-          {/* Trust badges */}
-          <div className="flex items-center justify-center gap-6 mt-8 pt-8 border-t border-border/20">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/40">
-              <Shield className="w-3.5 h-3.5" />
-              SSL Protected
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/40">
-              <Globe className="w-3.5 h-3.5" />
-              GDPR Compliant
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/40">
-              <BarChart3 className="w-3.5 h-3.5" />
-              Powered by Vercel
             </div>
           </div>
         </div>
