@@ -93,6 +93,7 @@ function DashboardContent() {
     const [influencerLibrary, setInfluencerLibrary] = useState<CreatedInfluencer[]>([]);
     const [loadingLibrary, setLoadingLibrary] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     /* ─── Influencer Result State ─── */
     const [createdInfluencer, setCreatedInfluencer] = useState<CreatedInfluencer | null>(null);
@@ -402,8 +403,18 @@ function DashboardContent() {
 
     /* ─── Delete Influencer ─── */
     const handleDeleteInfluencer = async (e: React.MouseEvent, inf: CreatedInfluencer) => {
-        e.stopPropagation(); // Don't trigger card click
-        if (!confirm(`Delete "${inf.name}"? This cannot be undone.`)) return;
+        e.stopPropagation();
+
+        // First click: show confirm state
+        if (deletingId !== inf.id) {
+            setDeletingId(inf.id);
+            // Auto-reset after 3 seconds
+            setTimeout(() => setDeletingId(prev => prev === inf.id ? null : prev), 3000);
+            return;
+        }
+
+        // Second click: actually delete
+        setDeletingId(null);
         try {
             const res = await fetch('/api/influencers', {
                 method: 'DELETE',
@@ -577,17 +588,30 @@ function DashboardContent() {
                                         {influencerLibrary.map((inf) => (
                                             <div
                                                 key={inf.id}
-                                                className="group relative rounded-2xl border border-border/50 bg-card p-4 text-left hover:border-violet-300 hover:shadow-md transition-all cursor-pointer"
-                                                onClick={() => handleSelectInfluencer(inf)}
+                                                className={`group relative rounded-2xl border bg-card p-4 text-left hover:shadow-md transition-all cursor-pointer ${deletingId === inf.id
+                                                        ? 'border-red-300 bg-red-50/30'
+                                                        : 'border-border/50 hover:border-violet-300'
+                                                    }`}
+                                                onClick={() => deletingId === inf.id ? setDeletingId(null) : handleSelectInfluencer(inf)}
                                             >
-                                                {/* Delete button — separate from card click */}
+                                                {/* Delete button */}
                                                 <button
                                                     type="button"
                                                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteInfluencer(e, inf); }}
-                                                    className="absolute top-2 right-2 z-20 w-7 h-7 rounded-lg bg-background/80 hover:bg-red-50 border border-transparent hover:border-red-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                                                    title="Delete influencer"
+                                                    className={`absolute top-2 right-2 z-20 rounded-lg flex items-center justify-center transition-all ${deletingId === inf.id
+                                                            ? 'px-2.5 py-1 bg-red-500 text-white text-[10px] font-bold opacity-100'
+                                                            : 'w-7 h-7 bg-background/80 hover:bg-red-50 border border-transparent hover:border-red-200 opacity-0 group-hover:opacity-100'
+                                                        }`}
+                                                    title={deletingId === inf.id ? 'Click again to confirm delete' : 'Delete influencer'}
                                                 >
-                                                    <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
+                                                    {deletingId === inf.id ? (
+                                                        <>
+                                                            <Trash2 className="w-3 h-3 mr-1" />
+                                                            Delete?
+                                                        </>
+                                                    ) : (
+                                                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-red-500" />
+                                                    )}
                                                 </button>
                                                 <div className="w-16 h-16 rounded-xl overflow-hidden border border-violet-200/30 mx-auto mb-3 shadow-sm">
                                                     {inf.avatarUrl ? (
