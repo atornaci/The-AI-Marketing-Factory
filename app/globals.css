@@ -92,7 +92,7 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(0.985 0.005 280);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.13 0.02 280);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -102,7 +102,7 @@
   --secondary: oklch(0.96 0.01 280);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.45 0.01 280);
+  --muted-foreground: oklch(0.35 0.02 280);
   --accent: oklch(0.96 0.01 280);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
