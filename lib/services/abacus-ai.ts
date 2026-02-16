@@ -665,15 +665,44 @@ Respond ONLY with valid JSON.`
             || 'A professional, modern-looking presenter'
 
         // Build the video generation prompt
-        const videoPrompt = this.buildVideoPrompt(
+        const { prompt: videoPrompt, scenePostureType } = this.buildVideoPrompt(
             params.script, influencerDesc as string, settings, params.screenshotUrls,
             params.visualDna, params.brandPersona, params.brandColors,
             params.influencerProfile, params.scenes as Array<Record<string, unknown>> | undefined
         )
 
+        // ═══ REFERENCE PHOTO MATCHING ═══
+        // Pick the best reference photo matching the selected scene posture
+        const referencePhotos = (params.influencerProfile?.referencePhotos as Array<{ url: string; type: string; scene: string; posture: string }>) || []
+        let matchedPhotoUrl = params.avatarUrl || ''
+
+        if (referencePhotos.length > 0) {
+            // Map scene posture types to reference photo types
+            const postureToPhotoType: Record<string, string[]> = {
+                'sitting': ['sitting', 'office', 'outdoor'],
+                'standing': ['standing', 'portrait'],
+                'walking': ['walking', 'outdoor'],
+                'office': ['office', 'sitting'],
+                'outdoor': ['outdoor', 'walking'],
+            }
+
+            // Determine which photo type to use based on scene posture
+            const preferredTypes = postureToPhotoType[scenePostureType] || ['portrait']
+            const matchedPhoto = preferredTypes
+                .map(type => referencePhotos.find(p => p.type === type))
+                .find(p => p !== undefined)
+
+            if (matchedPhoto) {
+                matchedPhotoUrl = matchedPhoto.url
+                console.log(`[Video] 📸 Matched reference photo: type=${matchedPhoto.type}, scene="${matchedPhoto.scene.substring(0, 40)}..."`)
+            } else {
+                console.log(`[Video] 📸 No matching reference photo for posture "${scenePostureType}", using avatar`)
+            }
+        }
+
         try {
             // Use fal.ai minimax-video for real video generation
-            const videoResult = await this.callFalVideoGen(videoPrompt, params.avatarUrl)
+            const videoResult = await this.callFalVideoGen(videoPrompt, matchedPhotoUrl)
 
             if (videoResult.videoUrl) {
                 console.log(`[Video] ✅ Video generated successfully via fal.ai: ${videoResult.videoUrl}`)
@@ -751,7 +780,7 @@ Respond ONLY with valid JSON.`
         brandColors?: string,
         influencerProfile?: Record<string, unknown>,
         scenes?: Array<Record<string, unknown>>
-    ): string {
+    ): { prompt: string; scenePostureType: string } {
         const spokenScript = script
             .replace(/\[.*?\]/g, '')
             .replace(/\(.*?\)/g, '')
@@ -808,9 +837,17 @@ Respond ONLY with valid JSON.`
         const energyObj = pick(energyLevels)
         const wardrobe = pick(wardrobes)
 
-        console.log(`[Video] UGC Template: Scene="${scene.substring(0, 40)}...", Energy="${energyObj.energy}", Tone="${energyObj.tone}"`)
+        // Determine posture type for reference photo matching
+        const scenePostureType = posture.toLowerCase().includes('sitting') ? 'sitting'
+            : posture.toLowerCase().includes('walking') ? 'walking'
+                : posture.toLowerCase().includes('standing') ? 'standing'
+                    : posture.toLowerCase().includes('desk') || posture.toLowerCase().includes('office') ? 'office'
+                        : posture.toLowerCase().includes('park') || posture.toLowerCase().includes('outdoor') || posture.toLowerCase().includes('balcony') || posture.toLowerCase().includes('rooftop') ? 'outdoor'
+                            : 'standing'
 
-        return `DIALOGUE (the person speaks this aloud with natural lip movement throughout the entire video):
+        console.log(`[Video] UGC Template: Scene="${scene.substring(0, 40)}...", Energy="${energyObj.energy}", Posture Type="${scenePostureType}"`)
+
+        const prompt = `DIALOGUE (the person speaks this aloud with natural lip movement throughout the entire video):
 "${spokenScript}"
 
 This should feel like a real TikTok creator video, not an advertisement.
@@ -901,6 +938,8 @@ cinematic, studio lighting, beauty filter, smooth skin, plastic look, CGI, 3D re
 ${visualDna ? `\nVISUAL DNA: ${visualDna}` : ''}
 ${brandPersona ? `\nBRAND PERSONA: ${brandPersona}` : ''}
 ${brandColors ? `\nBRAND COLORS: ${brandColors}` : ''}`
+
+        return { prompt, scenePostureType }
     }
 
     /**

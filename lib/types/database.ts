@@ -23,6 +23,13 @@ export interface Project {
     updated_at: string
 }
 
+export interface ReferencePhoto {
+    url: string
+    type: 'portrait' | 'sitting' | 'standing' | 'walking' | 'office' | 'outdoor'
+    scene: string
+    posture: string
+}
+
 export interface AIInfluencer {
     id: string
     project_id: string
@@ -34,6 +41,7 @@ export interface AIInfluencer {
     visual_profile: Record<string, unknown>
     sample_video_url: string | null
     avatar_url: string | null
+    reference_photos: ReferencePhoto[]
     status: 'draft' | 'generating' | 'ready' | 'failed'
     created_at: string
     updated_at: string

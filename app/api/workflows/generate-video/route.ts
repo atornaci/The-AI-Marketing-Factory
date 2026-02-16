@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
                     appearanceDescription: influencer.appearance_description,
                     visualProfile: influencer.visual_profile,
                     avatarUrl: influencer.avatar_url,
+                    referencePhotos: influencer.reference_photos || [],
                     language: language,
                 }
                 voiceId = influencer.voice_id || ''

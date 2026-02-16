@@ -235,7 +235,9 @@ Respond with ONLY valid JSON (no markdown formatting):
             }
         }
 
-        // Generate avatar using fal.ai directly (server-side)
+        // ═══ MULTI-REFERENCE PHOTO PACK ═══
+        // Generate 6 reference photos showing the same person in different postures/scenes
+        // This enables video generation to match the correct reference photo to the scene
         const FAL_KEY = process.env.FAL_KEY || ''
         const vp = profile.visualProfile || {}
         const genderWord = selectedGender === 'male' ? 'man' : 'woman'
@@ -246,47 +248,133 @@ Respond with ONLY valid JSON (no markdown formatting):
         const visualDna = (constitution?.visualDna as string) || ''
 
         const appearance = (profile.appearanceDescription || '').substring(0, 300)
-        const scene = (profile.sceneEnvironment || 'cozy living room').substring(0, 100)
         const dnaKeywords = visualDna ? `, ${visualDna}` : ''
 
-        // ─── UGC Realism DNA: iPhone selfie, NOT cinematic portrait ───
-        const avatarPrompt = `Raw unfiltered smartphone selfie of a ${genderWord} aged ${age}, shot on iPhone 15 front camera, 9:16 vertical portrait format. ${appearance || 'natural everyday appearance'}. Sitting or standing naturally in ${scene}. Direct gaze at camera lens, slightly off-center framing. Natural ambient lighting matching the environment, NO studio lighting, NO professional photography. Realistic skin texture with visible pores, natural skin redness and imperfections, flyaway hairs, non-perfect teeth visible in a natural smile. Candid and authentic, like a real social media creator about to film a video. Slight lens distortion from front camera proximity${dnaKeywords}. AVOID: professional photography, studio lighting, 85mm lens, shallow depth of field, beauty filter, smooth skin, cinematic look, perfect framing, model pose, extreme close-up, tight headshot, cropped face, lowres, bad anatomy, cartoon, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs`
+        // ─── Reference Photo Configurations ───
+        const photoConfigs = [
+            {
+                type: 'portrait' as const,
+                scene: 'neutral soft-lit indoor background',
+                posture: 'standing facing camera, relaxed natural pose',
+                framing: 'medium portrait from head to chest',
+            },
+            {
+                type: 'sitting' as const,
+                scene: 'cozy café with warm lighting, coffee cup on table',
+                posture: 'sitting at a small café table, leaning slightly forward, one hand near coffee cup',
+                framing: 'medium-wide shot from head to waist, table edge visible',
+            },
+            {
+                type: 'standing' as const,
+                scene: 'modern kitchen with natural morning light, counter visible',
+                posture: 'standing at a kitchen counter, leaning casually against it with arms relaxed',
+                framing: 'medium-wide shot from head to waist, kitchen background visible',
+            },
+            {
+                type: 'walking' as const,
+                scene: 'urban sidewalk with trees and buildings softly blurred, outdoor daylight',
+                posture: 'walking slowly toward camera on a sidewalk, natural stride, slight motion',
+                framing: 'medium shot from head to thighs, outdoor scene visible',
+            },
+            {
+                type: 'office' as const,
+                scene: 'home office desk with laptop and coffee mug, soft window light',
+                posture: 'sitting at a desk in an office chair, looking at camera, hands on desk',
+                framing: 'medium-wide shot from head to waist, desk and laptop visible',
+            },
+            {
+                type: 'outdoor' as const,
+                scene: 'park bench under trees, dappled sunlight, green foliage behind',
+                posture: 'sitting on a park bench, relaxed posture, one arm resting on bench back',
+                framing: 'medium-wide shot from head to waist, park setting visible',
+            },
+        ]
 
+        // Build prompts for all 6 photos
+        const negativePrompt = 'professional photography, studio lighting, 85mm lens, shallow depth of field, beauty filter, smooth skin, cinematic look, perfect framing, model pose, extreme close-up, tight headshot, cropped face, lowres, bad anatomy, cartoon, unrealistic skin, blurry, watermark, logo, text, deformed, disfigured, extra limbs'
+
+        const photoPrompts = photoConfigs.map(config => ({
+            type: config.type,
+            scene: config.scene,
+            posture: config.posture,
+            prompt: `Raw unfiltered smartphone selfie of a ${genderWord} aged ${age}, shot on iPhone 15 front camera, 9:16 vertical format. ${appearance || 'natural everyday appearance'}. ${config.posture} in ${config.scene}. ${config.framing}. Direct gaze at camera lens, slightly off-center framing. Natural ambient lighting matching the environment, NO studio lighting, NO professional photography. Realistic skin texture with visible pores, natural skin redness and imperfections, flyaway hairs. Candid and authentic, like a real social media creator about to film a video. Slight lens distortion from front camera proximity${dnaKeywords}. IDENTITY FREEZE: This is the SAME person in all reference photos — maintain EXACT same face, skin tone, eye color, hair, facial features. AVOID: ${negativePrompt}`,
+        }))
+
+        // Generate all 6 photos in parallel for speed
+        interface ReferencePhoto {
+            url: string
+            type: 'portrait' | 'sitting' | 'standing' | 'walking' | 'office' | 'outdoor'
+            scene: string
+            posture: string
+        }
+        let referencePhotos: ReferencePhoto[] = []
         let avatarUrl = ''
+
         try {
             if (FAL_KEY) {
-                const falResponse = await fetch('https://fal.run/fal-ai/nano-banana-pro', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Key ${FAL_KEY}`,
-                    },
-                    body: JSON.stringify({
-                        prompt: avatarPrompt,
-                        aspect_ratio: '1:1',
-                        resolution: '1K',
-                        num_images: 1,
-                        output_format: 'png',
-                        safety_tolerance: '2',
-                    }),
-                })
+                console.log(`[Influencer] Generating ${photoPrompts.length} reference photos in parallel...`)
 
-                if (falResponse.ok) {
-                    const falData = await falResponse.json()
-                    avatarUrl = falData.images?.[0]?.url || ''
-                    console.log('fal.ai avatar generated:', avatarUrl ? 'success' : 'empty URL')
-                } else {
-                    const errText = await falResponse.text().catch(() => '')
-                    console.error('fal.ai error:', falResponse.status, errText)
-                }
+                const photoResults = await Promise.allSettled(
+                    photoPrompts.map(async (config) => {
+                        const falResponse = await fetch('https://fal.run/fal-ai/nano-banana-pro', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Key ${FAL_KEY}`,
+                            },
+                            body: JSON.stringify({
+                                prompt: config.prompt,
+                                aspect_ratio: '9:16',
+                                resolution: '1K',
+                                num_images: 1,
+                                output_format: 'png',
+                                safety_tolerance: '2',
+                            }),
+                        })
+
+                        if (!falResponse.ok) {
+                            const errText = await falResponse.text().catch(() => '')
+                            throw new Error(`fal.ai error ${falResponse.status}: ${errText}`)
+                        }
+
+                        const falData = await falResponse.json()
+                        const url = falData.images?.[0]?.url || ''
+                        if (!url) throw new Error('Empty URL from fal.ai')
+
+                        return {
+                            url,
+                            type: config.type,
+                            scene: config.scene,
+                            posture: config.posture,
+                        } as ReferencePhoto
+                    })
+                )
+
+                // Collect successful results
+                referencePhotos = photoResults
+                    .filter((r): r is PromiseFulfilledResult<ReferencePhoto> => r.status === 'fulfilled')
+                    .map(r => r.value)
+
+                console.log(`[Influencer] ✅ Generated ${referencePhotos.length}/${photoPrompts.length} reference photos`)
+
+                // Use portrait as main avatar, fallback to first available
+                const portraitPhoto = referencePhotos.find(p => p.type === 'portrait')
+                avatarUrl = portraitPhoto?.url || referencePhotos[0]?.url || ''
+
+                // Log any failures
+                photoResults.forEach((r, i) => {
+                    if (r.status === 'rejected') {
+                        console.warn(`[Influencer] ⚠️ Photo ${photoConfigs[i].type} failed:`, r.reason)
+                    }
+                })
             } else {
-                console.warn('FAL_KEY not set, skipping avatar generation')
+                console.warn('FAL_KEY not set, skipping reference photo generation')
             }
         } catch (imgErr) {
-            console.error('fal.ai avatar generation failed:', imgErr)
+            console.error('Reference photo generation failed:', imgErr)
         }
 
-        // Fallback: use a placeholder if fal.ai fails
+        // Fallback: use a placeholder if all photos failed
         if (!avatarUrl) {
             avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&size=512&background=7c3aed&color=fff&bold=true`
         }
@@ -303,6 +391,7 @@ Respond with ONLY valid JSON (no markdown formatting):
                 appearance_description: profile.appearanceDescription,
                 visual_profile: profile.visualProfile,
                 avatar_url: avatarUrl,
+                reference_photos: referencePhotos,
                 status: 'ready',
             })
             .select()
