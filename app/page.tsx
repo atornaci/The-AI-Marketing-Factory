@@ -141,8 +141,8 @@ export default function LandingPage() {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0">
-              <img src="/logo.png" alt="CreatorPersonaAI" className="w-full h-full object-contain" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+              <Sparkles className="w-4.5 h-4.5 text-white" />
             </div>
             <span className="text-lg font-bold tracking-tight">
               Creator<span className="gradient-text">Persona</span><span className="text-violet-400">AI</span>
