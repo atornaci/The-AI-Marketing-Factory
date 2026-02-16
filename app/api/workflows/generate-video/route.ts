@@ -10,7 +10,7 @@ export const maxDuration = 300
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
-        const { projectId, platform, prompt, brandName, title, influencerId, influencerName, influencerPersonality, influencerBackstory, productImageUrls, language: requestLanguage } = body
+        const { projectId, platform, prompt, brandName, title, influencerId, influencerName, influencerPersonality, influencerBackstory, productImageUrls, language: requestLanguage, userScript } = body
         const language: Language = requestLanguage || 'en'
 
         if (!projectId || !platform) {
@@ -158,7 +158,8 @@ export async function POST(req: NextRequest) {
                         .update({ status })
                         .eq('id', videoRecord.id)
                 },
-                language
+                language,
+                userScript || undefined
             )
 
             // Update video record with the results

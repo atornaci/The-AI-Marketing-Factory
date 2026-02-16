@@ -348,6 +348,7 @@ function DashboardContent() {
                     influencerBackstory: createdInfluencer.backstory || null,
                     productImageUrls: [],
                     language: 'en',
+                    userScript: quickScript.trim() || undefined,
                 }),
             });
 

@@ -164,7 +164,8 @@ export async function generateVideo(
     platform: 'instagram' | 'tiktok' | 'linkedin' | 'youtube',
     projectId: string,
     onProgress?: (step: string) => void,
-    language: Language = 'tr'
+    language: Language = 'tr',
+    userScript?: string
 ): Promise<VideoResult> {
     const report = (step: string) => onProgress?.(step)
 
@@ -227,6 +228,7 @@ export async function generateVideo(
                 || [analysis.valueProposition || ''].filter(Boolean),
             platform: platform,
             language: LANGUAGE_NAMES[language] || 'Turkish',
+            userScript: userScript || undefined,
         }
 
         // Call Claude to generate the Master Prompt

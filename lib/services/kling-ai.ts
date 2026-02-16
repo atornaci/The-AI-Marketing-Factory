@@ -137,6 +137,7 @@ export interface MasterPromptInput {
     uniqueSellingPoints: string[]
     platform: string
     language: string
+    userScript?: string
 }
 
 export interface MasterPromptOutput {
@@ -353,6 +354,12 @@ SCRIPT YAPISI (10 saniye, 3 parça):
 - Problem (3-6s): Hedef kitlenin yaşadığı sorunu tanımla
 - Çözüm + CTA (6-10s): Ürünü çözüm olarak sun + harekete geçirici çağrı
 
+KULLANICI SCRIPT UYARLAMA:
+- Kullanıcı kendi scriptini yazmış olabilir (USER_SCRIPT alanı). 
+- Eğer kullanıcı scripti çok uzunsa, ANLAMINI ve ANA MESAJINI koruyarak 10 saniyelik formata (30-40 kelime) KISA ve ÖZLÜ hale getir.
+- Kullanıcının iletmek istediği temel fikri her zaman öncelikle koru.
+- Eğer kullanıcı scripti zaten kısaysa veya yoksa, projeye uygun yeni script yaz.
+
 JSON FORMATI ile yanıt ver.`
 }
 
@@ -363,6 +370,10 @@ export function buildMasterPromptUserInput(input: MasterPromptInput): string {
     const previousThemes = input.previousVideoThemes.length > 0
         ? input.previousVideoThemes.join(', ')
         : 'Henüz yok (ilk video)'
+
+    const userScriptSection = input.userScript
+        ? `\nUSER SCRIPT (Kullanıcının yazdığı metin — bunu 10 saniyelik video formatına uyarla, anlamını koru):\n"${input.userScript}"\n`
+        : ''
 
     return `
 Aşağıdaki bilgilere dayanarak video ve görsel promptları üret:
@@ -382,7 +393,7 @@ VIDEO SETTINGS:
 - Mood: ${input.desiredVideoMood}
 - Language: ${input.language}
 - Duration: 10 seconds
-
+${userScriptSection}
 ÖNCEKİ TEMALAR (BUNLARI TEKRAR ETME):
 ${previousThemes}
 
@@ -390,7 +401,7 @@ JSON formatında yanıt ver:
 {
   "video_prompt": "Kling AI video prompt (İngilizce, 150-250 kelime, Subject/Action/Scene/Camera/Lighting)",
   "negative_prompt": "Negatif prompt (İngilizce, virgülle ayrılmış)",
-  "video_script": "10 saniyelik script (${input.language} dilinde, 30-40 kelime, Hook|Problem|CTA formatı)",
+  "video_script": "10 saniyelik script (${input.language} dilinde, 30-40 kelime, Hook|Problem|CTA formatı)${input.userScript ? ' — kullanıcının mesajını uyarla' : ''}",
   "image_prompt": "Thumbnail/banner görseli için prompt (İngilizce, 50-100 kelime)",
   "audio_mood_tags": ["mood1", "mood2", "mood3"],
   "theme_tag": "Bu videonun tema etiketi (kısa, İngilizce, örn: 'modern-cafe-casual')"
