@@ -11,7 +11,7 @@ export const maxDuration = 300
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
-        const { projectId, platform, prompt, brandName, title, influencerId, influencerName, influencerPersonality, influencerBackstory, productImageUrls, language: requestLanguage, userScript } = body
+        const { projectId, platform, prompt, brandName, title, influencerId, influencerName, influencerPersonality, influencerBackstory, productImageUrls, language: requestLanguage, userScript, selectedPhotoUrl } = body
         const language: Language = requestLanguage || 'en'
 
         if (!projectId || !platform) {
@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
                     visualProfile: influencer.visual_profile,
                     avatarUrl: influencer.avatar_url,
                     referencePhotos: influencer.reference_photos || [],
+                    selectedPhotoUrl: selectedPhotoUrl || null,
                     language: language,
                 }
                 voiceId = influencer.voice_id || ''

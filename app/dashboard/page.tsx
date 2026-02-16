@@ -31,6 +31,7 @@ import {
     PanelLeft,
     Library,
     Copy,
+    Camera,
     ClipboardCheck,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -41,6 +42,17 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 /* ─── Types ─── */
+interface ReferencePhotoItem {
+    url: string;
+    type: string;
+    scene: string;
+    posture: string;
+    location?: string;
+    outfit?: string;
+    hairstyle?: string;
+    generated_at?: string;
+}
+
 interface CreatedInfluencer {
     id: string;
     name: string;
@@ -48,6 +60,7 @@ interface CreatedInfluencer {
     backstory?: string;
     avatarUrl?: string;
     projectId: string;
+    referencePhotos?: ReferencePhotoItem[];
 }
 
 interface GeneratedVideo {
@@ -131,6 +144,16 @@ function DashboardContent() {
     const [generatedVideos, setGeneratedVideos] = useState<GeneratedVideo[]>([]);
     const [selectedPlatform, setSelectedPlatform] = useState<"tiktok" | "instagram" | "youtube">("tiktok");
     const [showPlatformMenu, setShowPlatformMenu] = useState(false);
+
+    /* ─── Photo Studio State ─── */
+    const [showPhotoStudio, setShowPhotoStudio] = useState(false);
+    const [studioLocation, setStudioLocation] = useState('cafe');
+    const [studioOutfit, setStudioOutfit] = useState('casual');
+    const [studioHairstyle, setStudioHairstyle] = useState('natural');
+    const [studioPose, setStudioPose] = useState('sitting');
+    const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false);
+    const [photoGenError, setPhotoGenError] = useState('');
+    const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
 
     /* ─── Subscription State ─── */
     const [subscription, setSubscription] = useState<{
@@ -216,6 +239,7 @@ function DashboardContent() {
                         backstory: inf.backstory as string || undefined,
                         avatarUrl: inf.avatar_url as string || undefined,
                         projectId: inf.project_id as string,
+                        referencePhotos: (inf.reference_photos as ReferencePhotoItem[]) || undefined,
                     }))
                 );
             }
@@ -415,6 +439,7 @@ function DashboardContent() {
                     productImageUrls: [],
                     language: 'en',
                     userScript: quickScript.trim() || undefined,
+                    selectedPhotoUrl: selectedPhotoUrl || undefined,
                 }),
             });
 
@@ -474,6 +499,60 @@ function DashboardContent() {
         setGeneratedVideos([]);
         setGenError("");
         setShowCreateForm(false);
+        setShowPhotoStudio(false);
+        setSelectedPhotoUrl(null);
+    };
+
+    /* ─── Photo Studio: Generate Photo ─── */
+    const handleGeneratePhoto = async () => {
+        if (!createdInfluencer) return;
+        setIsGeneratingPhoto(true);
+        setPhotoGenError('');
+
+        try {
+            const response = await fetch('/api/workflows/generate-photo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    influencerId: createdInfluencer.id,
+                    location: studioLocation,
+                    outfit: studioOutfit,
+                    hairstyle: studioHairstyle,
+                    pose: studioPose,
+                }),
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || 'Failed to generate photo');
+            }
+
+            const { photo } = await response.json();
+
+            // Add photo to current influencer's reference photos
+            setCreatedInfluencer(prev => {
+                if (!prev) return prev;
+                const updatedPhotos = [...(prev.referencePhotos || []), photo];
+                return { ...prev, referencePhotos: updatedPhotos };
+            });
+
+            // Also update in library
+            setInfluencerLibrary(prev =>
+                prev.map(inf =>
+                    inf.id === createdInfluencer.id
+                        ? { ...inf, referencePhotos: [...(inf.referencePhotos || []), photo] }
+                        : inf
+                )
+            );
+
+            // Auto-select the new photo for video generation
+            setSelectedPhotoUrl(photo.url);
+
+        } catch (err) {
+            setPhotoGenError(err instanceof Error ? err.message : 'Photo generation failed');
+        } finally {
+            setIsGeneratingPhoto(false);
+        }
     };
 
     /* ─── Delete Influencer ─── */
@@ -1067,6 +1146,203 @@ function DashboardContent() {
                                                     )}
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* ─── Photo Studio Section ─── */}
+                                    <div className="relative rounded-2xl border border-amber-200/50 bg-gradient-to-br from-amber-500/[0.04] via-orange-500/[0.02] to-transparent shadow-sm">
+                                        <div className="relative p-6 lg:p-8">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
+                                                        <Camera className="w-5 h-5 text-white" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-lg font-bold tracking-tight">Photo Studio</h3>
+                                                        <p className="text-xs text-muted-foreground">Same face, different scenes — generate new looks</p>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setShowPhotoStudio(!showPhotoStudio)}
+                                                    className="text-xs text-muted-foreground hover:text-amber-600 rounded-lg"
+                                                >
+                                                    {showPhotoStudio ? 'Close' : 'Open Studio'}
+                                                </Button>
+                                            </div>
+
+                                            {/* Photo Gallery — always show if there are reference photos */}
+                                            {createdInfluencer.referencePhotos && createdInfluencer.referencePhotos.length > 0 && (
+                                                <div className="mb-4">
+                                                    <p className="text-xs font-medium text-muted-foreground mb-2">
+                                                        Reference Photos ({createdInfluencer.referencePhotos.length}) — click to select for video
+                                                    </p>
+                                                    <div className="flex gap-2 overflow-x-auto pb-2">
+                                                        {/* Original avatar */}
+                                                        <button
+                                                            onClick={() => setSelectedPhotoUrl(null)}
+                                                            className={`shrink-0 w-16 h-20 rounded-lg overflow-hidden border-2 transition-all ${selectedPhotoUrl === null
+                                                                ? 'border-amber-500 ring-2 ring-amber-500/30 scale-105'
+                                                                : 'border-border/50 hover:border-amber-300'
+                                                                }`}
+                                                        >
+                                                            {createdInfluencer.avatarUrl && (
+                                                                <Image
+                                                                    src={createdInfluencer.avatarUrl}
+                                                                    alt="Original"
+                                                                    width={64}
+                                                                    height={80}
+                                                                    className="w-full h-full object-cover"
+                                                                    unoptimized
+                                                                />
+                                                            )}
+                                                        </button>
+                                                        {/* Generated reference photos */}
+                                                        {createdInfluencer.referencePhotos.map((photo, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                onClick={() => setSelectedPhotoUrl(photo.url)}
+                                                                className={`shrink-0 w-16 h-20 rounded-lg overflow-hidden border-2 transition-all ${selectedPhotoUrl === photo.url
+                                                                    ? 'border-amber-500 ring-2 ring-amber-500/30 scale-105'
+                                                                    : 'border-border/50 hover:border-amber-300'
+                                                                    }`}
+                                                                title={`${photo.location || photo.type} • ${photo.outfit || ''}`}
+                                                            >
+                                                                <Image
+                                                                    src={photo.url}
+                                                                    alt={`${photo.location || photo.type}`}
+                                                                    width={64}
+                                                                    height={80}
+                                                                    className="w-full h-full object-cover"
+                                                                    unoptimized
+                                                                />
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    {selectedPhotoUrl && (
+                                                        <p className="text-[10px] text-amber-600 mt-1">
+                                                            ✓ Selected photo will be used for video generation
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Photo Studio Controls — expandable */}
+                                            <AnimatePresence>
+                                                {showPhotoStudio && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.3 }}
+                                                        className="overflow-hidden"
+                                                    >
+                                                        <div className="grid grid-cols-2 gap-3 mb-4">
+                                                            {/* Location */}
+                                                            <div>
+                                                                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">📍 Location</label>
+                                                                <select
+                                                                    value={studioLocation}
+                                                                    onChange={(e) => setStudioLocation(e.target.value)}
+                                                                    className="w-full h-10 rounded-xl border border-border/50 bg-background/50 px-3 text-sm focus:border-amber-300 focus:ring-1 focus:ring-amber-300"
+                                                                >
+                                                                    <option value="cafe">☕ Café</option>
+                                                                    <option value="kitchen">🍳 Kitchen</option>
+                                                                    <option value="office">💼 Office</option>
+                                                                    <option value="park">🌿 Park</option>
+                                                                    <option value="street">🏙️ Street</option>
+                                                                    <option value="beach">🏖️ Beach</option>
+                                                                    <option value="gym">💪 Gym</option>
+                                                                    <option value="bedroom">🛏️ Bedroom</option>
+                                                                    <option value="restaurant">🍷 Restaurant</option>
+                                                                    <option value="car">🚗 Car</option>
+                                                                    <option value="rooftop">🌆 Rooftop</option>
+                                                                    <option value="library">📚 Library</option>
+                                                                </select>
+                                                            </div>
+
+                                                            {/* Outfit */}
+                                                            <div>
+                                                                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">👗 Outfit</label>
+                                                                <select
+                                                                    value={studioOutfit}
+                                                                    onChange={(e) => setStudioOutfit(e.target.value)}
+                                                                    className="w-full h-10 rounded-xl border border-border/50 bg-background/50 px-3 text-sm focus:border-amber-300 focus:ring-1 focus:ring-amber-300"
+                                                                >
+                                                                    <option value="casual">👕 Casual</option>
+                                                                    <option value="sporty">🏃 Sporty</option>
+                                                                    <option value="professional">👔 Professional</option>
+                                                                    <option value="elegant">✨ Elegant</option>
+                                                                    <option value="homewear">🏠 Homewear</option>
+                                                                    <option value="streetwear">🧢 Streetwear</option>
+                                                                </select>
+                                                            </div>
+
+                                                            {/* Hairstyle */}
+                                                            <div>
+                                                                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">💇 Hairstyle</label>
+                                                                <select
+                                                                    value={studioHairstyle}
+                                                                    onChange={(e) => setStudioHairstyle(e.target.value)}
+                                                                    className="w-full h-10 rounded-xl border border-border/50 bg-background/50 px-3 text-sm focus:border-amber-300 focus:ring-1 focus:ring-amber-300"
+                                                                >
+                                                                    <option value="natural">🪞 Natural (Keep original)</option>
+                                                                    <option value="ponytail">🎀 Ponytail</option>
+                                                                    <option value="straight">📐 Straight</option>
+                                                                    <option value="wavy">🌊 Wavy</option>
+                                                                    <option value="short">✂️ Short</option>
+                                                                    <option value="bun">💫 Bun</option>
+                                                                    <option value="braids">🪢 Braids</option>
+                                                                </select>
+                                                            </div>
+
+                                                            {/* Pose */}
+                                                            <div>
+                                                                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">🧍 Pose</label>
+                                                                <select
+                                                                    value={studioPose}
+                                                                    onChange={(e) => setStudioPose(e.target.value)}
+                                                                    className="w-full h-10 rounded-xl border border-border/50 bg-background/50 px-3 text-sm focus:border-amber-300 focus:ring-1 focus:ring-amber-300"
+                                                                >
+                                                                    <option value="sitting">🪑 Sitting</option>
+                                                                    <option value="standing">🧍 Standing</option>
+                                                                    <option value="walking">🚶 Walking</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Generate Button */}
+                                                        <div className="flex items-center gap-3">
+                                                            <Button
+                                                                onClick={handleGeneratePhoto}
+                                                                disabled={isGeneratingPhoto || !createdInfluencer.avatarUrl}
+                                                                className="h-10 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 border-0 shadow-lg text-sm font-semibold flex items-center gap-2"
+                                                            >
+                                                                {isGeneratingPhoto ? (
+                                                                    <>
+                                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                                        Generating photo...
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Camera className="w-4 h-4" />
+                                                                        Generate Photo
+                                                                    </>
+                                                                )}
+                                                            </Button>
+                                                            {!createdInfluencer.avatarUrl && (
+                                                                <span className="text-xs text-red-500">No avatar available for face reference</span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Error */}
+                                                        {photoGenError && (
+                                                            <p className="text-xs text-red-500 mt-2">{photoGenError}</p>
+                                                        )}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
                                     </div>
 

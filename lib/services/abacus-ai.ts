@@ -672,11 +672,16 @@ Respond ONLY with valid JSON.`
         )
 
         // ═══ REFERENCE PHOTO MATCHING ═══
-        // Pick the best reference photo matching the selected scene posture
+        // If user explicitly selected a photo from the Photo Studio, use that
+        const selectedPhotoUrl = params.influencerProfile?.selectedPhotoUrl as string | null
         const referencePhotos = (params.influencerProfile?.referencePhotos as Array<{ url: string; type: string; scene: string; posture: string }>) || []
         let matchedPhotoUrl = params.avatarUrl || ''
 
-        if (referencePhotos.length > 0) {
+        if (selectedPhotoUrl) {
+            // User explicitly selected a photo — use it directly
+            matchedPhotoUrl = selectedPhotoUrl
+            console.log(`[Video] 📸 Using user-selected photo from Photo Studio`)
+        } else if (referencePhotos.length > 0) {
             // Map scene posture types to reference photo types
             const postureToPhotoType: Record<string, string[]> = {
                 'sitting': ['sitting', 'office', 'outdoor'],
