@@ -867,7 +867,7 @@ CHARACTER:
 Real human influencer-style person looking directly into camera.
 Body position: ${posture}.
 Camera frames the person from HEAD TO WAIST — this is a MEDIUM SHOT, NOT a close-up. The person's upper body, arms, and hands must be clearly visible.
-Natural appearance, minimal makeup, realistic skin texture with pores and imperfections.
+Attractive, well-groomed, naturally photogenic. Confident and approachable expression.
 Wardrobe: ${wardrobe}.
 
 PERFORMANCE (CRITICAL — THIS IS THE MOST IMPORTANT PART):
@@ -882,13 +882,9 @@ Hands occasionally enter frame with spontaneous conversational gestures.
 Small body shifts in seat or stance, natural fidgeting.
 Authenticity prioritized over perfection.
 
-HUMAN IMPERFECTIONS (CRITICAL):
-Visible skin pores and natural skin texture.
-Natural skin redness on cheeks, nose, or ears.
-Flyaway hairs that catch the light.
-Non-perfect teeth visible when smiling or talking.
-Slightly uneven skin tone — real human skin, NOT beauty-filtered.
-Occasional blink rate variation — sometimes rapid, sometimes slow.
+NATURAL PRESENCE:
+Natural realistic skin texture — not plastic or CGI.
+Natural occasional blink.
 Breathing movement visible in chest/shoulders.
 
 ENERGY LEVEL: ${energyObj.energy}
