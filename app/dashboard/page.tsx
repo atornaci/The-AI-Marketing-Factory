@@ -613,7 +613,7 @@ function DashboardContent() {
 
                         <AnimatePresence mode="wait">
                             {/* ═══ Influencer Library ═══ */}
-                            {!createdInfluencer && !showCreateForm && (
+                            {activeView === 'library' && !createdInfluencer && !showCreateForm && (
                                 <motion.div
                                     key="influencer-library"
                                     initial={{ opacity: 0, y: 20 }}
@@ -720,7 +720,7 @@ function DashboardContent() {
                             )}
 
                             {/* ═══ STEP 1: Create Influencer Form ═══ */}
-                            {!createdInfluencer && (showCreateForm || influencerLibrary.length === 0) && (
+                            {activeView === 'create' && !createdInfluencer && (showCreateForm || influencerLibrary.length === 0) && (
                                 <motion.div
                                     key="create-form"
                                     initial={{ opacity: 0, y: 20 }}
@@ -1148,6 +1148,85 @@ function DashboardContent() {
                                 </motion.div>
                             )}
                         </AnimatePresence>
+
+                        {/* ═══ Settings View ═══ */}
+                        {activeView === 'settings' && (
+                            <motion.div
+                                key="settings-view"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-6"
+                            >
+                                {/* Account */}
+                                <div className="rounded-2xl border border-border/60 bg-background/80 backdrop-blur-sm p-6">
+                                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                        <UserRound className="w-5 h-5 text-violet-500" />
+                                        Account
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between py-3 border-b border-border/40">
+                                            <span className="text-sm text-muted-foreground">Email</span>
+                                            <span className="text-sm font-medium">{userEmail}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-3 border-b border-border/40">
+                                            <span className="text-sm text-muted-foreground">Plan</span>
+                                            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-violet-500/10 text-violet-500 border border-violet-200/30">
+                                                Free
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-3">
+                                            <span className="text-sm text-muted-foreground">Influencers Created</span>
+                                            <span className="text-sm font-medium">{influencerLibrary.length}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* About */}
+                                <div className="rounded-2xl border border-border/60 bg-background/80 backdrop-blur-sm p-6">
+                                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                        <Sparkles className="w-5 h-5 text-violet-500" />
+                                        About CreatorForge
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between py-3 border-b border-border/40">
+                                            <span className="text-sm text-muted-foreground">Version</span>
+                                            <span className="text-sm font-medium">1.0.0</span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-3 border-b border-border/40">
+                                            <span className="text-sm text-muted-foreground">AI Engine</span>
+                                            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-200/30">
+                                                Active ✓
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-3">
+                                            <span className="text-sm text-muted-foreground">Powered By</span>
+                                            <span className="text-sm font-medium">Kling AI · OpenRouter · fal.ai</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Danger Zone */}
+                                <div className="rounded-2xl border border-red-200/30 bg-red-50/5 p-6">
+                                    <h3 className="text-lg font-semibold mb-4 text-red-500">Danger Zone</h3>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium">Sign Out</p>
+                                            <p className="text-xs text-muted-foreground">Sign out of your account</p>
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleSignOut}
+                                            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 rounded-xl"
+                                        >
+                                            <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                                            Sign Out
+                                        </Button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
                     </motion.div>
                 </main>
             </div>
