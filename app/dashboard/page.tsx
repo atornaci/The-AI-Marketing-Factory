@@ -25,6 +25,7 @@ import {
     Plus,
     Check,
     Trash2,
+    ArrowLeft,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
@@ -454,15 +455,25 @@ function DashboardContent() {
             {/* ═══ Header ═══ */}
             <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/90 border-b border-border">
                 <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-                    {/* Left: Logo */}
-                    <Link href="/" className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                            <Sparkles className="w-4.5 h-4.5 text-white" />
-                        </div>
-                        <span className="text-lg font-bold tracking-tight hidden sm:block">
-                            AI Marketing <span className="gradient-text">Factory</span>
-                        </span>
-                    </Link>
+                    {/* Left: Back + Logo */}
+                    <div className="flex items-center gap-2">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-violet-600 hover:bg-violet-50 transition-colors"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            <span className="hidden sm:inline">Home</span>
+                        </Link>
+                        <div className="w-px h-6 bg-border/50 hidden sm:block" />
+                        <Link href="/" className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                                <Sparkles className="w-4.5 h-4.5 text-white" />
+                            </div>
+                            <span className="text-lg font-bold tracking-tight hidden sm:block">
+                                AI Marketing <span className="gradient-text">Factory</span>
+                            </span>
+                        </Link>
+                    </div>
 
                     {/* Right: User + Logout */}
                     <div className="flex items-center gap-3">
