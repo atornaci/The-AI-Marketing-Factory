@@ -1266,11 +1266,11 @@ function DashboardContent() {
                                                     >
                                                         {/* Video Player */}
                                                         {video.videoUrl ? (
-                                                            <div className="aspect-[9/16] max-h-[400px] bg-black relative">
+                                                            <div className="aspect-[9/16] max-h-[400px] bg-gradient-to-b from-violet-950/80 to-gray-900 relative">
                                                                 <video
                                                                     src={video.videoUrl}
                                                                     controls
-                                                                    preload="none"
+                                                                    preload="metadata"
                                                                     className="w-full h-full object-contain"
                                                                     poster={video.thumbnailUrl || undefined}
                                                                 />
